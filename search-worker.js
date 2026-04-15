@@ -11,6 +11,13 @@ function normalize(value) {
     .trim();
 }
 
+function normalizePhrase(value) {
+  return normalize(value)
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function prepareDocuments(sourceDocuments) {
   documents = sourceDocuments.map((document) => {
     const speakers = Array.isArray(document.speakers) ? document.speakers : [];
@@ -22,7 +29,8 @@ function prepareDocuments(sourceDocuments) {
             id: node.id || "",
             speakers: nodeSpeakers,
             text: nodeText,
-            haystack: normalize([nodeSpeakers.join(" "), nodeText].join(" ")),
+            haystack: normalize(nodeText),
+            phraseHaystack: normalizePhrase(nodeText),
           };
         })
       : [];
@@ -65,14 +73,17 @@ function matchesSpeakerFilter(document, speaker, mode) {
   return true;
 }
 
-function searchDocuments(query, speaker, mode) {
+function searchDocuments(query, speaker, speakerMode, queryMode) {
   const normalizedQuery = normalize(query);
+  const normalizedPhraseQuery = normalizePhrase(query);
   const queryTerms = normalizedQuery ? normalizedQuery.split(" ") : [];
+  const matchMode =
+    queryMode === "phrase" || queryMode === "exact" ? "phrase" : "contains";
 
   const results = [];
   let totalCount = 0;
   for (const document of documents) {
-    if (!matchesSpeakerFilter(document, speaker, mode)) {
+    if (!matchesSpeakerFilter(document, speaker, speakerMode)) {
       continue;
     }
 
@@ -81,7 +92,11 @@ function searchDocuments(query, speaker, mode) {
         continue;
       }
 
-      if (!node.haystack.includes(normalizedQuery)) {
+      if (matchMode === "phrase") {
+        if (!normalizedPhraseQuery || !node.phraseHaystack.includes(normalizedPhraseQuery)) {
+          continue;
+        }
+      } else if (!node.haystack.includes(normalizedQuery)) {
         let allTermsPresent = true;
         for (const term of queryTerms) {
           if (!node.haystack.includes(term)) {
@@ -134,7 +149,8 @@ self.onmessage = (event) => {
     const response = searchDocuments(
       payload.query || "",
       payload.speaker || "",
-      payload.speakerMode || "includes"
+      payload.speakerMode || "includes",
+      payload.queryMode || "contains"
     );
     self.postMessage({
       type: "results",

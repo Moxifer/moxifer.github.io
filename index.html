@@ -93,6 +93,7 @@
     }
 
     .excerpt {
+      display: block;
       margin-top: 0.15rem;
     }
 
@@ -102,6 +103,11 @@
       margin-left: 0.4rem;
       white-space: nowrap;
     }
+
+    mark {
+      background: #fff0a6;
+      padding: 0 0.08rem;
+    }
   </style>
 </head>
 <body>
@@ -109,6 +115,13 @@
   <div class="controls">
     <div class="search-row">
       <input id="query" type="search" placeholder="Search dialog text">
+      <label>
+        <span>Match</span>
+        <select id="query-mode">
+          <option value="contains">Contains</option>
+          <option value="phrase">Phrase</option>
+        </select>
+      </label>
     </div>
     <div class="filter-row">
       <label>
@@ -130,6 +143,7 @@
   <ul id="results"></ul>
   <script>
     const queryInput = document.getElementById("query");
+    const queryModeSelect = document.getElementById("query-mode");
     const speakerSelect = document.getElementById("speaker");
     const speakerModeSelect = document.getElementById("speaker-mode");
     const status = document.getElementById("status");
@@ -169,6 +183,58 @@
         return text || "";
       }
       return text.slice(0, limit - 3).trimEnd() + "...";
+    }
+
+    function getQueryTerms() {
+      return queryInput.value
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+        .sort((a, b) => b.length - a.length);
+    }
+
+    function appendHighlightedText(container, text, terms) {
+      if (!text) {
+        return;
+      }
+
+      if (!terms.length) {
+        container.textContent = text;
+        return;
+      }
+
+      const lowerText = text.toLowerCase();
+      let index = 0;
+
+      while (index < text.length) {
+        let matchedTerm = "";
+        for (const term of terms) {
+          if (lowerText.startsWith(term.toLowerCase(), index)) {
+            matchedTerm = text.slice(index, index + term.length);
+            break;
+          }
+        }
+
+        if (matchedTerm) {
+          const mark = document.createElement("mark");
+          mark.textContent = matchedTerm;
+          container.appendChild(mark);
+          index += matchedTerm.length;
+          continue;
+        }
+
+        let nextIndex = text.length;
+        for (const term of terms) {
+          const foundIndex = lowerText.indexOf(term.toLowerCase(), index);
+          if (foundIndex !== -1 && foundIndex < nextIndex) {
+            nextIndex = foundIndex;
+          }
+        }
+
+        const plainText = text.slice(index, nextIndex);
+        container.appendChild(document.createTextNode(plainText));
+        index = nextIndex;
+      }
     }
 
     function matchesSpeakerFilter(document, speaker, mode) {
@@ -236,7 +302,10 @@
         const childNode = node.folders.get(folderName);
         const item = document.createElement("li");
         const details = document.createElement("details");
-        if (depth < 2) {
+        if (
+          (depth === 0 && folderName === "dialog") ||
+          (depth === 1 && folderName === "Companions")
+        ) {
           details.open = true;
         }
 
@@ -280,12 +349,13 @@
         (payload.truncated ? " (showing first 500)" : "");
       resultsList.innerHTML = "";
       const showDetail = Boolean(queryInput.value.trim() || speakerSelect.value);
+      const queryTerms = getQueryTerms();
 
       for (const result of payload.results) {
         const item = document.createElement("li");
 
         const link = document.createElement("a");
-        link.href = result.path;
+        link.href = result.documentPath || result.path;
         link.textContent = result.title;
         item.appendChild(link);
         item.appendChild(createSizeNode(result.sizeBytes));
@@ -303,9 +373,14 @@
         }
 
         if (showDetail && result.excerpt) {
-          const excerpt = document.createElement("div");
+          const excerpt = document.createElement("a");
           excerpt.className = "excerpt";
-          excerpt.textContent = shortenText(result.excerpt, 260);
+          excerpt.href = result.path;
+          appendHighlightedText(
+            excerpt,
+            shortenText(result.excerpt, 260),
+            queryTerms
+          );
           item.appendChild(excerpt);
         }
 
@@ -330,6 +405,7 @@
         type: "search",
         payload: {
           query: queryInput.value,
+          queryMode: queryModeSelect.value,
           speaker: speakerSelect.value,
           speakerMode: speakerModeSelect.value,
         },
@@ -365,6 +441,7 @@
     };
 
     queryInput.addEventListener("input", scheduleSearch);
+    queryModeSelect.addEventListener("change", requestSearch);
     speakerSelect.addEventListener("change", requestSearch);
     speakerModeSelect.addEventListener("change", requestSearch);
 
