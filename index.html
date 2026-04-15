@@ -1,5 +1,3 @@
----
----
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,16 +14,380 @@
     h1 {
       margin-top: 0;
     }
+
+    .controls {
+      display: grid;
+      gap: 0.6rem;
+      margin-bottom: 1rem;
+    }
+
+    .search-row,
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .controls input,
+    .controls select,
+    .controls label {
+      font: inherit;
+    }
+
+    .controls input {
+      padding: 0.45rem 0.6rem;
+      min-width: 22rem;
+      flex: 1 1 28rem;
+    }
+
+    .controls select {
+      padding: 0.45rem 0.6rem;
+      min-width: 14rem;
+      flex: 0 1 18rem;
+    }
+
+    .filter-row label {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    #status {
+      margin: 0 0 1rem;
+    }
+
+    #results {
+      padding-left: 1.25rem;
+    }
+
+    #results li {
+      margin-bottom: 0.85rem;
+    }
+
+    #results.tree {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    #results.tree ul {
+      list-style: none;
+      padding-left: 1.35rem;
+      margin: 0.3rem 0 0.3rem;
+    }
+
+    #results.tree li {
+      margin-bottom: 0.2rem;
+    }
+
+    #results.tree details {
+      margin: 0.2rem 0;
+    }
+
+    #results.tree summary {
+      cursor: pointer;
+    }
+
+    .meta {
+      color: #444;
+      font-size: 0.95rem;
+    }
+
+    .excerpt {
+      margin-top: 0.15rem;
+    }
+
+    .size {
+      color: #666;
+      font-size: 0.95rem;
+      margin-left: 0.4rem;
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body>
-  {% assign dialog_files = site.static_files | where_exp: "file", "file.path contains '/dialog/'" | where_exp: "file", "file.extname == '.html'" | sort: "path" %}
   <h1>Baldur's Gate 3 Dialog</h1>
-  <ul>
-    {% for file in dialog_files %}
-      {% assign label = file.path | remove_first: '/dialog/' | replace: '.html', '' %}
-      <li><a href="{{ file.path | relative_url }}">{{ label }}</a></li>
-    {% endfor %}
-  </ul>
+  <div class="controls">
+    <div class="search-row">
+      <input id="query" type="search" placeholder="Search dialog text">
+    </div>
+    <div class="filter-row">
+      <label>
+        <span>Speaker</span>
+        <select id="speaker">
+          <option value="">All speakers</option>
+        </select>
+      </label>
+      <label>
+        <span>Mode</span>
+        <select id="speaker-mode">
+          <option value="includes">Includes speaker</option>
+          <option value="only">Only that speaker</option>
+        </select>
+      </label>
+    </div>
+  </div>
+  <p id="status">Loading search index...</p>
+  <ul id="results"></ul>
+  <script>
+    const queryInput = document.getElementById("query");
+    const speakerSelect = document.getElementById("speaker");
+    const speakerModeSelect = document.getElementById("speaker-mode");
+    const status = document.getElementById("status");
+    const resultsList = document.getElementById("results");
+    const worker = new Worker("search-worker.js");
+    const onlyModeIgnoredSpeakers = new Set(["Player", "Narrator", "No Speaker"]);
+
+    let allDocuments = [];
+    let searchReady = false;
+    let pendingTimer = null;
+
+    function formatSize(sizeBytes) {
+      const units = ["B", "KB", "MB"];
+      let value = Number(sizeBytes) || 0;
+      let unitIndex = 0;
+
+      while (value >= 1024 && unitIndex < units.length - 1) {
+        value /= 1024;
+        unitIndex += 1;
+      }
+
+      if (unitIndex === 0) {
+        return value + " " + units[unitIndex];
+      }
+      return value.toFixed(value >= 10 ? 0 : 1) + " " + units[unitIndex];
+    }
+
+    function createSizeNode(sizeBytes) {
+      const size = document.createElement("span");
+      size.className = "size";
+      size.textContent = "(" + formatSize(sizeBytes) + ")";
+      return size;
+    }
+
+    function shortenText(text, limit) {
+      if (!text || text.length <= limit) {
+        return text || "";
+      }
+      return text.slice(0, limit - 3).trimEnd() + "...";
+    }
+
+    function matchesSpeakerFilter(document, speaker, mode) {
+      if (!speaker) {
+        return true;
+      }
+
+      const speakers = Array.isArray(document.speakers) ? document.speakers : [];
+      if (!speakers.includes(speaker)) {
+        return false;
+      }
+
+      if (mode !== "only") {
+        return true;
+      }
+
+      for (const otherSpeaker of speakers) {
+        if (otherSpeaker === speaker) {
+          continue;
+        }
+        if (onlyModeIgnoredSpeakers.has(otherSpeaker)) {
+          continue;
+        }
+        return false;
+      }
+
+      return true;
+    }
+
+    function getTreeDocuments() {
+      return allDocuments.filter((document) =>
+        matchesSpeakerFilter(
+          document,
+          speakerSelect.value,
+          speakerModeSelect.value
+        )
+      );
+    }
+
+    function buildTree(documents) {
+      const root = { folders: new Map(), files: [] };
+
+      for (const document of documents) {
+        const parts = document.path.split("/");
+        let current = root;
+        for (let index = 0; index < parts.length - 1; index += 1) {
+          const part = parts[index];
+          if (!current.folders.has(part)) {
+            current.folders.set(part, { folders: new Map(), files: [] });
+          }
+          current = current.folders.get(part);
+        }
+        current.files.push(document);
+      }
+
+      return root;
+    }
+
+    function renderTreeNode(node, parentElement, depth) {
+      const folderNames = Array.from(node.folders.keys()).sort((a, b) =>
+        a.localeCompare(b)
+      );
+
+      for (const folderName of folderNames) {
+        const childNode = node.folders.get(folderName);
+        const item = document.createElement("li");
+        const details = document.createElement("details");
+        if (depth < 2) {
+          details.open = true;
+        }
+
+        const summary = document.createElement("summary");
+        summary.textContent = folderName;
+        details.appendChild(summary);
+
+        const childList = document.createElement("ul");
+        renderTreeNode(childNode, childList, depth + 1);
+        details.appendChild(childList);
+
+        item.appendChild(details);
+        parentElement.appendChild(item);
+      }
+
+      const files = node.files.slice().sort((a, b) => a.title.localeCompare(b.title));
+      for (const file of files) {
+        const item = document.createElement("li");
+        const link = document.createElement("a");
+        link.href = file.path;
+        link.textContent = file.title;
+        item.appendChild(link);
+        item.appendChild(createSizeNode(file.size_bytes));
+        parentElement.appendChild(item);
+      }
+    }
+
+    function renderTree(documents) {
+      resultsList.className = "tree";
+      resultsList.innerHTML = "";
+      const tree = buildTree(documents);
+      renderTreeNode(tree, resultsList, 0);
+    }
+
+    function renderResults(payload) {
+      resultsList.className = "";
+      status.textContent =
+        payload.count +
+        " result" +
+        (payload.count === 1 ? "" : "s") +
+        (payload.truncated ? " (showing first 500)" : "");
+      resultsList.innerHTML = "";
+      const showDetail = Boolean(queryInput.value.trim() || speakerSelect.value);
+
+      for (const result of payload.results) {
+        const item = document.createElement("li");
+
+        const link = document.createElement("a");
+        link.href = result.path;
+        link.textContent = result.title;
+        item.appendChild(link);
+        item.appendChild(createSizeNode(result.sizeBytes));
+
+        const path = document.createElement("div");
+        path.className = "meta";
+        path.textContent = result.documentPath || result.path;
+        item.appendChild(path);
+
+        if (showDetail && result.speakers && result.speakers.length) {
+          const speakers = document.createElement("div");
+          speakers.className = "meta";
+          speakers.textContent = result.speakers.join(", ");
+          item.appendChild(speakers);
+        }
+
+        if (showDetail && result.excerpt) {
+          const excerpt = document.createElement("div");
+          excerpt.className = "excerpt";
+          excerpt.textContent = shortenText(result.excerpt, 260);
+          item.appendChild(excerpt);
+        }
+
+        resultsList.appendChild(item);
+      }
+    }
+
+    function requestSearch() {
+      if (!searchReady) {
+        return;
+      }
+      if (!queryInput.value.trim()) {
+        const filteredDocuments = getTreeDocuments();
+        status.textContent =
+          filteredDocuments.length +
+          " dialog file" +
+          (filteredDocuments.length === 1 ? "" : "s");
+        renderTree(filteredDocuments);
+        return;
+      }
+      worker.postMessage({
+        type: "search",
+        payload: {
+          query: queryInput.value,
+          speaker: speakerSelect.value,
+          speakerMode: speakerModeSelect.value,
+        },
+      });
+    }
+
+    function scheduleSearch() {
+      if (pendingTimer !== null) {
+        clearTimeout(pendingTimer);
+      }
+      pendingTimer = window.setTimeout(requestSearch, 120);
+    }
+
+    worker.onmessage = (event) => {
+      const { type, payload } = event.data || {};
+
+      if (type === "ready") {
+        searchReady = true;
+        status.textContent = payload.count + " dialog files";
+        for (const speaker of payload.speakers) {
+          const option = document.createElement("option");
+          option.value = speaker;
+          option.textContent = speaker;
+          speakerSelect.appendChild(option);
+        }
+        requestSearch();
+        return;
+      }
+
+      if (type === "results") {
+        renderResults(payload);
+      }
+    };
+
+    queryInput.addEventListener("input", scheduleSearch);
+    speakerSelect.addEventListener("change", requestSearch);
+    speakerModeSelect.addEventListener("change", requestSearch);
+
+    fetch("search-index.json")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to load search index");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        allDocuments = data.documents || [];
+        worker.postMessage({
+          type: "init",
+          payload: {
+            documents: allDocuments,
+            speakers: data.speakers || [],
+          },
+        });
+      })
+      .catch((error) => {
+        status.textContent = error.message;
+      });
+  </script>
 </body>
 </html>
