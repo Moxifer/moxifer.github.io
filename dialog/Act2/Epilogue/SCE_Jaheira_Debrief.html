@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SCE_Jaheira_Debrief</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #182330;
+      --muted: #586477;
+      --line: #c7d2df;
+      --npc: #b91c1c;
+      --player: #15803d;
+      --system: #2563eb;
+      --rule: #2f6f44;
+      --tag: #0f766e;
+      --check: #7c3aed;
+      --set: #ea580c;
+      --roll: #6d28d9;
+      --approval: #0f766e;
+      --jump: #155eef;
+      --context: #475467;
+      --surface: #f3f6fa;
+      --surface-active: #e6edf5;
+      --surface-hover: #edf3f9;
+      --detail-surface: #e3ebf4;
+      --detail-border: #b4c2d4;
+      --focus: #90a4bc;
+      --highlight: #d9e5f5;
+      --scrollbar-proxy-bg: rgba(255, 255, 255, 0.94);
+      --mono: Consolas, "SFMono-Regular", Menlo, monospace;
+      --sans: Georgia, "Palatino Linotype", serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #fff;
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.35;
+      overflow-x: hidden;
+    }
+    a { color: var(--jump); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: none;
+      padding: 0;
+      border-radius: 0;
+    }
+    .page {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0.55rem 0.9rem 1.8rem;
+      overflow-x: hidden;
+    }
+    .hero {
+      margin-bottom: 0.55rem;
+    }
+    .hero h1 {
+      margin: 0 0 0.2rem;
+      font-size: 1.4rem;
+      line-height: 1.15;
+    }
+    .source {
+      color: var(--muted);
+      font-size: 0.9rem;
+      word-break: break-all;
+      margin-bottom: 0.2rem;
+    }
+    .source-label {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.3rem;
+    }
+    .summary-line {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 0.35rem;
+    }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.45rem;
+      margin-bottom: 0.45rem;
+      padding: 0.35rem 0;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      overflow: visible;
+    }
+    .toolbar-scroll {
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: calc(100% - 7rem);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+    }
+    .controls {
+      display: inline-flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0.45rem;
+      white-space: nowrap;
+      font-size: 0.9rem;
+      min-width: max-content;
+      overflow: visible;
+    }
+    .controls button,
+    .controls summary,
+    .speaker-map > summary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 1.85rem;
+      padding: 0.12rem 0.5rem;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: var(--surface);
+      color: var(--jump);
+      font: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      list-style: none;
+      user-select: none;
+    }
+    .controls button.is-active,
+    .controls details[open] > summary,
+    .speaker-map[open] > summary {
+      background: var(--surface-active);
+      border-color: var(--focus);
+    }
+    .controls button:hover,
+    .controls summary:hover,
+    .speaker-map > summary:hover {
+      background: var(--surface-hover);
+      text-decoration: none;
+    }
+    .controls summary:focus,
+    .controls button:focus,
+    .speaker-map > summary:focus {
+      outline: 1px solid var(--focus);
+      outline-offset: 1px;
+    }
+    .speaker-map {
+      flex: 0 0 auto;
+      position: relative;
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .speaker-map summary,
+    .meta-block summary {
+      cursor: pointer;
+      color: var(--jump);
+      list-style: none;
+    }
+    .speaker-map summary::-webkit-details-marker,
+    .meta-block summary::-webkit-details-marker {
+      display: none;
+    }
+    .speaker-map[open] ul {
+      display: block;
+    }
+    .speaker-map ul {
+      display: none;
+      list-style: none;
+      margin: 0.3rem 0 0;
+      padding: 0.45rem 0.6rem;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 0.2rem);
+      min-width: 20rem;
+      max-width: min(34rem, calc(100vw - 2rem));
+      max-height: 24rem;
+      overflow: auto;
+      background: #fbfcfe;
+      border: 1px solid var(--line);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+      z-index: 30;
+    }
+    .speaker-map li + li {
+      margin-top: 0.1rem;
+    }
+    .speaker-index {
+      display: inline-block;
+      min-width: 2rem;
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 600;
+    }
+    .speaker-name {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.25rem;
+    }
+    .inline-meta, .line-meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .tree-shell {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: visible;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-shell-inner {
+      width: max-content;
+      min-width: 100%;
+    }
+    .tree-scrollbar-proxy {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 1.1rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      background: var(--scrollbar-proxy-bg);
+      border-top: 1px solid var(--line);
+      z-index: 40;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-scrollbar-proxy[hidden] {
+      display: none;
+    }
+    .tree-scrollbar-proxy-inner {
+      height: 1px;
+    }
+    .orphan-section {
+      width: auto;
+      min-width: 0;
+      margin-top: 1rem;
+      padding-top: 0.55rem;
+      border-top: 1px dotted var(--line);
+    }
+    .orphan-section h2 {
+      margin: 0 0 0.15rem;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+    .orphan-note {
+      margin: 0 0 0.35rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .root-list, .child-list {
+      list-style: none;
+      margin: 0;
+      padding-left: 0;
+      width: auto;
+      min-width: 0;
+    }
+    .child-list {
+      margin-left: 1.1rem;
+      padding-left: 0.85rem;
+      border-left: 1px dotted var(--line);
+    }
+    .node-item {
+      margin: 0.18rem 0;
+    }
+    details.node {
+      margin: 0;
+    }
+    details.node:target > summary .node-line {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    .node-leaf:target {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 0;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    summary::-webkit-details-marker {
+      display: none;
+    }
+    details.node > summary::before {
+      content: "▸";
+      display: inline-block;
+      width: 0.9rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      vertical-align: top;
+      padding-top: 0.12rem;
+    }
+    details.node[open] > summary::before {
+      content: "▾";
+    }
+    details.node.no-children > summary::before {
+      content: "•";
+    }
+    .node-line {
+      display: inline;
+      padding: 0.06rem 0.18rem;
+    }
+    .node-leaf {
+      display: inline-block;
+      padding: 0.06rem 0.18rem;
+      border-radius: 6px;
+    }
+    details.node > summary::before {
+      content: "+";
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    details.node[open] > summary::before {
+      content: "-";
+    }
+    details.node.no-children > summary::before {
+      content: ".";
+    }
+    .node-number {
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 700;
+    }
+    .speaker-label {
+      font-weight: 700;
+      margin-left: 0.2rem;
+    }
+    .speaker-label.npc { color: var(--npc); }
+    .speaker-label.player { color: var(--player); }
+    .speaker-label.system { color: var(--system); }
+    .dialog {
+      color: var(--ink);
+      margin-left: 0.2rem;
+    }
+    .node-kind {
+      color: var(--system);
+      margin-left: 0.2rem;
+    }
+    .ruletag {
+      color: var(--rule);
+      margin-left: 0.35rem;
+    }
+    .tags {
+      color: var(--tag);
+      margin-left: 0.35rem;
+    }
+    .checkflag {
+      color: var(--check);
+      margin-left: 0.35rem;
+    }
+    .setflag {
+      color: var(--set);
+      margin-left: 0.35rem;
+    }
+    .rolls {
+      color: var(--roll);
+      margin-left: 0.35rem;
+    }
+    .approval {
+      color: var(--approval);
+      margin-left: 0.35rem;
+    }
+    .nodelink {
+      color: var(--jump);
+      margin-left: 0.35rem;
+    }
+    .context {
+      color: var(--context);
+      margin-left: 0.3rem;
+      cursor: help;
+    }
+    .end {
+      color: #8b1e1e;
+      margin-left: 0.35rem;
+    }
+    .node-shell:target,
+    .node-leaf:target {
+      background: none;
+      border-radius: 0;
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-shell {
+      display: block;
+    }
+    .node-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.32rem;
+      width: max-content;
+      min-width: 100%;
+      transition: background-color 0.18s ease;
+    }
+    .node-shell.jump-highlight > .node-row {
+      background: var(--highlight);
+    }
+    .node-content {
+      min-width: 0;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker,
+    .tree-spacer {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 0.95rem;
+      height: 0.95rem;
+      margin-top: 0.08rem;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker {
+      border: none;
+      background: none;
+      color: var(--muted);
+      padding: 0;
+      font: inherit;
+      font-weight: 800;
+      font-size: 1.18rem;
+      line-height: 1;
+      user-select: none;
+    }
+    .tree-spacer {
+      border: none;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .node-branch[hidden]:not([hidden='until-found']) {
+      display: none;
+    }
+    .repeat {
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+    .node-summary {
+      display: block;
+      cursor: default;
+    }
+    .node-summary.is-interactive {
+      cursor: pointer;
+    }
+    .node-summary.is-interactive:focus-visible {
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-main-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.35rem;
+    }
+    .node-main {
+      display: block;
+      flex: 1 1 auto;
+      min-width: 0;
+      white-space: normal;
+      line-height: 1.28;
+      overflow-wrap: anywhere;
+    }
+    .node-leaf {
+      display: block;
+      border-radius: 0;
+    }
+    .node-number {
+      font-weight: 600;
+    }
+    .speaker-label {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind,
+    .nodelink {
+      overflow-wrap: anywhere;
+    }
+    .nodelink,
+    .end {
+      margin-left: 0;
+    }
+    .node-previews {
+      display: block;
+      margin: 0.12rem 0 0 1.1rem;
+      font-size: 0.88rem;
+      white-space: normal;
+      line-height: 1.28;
+    }
+    .preview-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.12rem 0.45rem;
+    }
+    .preview-token {
+      display: inline;
+      overflow-wrap: anywhere;
+    }
+    .preview-token.tag {
+      color: var(--tag);
+    }
+    .preview-token.rule {
+      color: var(--rule);
+    }
+    .preview-token.check {
+      color: var(--check);
+    }
+    .preview-token.set {
+      color: var(--set);
+    }
+    .preview-note {
+      display: block;
+      margin-top: 0.08rem;
+      color: var(--context);
+      overflow-wrap: anywhere;
+      font-weight: 700;
+    }
+    .preview-note-label {
+      color: var(--context);
+      font-weight: 700;
+    }
+    .preview-note-value {
+      color: #4f463f;
+      font-weight: 600;
+    }
+    .signal-line {
+      display: block;
+      margin: 0.14rem 0 0.2rem;
+    }
+    .signal-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem;
+    }
+    .signal-label {
+      font-weight: 700;
+    }
+    .signal-scope {
+      color: var(--muted);
+    }
+    .tag-line, .tag-line .signal-label { color: var(--tag); }
+    .rule-line, .rule-line .signal-label { color: var(--rule); }
+    .checkflag-line, .checkflag-line .signal-label { color: var(--check); }
+    .setflag-line, .setflag-line .signal-label { color: var(--set); }
+    .roll-line, .roll-line .signal-label { color: var(--roll); }
+    .approval-line, .approval-line .signal-label { color: var(--approval); }
+    .context-line, .context-line .signal-label { color: var(--context); }
+    .context-line .signal-heading {
+      font-weight: 700;
+    }
+    .context-line .signal-item {
+      color: #4f463f;
+    }
+    .signal-values {
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .signal-list {
+      list-style: none;
+      margin: 0.06rem 0 0 0.9rem;
+      padding: 0;
+    }
+    .signal-item {
+      margin: 0.1rem 0;
+      overflow-wrap: anywhere;
+    }
+    .signal-item::before {
+      content: "- ";
+      color: var(--muted);
+    }
+    .signal-body {
+      display: block;
+      margin: 0.06rem 0 0 0.9rem;
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .asset-name {
+      color: var(--ink);
+    }
+    .asset-id {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.92em;
+      overflow-wrap: anywhere;
+    }
+    .asset-state {
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .node-detail-panel {
+      margin: 0.08rem 0 0.18rem 1.1rem;
+      padding: 0.35rem 0.5rem;
+      border: 1px solid var(--detail-border);
+      background: var(--detail-surface);
+      border-radius: 0;
+      display: block;
+      gap: 0;
+      max-width: none;
+    }
+    .node-detail-panel[hidden]:not([hidden='until-found']) {
+      display: none;
+    }
+    .node-detail-panel[hidden='until-found'] {
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: none;
+    }
+    .section {
+      margin: 0.16rem 0;
+      padding: 0;
+      background: none;
+      border: none;
+    }
+    .section h3 {
+      margin: 0 0 0.22rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .node-detail-panel > .section + .section {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-block + .text-block {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-line {
+      font-size: 0.96rem;
+      margin-bottom: 0.15rem;
+    }
+    .text-line {
+      margin: 0.08rem 0;
+      font-size: inherit;
+      overflow-wrap: anywhere;
+    }
+    .badge-row, .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .badge, .meta-item {
+      display: block;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+    }
+    .meta-items {
+      margin: 0.12rem 0 0 0.85rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+      white-space: normal;
+    }
+    .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .meta-item {
+      display: block;
+      margin: 0.06rem 0;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+      overflow-wrap: anywhere;
+    }
+    .meta-item strong {
+      color: var(--ink);
+    }
+    .badge.flags { color: var(--check); }
+    .badge.tags { color: var(--tag); }
+    .flag-groups {
+      display: block;
+      gap: 0;
+    }
+    .flag-group-type {
+      display: inline-block;
+      color: var(--muted);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.15rem;
+    }
+    .rule-tree, .rule-tree ul {
+      margin: 0;
+      padding-left: 1rem;
+    }
+    .body-hide-flags .section-flags,
+    .body-hide-rules .section-rules,
+    .body-hide-details .section-metadata,
+    .body-hide-context .preview-note,
+    .body-hide-context .context-line,
+    .body-hide-context .node-line .context {
+      display: none;
+    }
+    .body-hide-flags .node-line .checkflag,
+    .body-hide-flags .node-line .setflag,
+    .body-hide-rules .node-line .ruletag {
+      display: none;
+    }
+    .body-hide-flags .checkflag-line,
+    .body-hide-flags .setflag-line {
+      display: none;
+    }
+    .body-hide-flags .preview-token.check,
+    .body-hide-flags .preview-token.set {
+      display: none;
+    }
+    .body-hide-context .context-line {
+      display: none;
+    }
+    .body-hide-numbers .node-number {
+      display: none;
+    }
+    .missing, .cycle {
+      padding: 0.2rem 0.35rem;
+      color: #8b1e1e;
+      background: rgba(139, 30, 30, 0.08);
+      border-radius: 6px;
+      display: inline-block;
+    }
+    .missing, .cycle {
+      padding: 0;
+      background: none;
+      border-radius: 0;
+      display: block;
+      overflow-wrap: anywhere;
+    }
+    @media (max-width: 920px) {
+      .page {
+        padding: 0.45rem 0.5rem 0.9rem;
+      }
+      .tree-shell {
+        padding: 0;
+      }
+    }
+  </style>
+</head>
+  <body class="body-hide-numbers">
+  <div class="page">
+    <header class="hero">
+      <h1>SCE_Jaheira_Debrief</h1>
+      <div class="source"><span class="source-label">Dialog Resource UUID:</span><strong><code>7eb6a35a-656a-78db-57c8-4d5178ef880b</code></strong></div><div class="source"><span class="source-label">Timeline Resource UUID:</span><strong><code>cedebb84-a8d4-683f-e559-90b56a307733</code></strong></div><div class="source"><span class="source-label">StartDialog UUID:</span><strong><code>e329054c-d461-3499-29e3-6a6937040556</code></strong></div><div class="source"><span class="source-label">Dialog:</span>Mods\GustavDev\Story\DialogsBinary\Act2\Epilogue\SCE_Jaheira_Debrief.lsf.lsx</div><div class="source"><span class="source-label">Timeline:</span>Public\GustavDev\Timeline\Generated\SCE_Jaheira_Debrief.lsf.lsx</div><div class="source"><span class="source-label">Scene:</span>Public\GustavDev\Timeline\Generated\SCE_Jaheira_Debrief_Scene.lsf.lsx</div>
+      <div class="summary-line">
+        category=Generic NPC Dialog | nodes=64 | roots=2
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-scroll">
+          <div class="controls">
+            <button type="button" data-toggle-branches="all" data-hide-label="Expand all" data-show-label="Collapse all" data-active="false">Expand all</button>
+            <button type="button" data-toggle-class="body-hide-flags" data-hide-label="Hide flags" data-show-label="Show flags">Hide flags</button>
+            <button type="button" data-toggle-details="all" data-hide-label="Show details" data-show-label="Hide details" data-active="false">Show details</button>
+            <button type="button" data-toggle-class="body-hide-context" data-hide-label="Hide notes" data-show-label="Show notes">Hide notes</button>
+            <button type="button" data-toggle-class="body-hide-numbers" data-hide-label="Hide node numbers" data-show-label="Show node numbers">Hide node numbers</button>
+          </div>
+        </div>
+        <details class="speaker-map">
+          <summary>Speakers</summary>
+          <ul><li><span class='speaker-index'>0</span><span class='speaker-name'>Jaheira</span><span class='inline-meta'>GROUP_Act3_LOW_JaheiraClone_JaheiraVoice | S_Player_Jaheira | list=91b6b200-7d00-4d62-8dc9-99e8339dfa1a | mapping=99604f57-31f7-4a8b-bd37-a0e4141da1fe</span></li><li><span class='speaker-index'>1</span><span class='speaker-name'>Player</span><span class='inline-meta'>GROUP_Players | list=e0d1ff71-04a8-4340-ae64-9684d846eb83 | mapping=f19016ca-0d74-40fb-bae8-4f35fa12d47c</span></li><li><span class='speaker-index'>2</span><span class='speaker-name'>Speaker 2</span><span class='inline-meta'>list=0de603c5-42e2-4811-9dad-f652de080eba | mapping=3f29cada-2dd1-445b-8d91-08fb30f633f2 | Peanuts=True</span></li><li><span class='speaker-index'>3</span><span class='speaker-name'>Origin_Intro_Laezel</span><span class='inline-meta'>list=58a69333-40bf-8358-1d17-fff240d7fb12 | mapping=d8f0ed7c-88d3-4856-9b88-47abb3a3e9e4 | Peanuts=True</span></li><li><span class='speaker-index'>4</span><span class='speaker-name'>ShadowheartIllusion</span><span class='inline-meta'>GROUP_ShadowheartIllusion | list=3ed74f06-3c60-42dc-83f6-f034cb47c679 | mapping=1fdf5aea-4d8a-4f65-a647-ea79742afb3b | Peanuts=True</span></li><li><span class='speaker-index'>5</span><span class='speaker-name'>Astarion</span><span class='inline-meta'>GROUP_Act3_WYR_OrinsImpersonation_Astarion | list=c7c13742-bacd-460a-8f65-f864fe41f255 | mapping=fdc1df38-1d7d-4243-b6d1-4e54a2b04099 | Peanuts=True</span></li><li><span class='speaker-index'>6</span><span class='speaker-name'>Origin_Intro_Wyll</span><span class='inline-meta'>list=c774d764-4a17-48dc-b470-32ace9ce447d | mapping=604d9a0f-1693-4b25-aaa1-63329cd44a78 | Peanuts=True</span></li><li><span class='speaker-index'>7</span><span class='speaker-name'>Gale</span><span class='inline-meta'>GROUP_Act3_WYR_OrinsImpersonation_Gale | list=ad9af97d-75da-406a-ae13-7071c563f604 | mapping=8751f717-0466-443a-be1d-3b70f3de0379 | Peanuts=True</span></li><li><span class='speaker-index'>8</span><span class='speaker-name'>Origin_Intro_Karlach</span><span class='inline-meta'>list=2c76687d-93a2-477b-8b18-8a14b549304c | mapping=ea977a81-e3ce-443e-8387-160eef267287 | Peanuts=True</span></li><li><span class='speaker-index'>9</span><span class='speaker-name'>Halsin</span><span class='inline-meta'>GROUP_Act3_WYR_OrinsImpersonation_Halsin | list=7628bc0e-52b8-42a7-856a-13a6fd413323 | mapping=a1b3a783-7342-4507-ae13-c345ccf49d1d | Peanuts=True</span></li><li><span class='speaker-index'>10</span><span class='speaker-name'>Minthara</span><span class='inline-meta'>GROUP_Act3_WYR_OrinsImpersonation_Minthara | list=25721313-0c15-4935-8176-9f134385451b | mapping=becff68f-37ac-48ef-bd95-567bebf29c57 | Peanuts=True</span></li><li><span class='speaker-index'>11</span><span class='speaker-name'>Boo</span><span class='inline-meta'>GROUP_GLO_Boo | list=d49e3b49-a089-4465-b453-28dc79e82bb3 | mapping=526adf26-1bbb-4fe1-920b-ff38ac936880</span></li><li><span class='speaker-index'>12</span><span class='speaker-name'>Jaheira</span><span class='inline-meta'>GROUP_Act3_LOW_JaheiraClone_JaheiraVoice | S_Player_Jaheira | list=91b6b200-7d00-4d62-8dc9-99e8339dfa1a | mapping=6e1fef1c-a59b-4dd1-969b-ea114f35ee96 | Peanuts=True</span></li></ul>
+        </details>
+      </div>
+    </header>
+    <section class="tree-shell">
+      <div class="tree-shell-inner">
+        <ul class="root-list"><li class='node-item'><div class='node-shell' id='node-13'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-13' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-13' aria-expanded='true' tabindex='0' data-detail-target='details-13' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>13.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>If you have business to conclude before we march, have it done.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>SCE_Jaheira_HasMet</span></span></span></span><div class='node-detail-panel' id='details-13' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player has met with Jaheira at the epilogue.'>SCE_Jaheira_HasMet</span> <span class='asset-id'>{c3f7240e-7455-1bfd-0c6e-e9c94d1b4f05}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 2dfcc29e-9117-13b6-a174-e398f5157b4c</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h6d87778aga0d9g473cg946dgceb34a5c8a7a</span><span class='meta-item'><strong>Text UUID</strong>: 725f33c8-10f3-457d-82ff-9094d90b8b96</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 0</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 2dfcc29e-9117-13b6-a174-e398f5157b4c</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 8.5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: GroupID, GroupIndex</span></div></section></div></div></div><div class='node-branch' id='branch-13'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-21'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-21' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-21' aria-expanded='false' tabindex='0' data-detail-target='details-21' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>21.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>The road to Baldur&#x27;s Gate is long. </span></span></span></span><div class='node-detail-panel' id='details-21' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 4c23315f-40f4-451d-9d19-437758919f73</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: hee38ee82g3560g4c4egb23dg2f27375d33e8</span><span class='meta-item'><strong>Text UUID</strong>: 2994442a-9779-4f51-a10d-50864b91e1c2</span><span class='meta-item'><strong>Group ID</strong>: 2dfcc29e-9117-13b6-a174-e398f5157b4c</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-21' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-26'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-26' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-26' aria-expanded='false' tabindex='0' data-detail-target='details-26' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>26.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>And the city needs us.</span></span></span></span><div class='node-detail-panel' id='details-26' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 5bf55049-17a2-2f9f-8979-47f83968f075</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h3b346f53g5a2bg4eefg869eg4ec491f6be72</span><span class='meta-item'><strong>Text UUID</strong>: 32dbe612-4f2c-43b4-a3c3-afd4989886bc</span><span class='meta-item'><strong>Group ID</strong>: 2dfcc29e-9117-13b6-a174-e398f5157b4c</span><span class='meta-item'><strong>Group Index</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-26' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-56'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-56' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-56' aria-expanded='false' tabindex='0' data-detail-target='details-56' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>56.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Join me.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!ORI_State_Recruited</span><span class='preview-token set'>GLO_Jaheira_State_HasBeenRecruited</span></span></span></span><div class='node-detail-panel' id='details-56' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 Jaheira</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='ORI_State_Recruiteddescription'>ORI_State_Recruited</span> <span class='asset-id'>{e78c0aab-fb48-98e9-3ed9-773a0c39988d}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Jaheira can flip flop in and out of camp a lot by the time of CTY Main. This is just to check if any of those times she&#x27;s actually been recruited.'>GLO_Jaheira_State_HasBeenRecruited</span> <span class='asset-id'>{3a6e5580-d551-4cbb-add9-3e97f92fb371}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: e073242e-553c-c6ac-a760-9f2e9f5bc738</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h7401ef30g6fa8g4f65g995eg3e5e1e3ef1e4</span><span class='meta-item'><strong>Text UUID</strong>: 606a342c-a313-42d1-a163-939f388c9a9a</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-56' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-7'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-7' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>7.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-61'>Node 61</a></span></span></span></span><div class='node-detail-panel' id='details-7' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 207b766e-499d-5c4b-ba0f-11188edd57d5</span><span class='meta-item'><strong>Jump Target</strong>: Node 61 (efa8e7ad-2825-61ac-0123-f02284620d48)</span><span class='meta-item'><strong>Jump Target Point</strong>: 2</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-45'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-45' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>45.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'><i>Leave.</i></span></span></span></span><div class='node-detail-panel' id='details-45' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: b1050b34-9699-076a-dd8c-f76f4cec8889</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hce7a7a83gbc87g4339ga4a8gb90eb817eee2</span><span class='meta-item'><strong>Text UUID</strong>: 587bccbc-a898-4813-8f1c-737f40aed7a7</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-52'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-52' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-52' aria-expanded='true' tabindex='0' data-detail-target='details-52' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>52.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>Our enemies spread like rub-rot - treat one patch, and two more bloom in its place.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>SCE_Jaheira_HasMet</span></span></span></span><div class='node-detail-panel' id='details-52' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player has met with Jaheira at the epilogue.'>SCE_Jaheira_HasMet</span> <span class='asset-id'>{c3f7240e-7455-1bfd-0c6e-e9c94d1b4f05}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: d5f8a323-1564-fba0-8c9b-1347ddc20acb</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: hdf10ae71ge6b0g4d3egacecg2c5beba5e014</span><span class='meta-item'><strong>Text UUID</strong>: 2cbafcdf-d80d-4528-ba5a-10fed0970cda</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 1</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: d5f8a323-1564-fba0-8c9b-1347ddc20acb</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 18.75s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 5</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: GroupID, GroupIndex</span></div></section></div></div></div><div class='node-branch' id='branch-52'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-28'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-28' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-28' aria-expanded='false' tabindex='0' data-detail-target='details-28' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>28.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>An elder brain, bound by lost Netherese magic, with servants of the Dead Three holding the chain.</span></span></span></span><div class='node-detail-panel' id='details-28' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 6169d283-5117-e699-0356-419b1880a045</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h2d757126gac43g4bfcgbac8g58ff635bd7f3</span><span class='meta-item'><strong>Text UUID</strong>: 1d6f505b-2412-472c-a819-1724fde1cd7c</span><span class='meta-item'><strong>Group ID</strong>: d5f8a323-1564-fba0-8c9b-1347ddc20acb</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-28' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-40'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-40' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-40' aria-expanded='false' tabindex='0' data-detail-target='details-40' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>40.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>Reminds me of old times.</span></span></span></span><div class='node-detail-panel' id='details-40' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: a98b5a76-a3a4-6a30-571a-0b78821c91a3</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h08295ae8g7223g4903ga51fgc70f1e2fcbce</span><span class='meta-item'><strong>Text UUID</strong>: 5c461f2a-a05f-4b0f-8249-39c819c2ecb4</span><span class='meta-item'><strong>Group ID</strong>: d5f8a323-1564-fba0-8c9b-1347ddc20acb</span><span class='meta-item'><strong>Group Index</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-40' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-2'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-2' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-2' aria-expanded='false' tabindex='0' data-detail-target='details-2' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>2.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>You almost seem like you&#x27;re enjoying yourself.</span></span></span></span><div class='node-detail-panel' id='details-2' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 01441701-f4db-f63c-76a6-2f6651240fde</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hbbe122f1gdfb4g4024g9aecgdc06167d5bd0</span><span class='meta-item'><strong>Text UUID</strong>: 131f1750-9919-4b5e-8799-cf2d43984e61</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-2' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-36'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-36' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-36' aria-expanded='false' tabindex='0' data-detail-target='details-36' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>36.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>Aren&#x27;t you?</span></span></span></span><div class='node-detail-panel' id='details-36' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 8e9b70b3-b7ab-d9c5-eaca-be1bb64b4001</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h9d52b9e4gd5b4g4baega326gb9afc64297c8</span><span class='meta-item'><strong>Text UUID</strong>: 9bbf40a2-465a-41e6-98f1-d1b9bf550842</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 11</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 8e9b70b3-b7ab-d9c5-eaca-be1bb64b4001</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 2s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-36' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-14'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-14' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-14' aria-expanded='false' tabindex='0' data-detail-target='details-14' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>14.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I&#x27;m having the time of my life.</span></span></span></span><div class='node-detail-panel' id='details-14' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 3511545b-0697-5b60-2725-377bc9f7986e</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h2939d5cdgab94g4912g82a4g0bcbca2fe449</span><span class='meta-item'><strong>Text UUID</strong>: a81efa1a-bc47-44c5-89ef-846831a27803</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-14' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-41'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-41' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-41' aria-expanded='false' tabindex='0' data-detail-target='details-41' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>41.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>It is good to savour the moment of victory - but pace yourself. Our fight is just beginning.</span></span></span></span><div class='node-detail-panel' id='details-41' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: aaa8caf0-4f03-297c-2f52-03d3d533eae5</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h7bc80014g128cg48cdgb585g1fdec4cb1d37</span><span class='meta-item'><strong>Text UUID</strong>: 29d57799-4cce-464f-8b3c-ae09fc6fd6f2</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 8</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: aaa8caf0-4f03-297c-2f52-03d3d533eae5</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 9s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Unmapped Attributes</strong>: ApprovalRatingID</span></div></section></div></div></div><div class='node-branch' id='branch-41' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-30'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-30' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>30.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-64'>Node 64</a></span></span></span></span><div class='node-detail-panel' id='details-30' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 68541de4-d1da-66d7-1bea-4cba4cb7e0ee</span><span class='meta-item'><strong>Jump Target</strong>: Node 64 (f6deb815-99e2-2f85-3954-bf0b5052c336)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-59'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-59' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-59' aria-expanded='false' tabindex='0' data-detail-target='details-59' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>59.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I&#x27;m beginning to.</span></span></span></span><div class='node-detail-panel' id='details-59' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: e9d0237c-34ee-259f-dff5-b464d6afe91d</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h866aba6fg807eg4912g8f69g479a78a881f0</span><span class='meta-item'><strong>Text UUID</strong>: 90ae433b-e2b3-4367-a752-61de8d92f4b3</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-59' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-64'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-64' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-64' aria-expanded='false' tabindex='0' data-detail-target='details-64' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>64.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>When we met, I was licking my wounds - an old bear with her leg caught in the hunter&#x27;s snare.</span></span></span></span><div class='node-detail-panel' id='details-64' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: f6deb815-99e2-2f85-3954-bf0b5052c336</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: hb513d310gd631g485dgb961g9cd1c09f8097</span><span class='meta-item'><strong>Text UUID</strong>: 7d132adf-186e-4cb8-8c62-48bf14b4a827</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 17</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: f6deb815-99e2-2f85-3954-bf0b5052c336</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 19.5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Group ID</strong>: f6deb815-99e2-2f85-3954-bf0b5052c336</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-64' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-17'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-17' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-17' aria-expanded='false' tabindex='0' data-detail-target='details-17' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>17.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>Now, I&#x27;ve slipped free of the trap and rediscovered my claws.</span></span></span></span><div class='node-detail-panel' id='details-17' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 479ebe06-d06b-79ad-0072-14394922883c</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: had356a0bga14ag42c5g82e5g97398277a50a</span><span class='meta-item'><strong>Text UUID</strong>: e32c88bc-94fb-4014-b9ed-484ea587ad82</span><span class='meta-item'><strong>Group ID</strong>: f6deb815-99e2-2f85-3954-bf0b5052c336</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-17' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-42'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-42' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-42' aria-expanded='false' tabindex='0' data-detail-target='details-42' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>42.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>It&#x27;s time for me to hunt <i>my</i> prey.</span></span></span></span><div class='node-detail-panel' id='details-42' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: ada47b20-43f0-ffb3-e720-10892cd2d142</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h1f39ee01g0472g4b01g8a70g7b9d059de7bc</span><span class='meta-item'><strong>Text UUID</strong>: 45f33298-9578-45e6-a8a5-7956cbd7903d</span><span class='meta-item'><strong>Group ID</strong>: f6deb815-99e2-2f85-3954-bf0b5052c336</span><span class='meta-item'><strong>Group Index</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-42' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-33'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-33' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-33' aria-expanded='false' tabindex='0' data-detail-target='details-33' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>33.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>You have a Netherstone, and you&#x27;re on the scent of two more.</span></span></span></span><div class='node-detail-panel' id='details-33' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 840d3faa-5992-728f-c669-f8a25ceeab0d</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: hc6f1821bgcf6ag4cdegb908g949ba3a09853</span><span class='meta-item'><strong>Text UUID</strong>: 649e8414-fb75-41b5-8ceb-fa053633d1aa</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 13</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 840d3faa-5992-728f-c669-f8a25ceeab0d</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 13.75s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Group ID</strong>: 840d3faa-5992-728f-c669-f8a25ceeab0d</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-33' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-27'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-27' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-27' aria-expanded='false' tabindex='0' data-detail-target='details-27' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>27.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>These <i>Chosen</i> have reason to fear you - and I would like to be at your side when you confront them.</span></span></span></span><div class='node-detail-panel' id='details-27' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 5e50f97f-e355-d5ce-ddf2-cf7750583696</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h0e13ce29gcf9fg4ddcg8b6egedeb5cce3242</span><span class='meta-item'><strong>Text UUID</strong>: 17f65691-0723-43f3-8b73-13d7dca440f9</span><span class='meta-item'><strong>Group ID</strong>: 840d3faa-5992-728f-c669-f8a25ceeab0d</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-27' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-25'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-25' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-25' aria-expanded='false' tabindex='0' data-detail-target='details-25' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>25.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Don&#x27;t the Harpers need you?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>HAV_Siege_State_NoProtection</span></span></span></span><div class='node-detail-panel' id='details-25' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set when Last Light inn doesn&#x27;t have protection (Isobel kidnapped/dead) and there&#x27;s no Nightsong at inn'>HAV_Siege_State_NoProtection</span> <span class='asset-id'>{2da0dbf1-88ca-4cab-9c8f-ee8921822958}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 56d5a0d7-3ee1-6ed2-e0d8-1442f3531bb2</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h3807a747g1f86g420fg9a8agfe0c1eb448db</span><span class='meta-item'><strong>Text UUID</strong>: ed82cef3-9c8e-4283-bc8a-c3cc57396008</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-25' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-1'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-1' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-1' aria-expanded='false' tabindex='0' data-detail-target='details-1' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>1.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>The city needs me - the Harpers know their tasks.</span></span></span></span><div class='node-detail-panel' id='details-1' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 00cfea11-e7ef-3f0f-25aa-34330be68809</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h07512d8cg83e4g4a19ga1bag7e23a626645e</span><span class='meta-item'><strong>Text UUID</strong>: 5978a570-169e-476b-bf9d-2d81dc3cbe15</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 2</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 00cfea11-e7ef-3f0f-25aa-34330be68809</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 18.25s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 4</span><span class='meta-item'><strong>Group ID</strong>: 00cfea11-e7ef-3f0f-25aa-34330be68809</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-1' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-58'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-58' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-58' aria-expanded='false' tabindex='0' data-detail-target='details-58' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>58.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>And I know my calling. I thought my grand adventures were behind me, but I should have known better.</span></span></span></span><div class='node-detail-panel' id='details-58' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: e94cc3b8-1ccf-5a40-e7a0-ee4e92f9d701</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h3b7e218cgdb25g453fg9f6fg94e8d4ab9cea</span><span class='meta-item'><strong>Text UUID</strong>: 1e42d7b5-21e7-4e5a-ae8b-d3813e54bb69</span><span class='meta-item'><strong>Group ID</strong>: 00cfea11-e7ef-3f0f-25aa-34330be68809</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-58' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-48'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-48' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-48' aria-expanded='false' tabindex='0' data-detail-target='details-48' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>48.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>My place is with you.</span></span></span></span><div class='node-detail-panel' id='details-48' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: c738b6bf-0e8b-1ded-ee08-e938d97ce9a7</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h8971b11ag400fg4b40g8991ge20658fd05f2</span><span class='meta-item'><strong>Text UUID</strong>: 8b0829da-065b-44f0-b8b7-d072ce09ab6f</span><span class='meta-item'><strong>Group ID</strong>: 00cfea11-e7ef-3f0f-25aa-34330be68809</span><span class='meta-item'><strong>Group Index</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-48' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-60'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-60' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-60' aria-expanded='false' tabindex='0' data-detail-target='details-60' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>60.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>You ventured into the heart of darkness when I could not.</span></span></span></span><div class='node-detail-panel' id='details-60' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: edff1f98-9df7-1581-723f-00cb7135eedc</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h5c96d86dg1bf9g471bg8099g6d8ca66d10fa</span><span class='meta-item'><strong>Text UUID</strong>: 025c651d-c72d-416b-9058-76532ff7ba9a</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 22</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: edff1f98-9df7-1581-723f-00cb7135eedc</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-60' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-49'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-49' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-49' aria-expanded='false' tabindex='0' data-detail-target='details-49' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>49.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>When we reach Baldur&#x27;s Gate, there will be even darker paths to tread. I will follow you wherever they lead.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>SCE_Debrief_State_PartyDebriefed</span></span></span></span><div class='node-detail-panel' id='details-49' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Players have been debriefed after COL.'>SCE_Debrief_State_PartyDebriefed</span> <span class='asset-id'>{6efe1069-ca03-cccd-68eb-ffe0cc0e4169}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: c8cee5c0-1e82-2b31-3475-edd70b567ddf</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: ha9decadcg1f22g4e85g98f9g354657a61dfe</span><span class='meta-item'><strong>Text UUID</strong>: cc8187c0-af8a-42e6-82bb-a1f7d9c48267</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 5</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: c8cee5c0-1e82-2b31-3475-edd70b567ddf</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 10.75s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span></div></section></div></div></div><div class='node-branch' id='branch-49' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-61'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-61' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-61' aria-expanded='false' tabindex='0' data-detail-target='details-61' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>61.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Join me now.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>GLO_Jaheira_State_HasBeenRecruited</span></span></span></span><div class='node-detail-panel' id='details-61' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Jaheira can flip flop in and out of camp a lot by the time of CTY Main. This is just to check if any of those times she&#x27;s actually been recruited.'>GLO_Jaheira_State_HasBeenRecruited</span> <span class='asset-id'>{3a6e5580-d551-4cbb-add9-3e97f92fb371}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: efa8e7ad-2825-61ac-0123-f02284620d48</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: he3ececf7g03a0g4472g9e90gbc7be103d800</span><span class='meta-item'><strong>Text UUID</strong>: 5845e353-e431-4f3b-887b-2d29b74015e7</span><span class='meta-item'><strong>Approval Rating</strong>: cf90ed93-efcf-4900-bcdc-fab31fe595ac</span></div></section></div></div></div><div class='node-branch' id='branch-61' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-16'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-16' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-16' aria-expanded='false' tabindex='0' data-detail-target='details-16' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>16.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='nodelink'>Alias to <a href='#node-32'>Node 32</a></span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>GLO_Jaheira_Knows_HarpersAtDanthelon</span><span class='preview-token check'>GEN_MaxPlayerCountReached</span><span class='preview-token set'>GLO_Tutorials_FullPartyRejection</span><span class='preview-token set'>SCE_Jaheira_Debrief_Event_PartyFull</span></span></span></span><div class='node-detail-panel' id='details-16' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Jaheira told us she has Harpers waiting to report at Danthelon&#x27;s Dancing Axe in Wyrm&#x27;s Crossing.'>GLO_Jaheira_Knows_HarpersAtDanthelon</span> <span class='asset-id'>{3d66ab2d-7997-3a14-8fcc-9291a8802c5c}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='GEN_MaxPlayerCountReacheddescription'>GEN_MaxPlayerCountReached</span> <span class='asset-id'>{823b5064-8aa4-c0b7-1b8c-657b46987ccd}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set when companion refuses to join full party'>GLO_Tutorials_FullPartyRejection</span> <span class='asset-id'>{94a40e88-0e15-33f5-0beb-0332de542341}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='Set if you try and recruit Jaheira in SCE but your party is full; makes sure she arrives in Camp and will be a party member in INT and onwards'>SCE_Jaheira_Debrief_Event_PartyFull</span> <span class='asset-id'>{0574e386-bb2d-4b92-bcb1-9836563ad73d}</span> <span class='asset-state'>= True</span></li></ul></div></section></div></div></div><div class='node-branch' id='branch-16' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-32'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-32' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>32.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-11'>Node 11</a></span></span></span></span><div class='node-detail-panel' id='details-32' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 7f76a18c-8d2f-57a7-1ddd-320cb8ad76e1</span><span class='meta-item'><strong>Jump Target</strong>: Node 11 (2a12ac10-0dc7-8c82-9123-78bcbe566c98)</span><span class='meta-item'><strong>Jump Target Point</strong>: 2</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-19'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-19' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-19' aria-expanded='false' tabindex='0' data-detail-target='details-19' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>19.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>You&#x27;re amply reinforced already. I&#x27;ll let the new blood do all the running around, for now.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!GLO_Jaheira_Knows_HarpersAtDanthelon</span><span class='preview-token check'>GEN_MaxPlayerCountReached</span><span class='preview-token set'>GLO_Tutorials_FullPartyRejection</span><span class='preview-token set'>SCE_Jaheira_Debrief_Event_PartyFull</span></span></span></span><div class='node-detail-panel' id='details-19' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Jaheira told us she has Harpers waiting to report at Danthelon&#x27;s Dancing Axe in Wyrm&#x27;s Crossing.'>GLO_Jaheira_Knows_HarpersAtDanthelon</span> <span class='asset-id'>{3d66ab2d-7997-3a14-8fcc-9291a8802c5c}</span> <span class='asset-state'>= False</span></li><li class='signal-item'><span class='asset-name' title='GEN_MaxPlayerCountReacheddescription'>GEN_MaxPlayerCountReached</span> <span class='asset-id'>{823b5064-8aa4-c0b7-1b8c-657b46987ccd}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set when companion refuses to join full party'>GLO_Tutorials_FullPartyRejection</span> <span class='asset-id'>{94a40e88-0e15-33f5-0beb-0332de542341}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='Set if you try and recruit Jaheira in SCE but your party is full; makes sure she arrives in Camp and will be a party member in INT and onwards'>SCE_Jaheira_Debrief_Event_PartyFull</span> <span class='asset-id'>{0574e386-bb2d-4b92-bcb1-9836563ad73d}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 4ae53f01-3603-e435-6a88-179dcc52e8ef</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: hc7de0e20g62ddg4583g9c64ga4ed92edefd8</span><span class='meta-item'><strong>Text UUID</strong>: 73bfa000-7b68-44d6-8c77-60eec2b8ccd4</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 16</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 4ae53f01-3603-e435-6a88-179dcc52e8ef</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 7.5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-19' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-53'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-53' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-53' aria-expanded='false' tabindex='0' data-detail-target='details-53' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>53.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>With the Absolute&#x27;s army gone, the Risen Road should be clear - we can follow it all the way to Baldur&#x27;s Gate.</span></span></span></span><div class='node-detail-panel' id='details-53' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: d83c3e59-c33a-179e-4823-263348548b24</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: ha4d95698gfa7eg450bg8e4bg6812d37f9ac1</span><span class='meta-item'><strong>Text UUID</strong>: 3b29aacf-5220-411e-a597-70c862aaee19</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 4</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: d83c3e59-c33a-179e-4823-263348548b24</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 16.5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Group ID</strong>: d83c3e59-c33a-179e-4823-263348548b24</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-53' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-62'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-62' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-62' aria-expanded='false' tabindex='0' data-detail-target='details-62' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>62.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>There&#x27;s a Harper safe-house in Wyrm&#x27;s Crossing - Danthelon&#x27;s Dancing Axe. We&#x27;d do well to check in with them before entering the city proper.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>GLO_Jaheira_Knows_HarpersAtDanthelon</span></span></span></span><div class='node-detail-panel' id='details-62' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Jaheira told us she has Harpers waiting to report at Danthelon&#x27;s Dancing Axe in Wyrm&#x27;s Crossing.'>GLO_Jaheira_Knows_HarpersAtDanthelon</span> <span class='asset-id'>{3d66ab2d-7997-3a14-8fcc-9291a8802c5c}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: f30a8945-3866-68ef-a530-6fb7f3854818</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h819f24b5gb577g4484ga8c6g0cf933d6815b</span><span class='meta-item'><strong>Text UUID</strong>: f8ea4501-5738-4b02-9abd-be2f4edb3d41</span><span class='meta-item'><strong>Group ID</strong>: d83c3e59-c33a-179e-4823-263348548b24</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-62' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-39'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-39' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>39.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>Beyond that, our course is yours to set. Find me at your camp. I can remember how to take orders, as well as give them.</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>ORI_Jaheira_Event_GoToCamp</span></span></span></span><div class='node-detail-panel' id='details-39' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 Jaheira</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Jaheira goes to camp since the player party is full after the assault'>ORI_Jaheira_Event_GoToCamp</span> <span class='asset-id'>{6f1649cf-ab76-20a9-1c69-3ec573e932ec}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: a71d026f-54f2-d132-85ff-44b31488ce31</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h827f3e2ega556g4240gb09ag444b1df97d41</span><span class='meta-item'><strong>Text UUID</strong>: daa4e9ce-8c0b-45b5-93f8-da9613b4071c</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 9</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: a71d026f-54f2-d132-85ff-44b31488ce31</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 11s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-11'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-11' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-11' aria-expanded='false' tabindex='0' data-detail-target='details-11' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>11.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>Beyond that, our course is yours to set. I can recall how to take orders, as well as give them.</span></span></span></span><div class='node-detail-panel' id='details-11' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 2a12ac10-0dc7-8c82-9123-78bcbe566c98</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: ha883d086g531ag442agab85g23c415a70a48</span><span class='meta-item'><strong>Text UUID</strong>: 3bb22ae7-ea96-4b5a-be95-45347bd1ccda</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 24</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 2a12ac10-0dc7-8c82-9123-78bcbe566c98</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 10.75s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span></div></section></div></div></div><div class='node-branch' id='branch-11' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-50'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-50' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-50' aria-expanded='false' tabindex='0' data-detail-target='details-50' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>50.</span><span class='nodelink' title='Public/GustavDev/Timeline/Generated/GLO_CompanionSwap_Recruitment.lsf'>nested=GLO_CompanionSwap_Recruitment <code>f02d36d9-1f59-33ee-b87d-82f4c13c501f</code></span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>GEN_MaxPlayerCountReached</span></span></span></span><div class='node-detail-panel' id='details-50' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GEN_MaxPlayerCountReacheddescription'>GEN_MaxPlayerCountReached</span> <span class='asset-id'>{823b5064-8aa4-c0b7-1b8c-657b46987ccd}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Nested Dialog</span><span class='meta-item'><strong>UUID</strong>: caa5a1b0-c88a-4939-e0c9-780b3769a1b5</span><span class='meta-item'><strong>Nested Target</strong>: GLO_CompanionSwap_Recruitment (f02d36d9-1f59-33ee-b87d-82f4c13c501f)</span></div></section></div></div></div><div class='node-branch' id='branch-50' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-43'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-43' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>43.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'>Alias</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>GLO_ND_CompanionSwap_ToCamp</span><span class='preview-token set'>SCE_Jaheira_Debrief_Event_PartyFull</span><span class='preview-token set'>GLO_Jaheira_State_HasBeenRecruited</span><span class='preview-token set'>ORI_Jaheira_Event_GoToCamp</span></span></span></span><div class='node-detail-panel' id='details-43' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player selected a &#x27;go to camp&#x27; option in the CompanionSwap dialogue'>GLO_ND_CompanionSwap_ToCamp</span> <span class='asset-id'>{b0ad7652-77ee-c932-3440-922b6e1173aa}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set if you try and recruit Jaheira in SCE but your party is full; makes sure she arrives in Camp and will be a party member in INT and onwards'>SCE_Jaheira_Debrief_Event_PartyFull</span> <span class='asset-id'>{0574e386-bb2d-4b92-bcb1-9836563ad73d}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='Jaheira can flip flop in and out of camp a lot by the time of CTY Main. This is just to check if any of those times she&#x27;s actually been recruited.'>GLO_Jaheira_State_HasBeenRecruited</span> <span class='asset-id'>{3a6e5580-d551-4cbb-add9-3e97f92fb371}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Jaheira</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Jaheira goes to camp since the player party is full after the assault'>ORI_Jaheira_Event_GoToCamp</span> <span class='asset-id'>{6f1649cf-ab76-20a9-1c69-3ec573e932ec}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Alias</span><span class='meta-item'><strong>UUID</strong>: ae2ac76f-63ce-f186-6732-51aa84a502b4</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-44'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-44' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>44.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>(no line text)</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!GLO_ND_CompanionSwap_ToCamp</span></span></span></span><div class='node-detail-panel' id='details-44' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player selected a &#x27;go to camp&#x27; option in the CompanionSwap dialogue'>GLO_ND_CompanionSwap_ToCamp</span> <span class='asset-id'>{b0ad7652-77ee-c932-3440-922b6e1173aa}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: ae59e55e-2d5f-dfed-271d-7de05357649b</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-38'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-38' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>38.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>(no line text)</span> <span class='end'>[End]</span></span></span></span><div class='node-detail-panel' id='details-38' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: a667ea98-83f5-6a86-45b9-963d54afbf97</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>End Node</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: transitionmode</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-63'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-63' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-63' aria-expanded='false' tabindex='0' data-detail-target='details-63' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>63.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>By your command.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>OriginAddToParty</span></span></span></span><div class='node-detail-panel' id='details-63' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Jaheira</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='OriginAddToPartydescription'>OriginAddToParty</span> <span class='asset-id'>{4870b2cd-210c-0fdc-9c58-4d0142bdae29}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: f540d156-6232-e7b4-d17d-7e15b77f21ce</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h419c7cd2gf80ag4196gbcefg781805baaec5</span><span class='meta-item'><strong>Text UUID</strong>: b6da9857-47e3-4465-b759-767edce2a31a</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 23</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: f540d156-6232-e7b4-d17d-7e15b77f21ce</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1.75s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-63' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-53'>Node 53</a> <span class='repeat-speaker speaker-label npc'>(Jaheira)</span> <span class='dialog'>With the Absolute&#x27;s army gone, the Risen Road should be clear - we can follow it all the way to Baldur&#x27;s Gate.</span></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-18'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-18' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-18' aria-expanded='false' tabindex='0' data-detail-target='details-18' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>18.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I&#x27;ll see you at camp.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>SCE_Jaheira_Debrief_Event_PartyFull</span><span class='preview-token set'>GLO_Jaheira_State_HasBeenRecruited</span><span class='preview-token set'>ORI_Jaheira_Event_GoToCamp</span></span></span></span><div class='node-detail-panel' id='details-18' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set if you try and recruit Jaheira in SCE but your party is full; makes sure she arrives in Camp and will be a party member in INT and onwards'>SCE_Jaheira_Debrief_Event_PartyFull</span> <span class='asset-id'>{0574e386-bb2d-4b92-bcb1-9836563ad73d}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='Jaheira can flip flop in and out of camp a lot by the time of CTY Main. This is just to check if any of those times she&#x27;s actually been recruited.'>GLO_Jaheira_State_HasBeenRecruited</span> <span class='asset-id'>{3a6e5580-d551-4cbb-add9-3e97f92fb371}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Jaheira</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Jaheira goes to camp since the player party is full after the assault'>ORI_Jaheira_Event_GoToCamp</span> <span class='asset-id'>{6f1649cf-ab76-20a9-1c69-3ec573e932ec}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 48aba751-fa57-b038-6e6d-b6641b6a4758</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h0725d192gc189g4992g96f8g2e4f83d05419</span><span class='meta-item'><strong>Text UUID</strong>: eabb5699-20f8-4d97-8c1c-b112aea3d0f0</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Approval Rating</strong>: cf90ed93-efcf-4900-bcdc-fab31fe595ac</span></div></section></div></div></div><div class='node-branch' id='branch-18' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-10'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-10' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-10' aria-expanded='false' tabindex='0' data-detail-target='details-10' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>10.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>How does it compare to a shadow-cursed inn?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>OriginRemoveFromPartyAfterDialog</span></span></span></span><div class='node-detail-panel' id='details-10' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Jaheira</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='OriginRemoveFromPartyAfterDialogdescription'>OriginRemoveFromPartyAfterDialog</span> <span class='asset-id'>{7a429beb-fbfb-fa8a-3a33-0349323ad11d}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 295fe695-8078-e160-2981-8b75999d5ebe</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h312048b2gd957g48f3g8065g9723b8fc6a1e</span><span class='meta-item'><strong>Text UUID</strong>: 3cd382cb-eecc-4416-8a45-784a18e85b6c</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 18</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 295fe695-8078-e160-2981-8b75999d5ebe</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.75s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-10' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-53'>Node 53</a> <span class='repeat-speaker speaker-label npc'>(Jaheira)</span> <span class='dialog'>With the Absolute&#x27;s army gone, the Risen Road should be clear - we can follow it all the way to Baldur&#x27;s Gate.</span></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-51'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-51' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-51' aria-expanded='false' tabindex='0' data-detail-target='details-51' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>51.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>On second thought - no, Jaheira. Best we part ways.</span></span></span></span><div class='node-detail-panel' id='details-51' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: d4d9f539-ed4e-6dc6-31af-3f23d5472bc0</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h9a888d66g045fg4341g9247g9502cc73c3ac</span><span class='meta-item'><strong>Text UUID</strong>: 6fbc81c4-0bc6-4e15-b279-03f2a4a94eea</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-51' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-54'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-54' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-54' aria-expanded='false' tabindex='0' data-detail-target='details-54' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>54.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>Your way <i>is</i> my way, just as your fight is my fight. But suit yourself. </span></span></span></span><div class='node-detail-panel' id='details-54' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: d8e7a3ae-d369-4387-4719-9f954336766e</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h891c9e2bgbeacg4c63g8340ge19d5c8eb18e</span><span class='meta-item'><strong>Text UUID</strong>: 0cd04a19-db29-4e28-b8ba-b90b3679c3ea</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 25</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: d8e7a3ae-d369-4387-4719-9f954336766e</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 15s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 4</span><span class='meta-item'><strong>Group ID</strong>: d8e7a3ae-d369-4387-4719-9f954336766e</span><span class='meta-item'><strong>Group Index</strong>: 0</span><span class='meta-item'><strong>Unmapped Attributes</strong>: ApprovalRatingID</span></div></section></div></div></div><div class='node-branch' id='branch-54' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-8'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-8' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>8.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>One awkward evening in camp, until we are free of this place. And then you will be free of me.</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>SCE_Jaheira_Event_ToldToLeave</span><span class='preview-token set'>ORI_Jaheira_Event_GoToCamp</span></span></span></span><div class='node-detail-panel' id='details-8' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Told Jaheira to leave in the debrief, so she leaves after Intermezzo'>SCE_Jaheira_Event_ToldToLeave</span> <span class='asset-id'>{b6a57c45-6a9b-46a7-8f66-118a032477fb}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Jaheira</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Jaheira goes to camp since the player party is full after the assault'>ORI_Jaheira_Event_GoToCamp</span> <span class='asset-id'>{6f1649cf-ab76-20a9-1c69-3ec573e932ec}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 2405d32b-24e5-8cff-2033-202cc11ee070</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h92088f44g54a3g45feg8b6ag26ad4f5e8f77</span><span class='meta-item'><strong>Text UUID</strong>: 66534584-1125-43c0-8322-3a9035ce88ff</span><span class='meta-item'><strong>End Node</strong>: True</span><span class='meta-item'><strong>Group ID</strong>: d8e7a3ae-d369-4387-4719-9f954336766e</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-31'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-31' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-31' aria-expanded='false' tabindex='0' data-detail-target='details-31' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>31.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Of course. I already told you - you&#x27;re welcome in my party.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>ORI_State_Recruited</span></span></span></span><div class='node-detail-panel' id='details-31' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 Jaheira</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='ORI_State_Recruiteddescription'>ORI_State_Recruited</span> <span class='asset-id'>{e78c0aab-fb48-98e9-3ed9-773a0c39988d}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 7b4c098d-3876-ea0e-c16b-27798d57f048</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h9cbf83begd56ag472cgb19fg1fa15b333d42</span><span class='meta-item'><strong>Text UUID</strong>: 6ceb6a93-18ce-4e79-ab43-44502157c623</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-31' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-20'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-20' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-20' aria-expanded='false' tabindex='0' data-detail-target='details-20' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>20.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>How nice to be wanted.</span></span></span></span><div class='node-detail-panel' id='details-20' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 4c08f5c1-97b1-a73b-b686-edd0fab18949</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h6447b2beg5c2eg4fc6gb372gef5d0b674ef0</span><span class='meta-item'><strong>Text UUID</strong>: 8e9d3d72-7b92-4f9a-b836-abe0c0b34e41</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 15</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 4c08f5c1-97b1-a73b-b686-edd0fab18949</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 2.75s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-20' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-22'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-22' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-22' aria-expanded='false' tabindex='0' data-detail-target='details-22' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>22.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>Falling foul of Ketheric convinced me that my grand adventures were behind me - that even <i>if</i> I survived, I should hang up my blades.</span></span></span></span><div class='node-detail-panel' id='details-22' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 4eec65d6-d69d-654c-c6ed-642b6875ab78</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: hbf261d0cge808g4f78ga58fgd6653a11d46f</span><span class='meta-item'><strong>Text UUID</strong>: f9d56cdf-6197-4617-8ddf-6abbd41e86d3</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 20</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 4eec65d6-d69d-654c-c6ed-642b6875ab78</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 14.5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Group ID</strong>: 4eec65d6-d69d-654c-c6ed-642b6875ab78</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-22' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-4'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-4' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-4' aria-expanded='false' tabindex='0' data-detail-target='details-4' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>4.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>But you convinced me otherwise.</span></span></span></span><div class='node-detail-panel' id='details-4' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 0f5d2098-b8e5-0292-5462-9661ea28d9a9</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h85dcecc0g340fg412cgacddg7e4eb7be2ada</span><span class='meta-item'><strong>Text UUID</strong>: c851598c-4eea-42e1-9ff4-7d16f0407d1c</span><span class='meta-item'><strong>Group ID</strong>: 4eec65d6-d69d-654c-c6ed-642b6875ab78</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-4' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-9'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-9' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-9' aria-expanded='false' tabindex='0' data-detail-target='details-9' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>9.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>We ventured into darkness together - now we&#x27;ve come out the other side, I&#x27;d say I&#x27;m feeling a little refreshed.</span></span></span></span><div class='node-detail-panel' id='details-9' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 269171ca-87e0-226c-bce5-944883dd4f88</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: hbad3752fg772ag4bd1g9523gee50ca18680c</span><span class='meta-item'><strong>Text UUID</strong>: 1bad89a0-653f-41d9-b595-a26610b48a60</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 19</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 269171ca-87e0-226c-bce5-944883dd4f88</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 9.5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-9' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-49'>Node 49</a> <span class='repeat-speaker speaker-label npc'>(Jaheira)</span> <span class='dialog'>When we reach Baldur&#x27;s Gate, there will be even darker paths to tread. I will follow you wherever they lead.</span></div></li></ul></div></div></li><li class='node-item'><div class='repeat'>See <a href='#node-60'>Node 60</a> <span class='repeat-speaker speaker-label npc'>(Jaheira)</span> <span class='dialog'>You ventured into the heart of darkness when I could not.</span></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-6'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-6' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-6' aria-expanded='false' tabindex='0' data-detail-target='details-6' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>6.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>You want to join me?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!ORI_State_Recruited</span></span></span></span><div class='node-detail-panel' id='details-6' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 Jaheira</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='ORI_State_Recruiteddescription'>ORI_State_Recruited</span> <span class='asset-id'>{e78c0aab-fb48-98e9-3ed9-773a0c39988d}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 17daf573-ec46-e8c9-3271-c6c035bfeb3a</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h87fd4357gc395g4a9cgaefegc219983a335a</span><span class='meta-item'><strong>Text UUID</strong>: 5d70fda6-91d1-49e7-a9db-8ff24364b2d9</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-6' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-24'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-24' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-24' aria-expanded='false' tabindex='0' data-detail-target='details-24' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>24.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>Of course.</span></span></span></span><div class='node-detail-panel' id='details-24' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 52f1fa28-2255-360b-ac7f-c8930b6e70c8</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h881f8daeg5606g464dgbd92g86d32917a14a</span><span class='meta-item'><strong>Text UUID</strong>: d677c11b-16ae-42b5-85f4-1398f99853e2</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 14</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 52f1fa28-2255-360b-ac7f-c8930b6e70c8</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1.5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-24' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-22'>Node 22</a> <span class='repeat-speaker speaker-label npc'>(Jaheira)</span> <span class='dialog'>Falling foul of Ketheric convinced me that my grand adventures were behind me - that even <i>if</i> I survived, I should hang up my blades.</span></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-23'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-23' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-23' aria-expanded='false' tabindex='0' data-detail-target='details-23' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>23.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I&#x27;ll be glad to have you by my side.</span></span></span></span><div class='node-detail-panel' id='details-23' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 4f957395-c419-3c50-545d-e49cf67f7cf5</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h89ea713eg1766g4c1ega251gc4e8065ca76d</span><span class='meta-item'><strong>Text UUID</strong>: 1df7dca8-f5e8-4978-b711-f051ecc73d21</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-23' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-47'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-47' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-47' aria-expanded='false' tabindex='0' data-detail-target='details-47' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>47.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>Glad to be there.</span></span></span></span><div class='node-detail-panel' id='details-47' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: c5b0c05e-6792-0ca1-93fc-d65cccb58424</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: hc5ee9415gde5fg4465g9a1ag2802f5430d5a</span><span class='meta-item'><strong>Text UUID</strong>: e10d714e-65de-4299-9320-5f9535a8489a</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 6</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: c5b0c05e-6792-0ca1-93fc-d65cccb58424</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1.5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-47' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-22'>Node 22</a> <span class='repeat-speaker speaker-label npc'>(Jaheira)</span> <span class='dialog'>Falling foul of Ketheric convinced me that my grand adventures were behind me - that even <i>if</i> I survived, I should hang up my blades.</span></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-12'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-12' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-12' aria-expanded='false' tabindex='0' data-detail-target='details-12' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>12.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I don&#x27;t think so, Jaheira. Go your own way.</span></span></span></span><div class='node-detail-panel' id='details-12' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 2d27618a-ac48-61d0-e057-e8ae2a7c6ce1</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h66440bfdgd472g48f0gb76ag4528fb0a996a</span><span class='meta-item'><strong>Text UUID</strong>: 4a634342-2428-49dc-a53b-95239d966a19</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-12' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-34'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-34' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>34.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-54'>Node 54</a></span></span></span></span><div class='node-detail-panel' id='details-34' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 86150167-6b34-c770-8d73-dc377ff4049d</span><span class='meta-item'><strong>Jump Target</strong>: Node 54 (d8e7a3ae-d369-4387-4719-9f954336766e)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-5'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-5' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-5' aria-expanded='false' tabindex='0' data-detail-target='details-5' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>5.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I&#x27;ve got a parasite in my brain - makes it hard to enjoy anything.</span></span></span></span><div class='node-detail-panel' id='details-5' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 121136fb-be6e-82a1-a82b-7a63158928eb</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: ha9ce1badg5955g4d62gb38ag66c3d3dcafa0</span><span class='meta-item'><strong>Text UUID</strong>: c27c5d09-0dd6-42a7-bfc3-29c2a0d2847d</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-5' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-29'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-29' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-29' aria-expanded='false' tabindex='0' data-detail-target='details-29' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>29.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>You came here in search of a cure, but found a conspiracy instead - I can see how that would be disheartening.</span></span></span></span><div class='node-detail-panel' id='details-29' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 673b5ee0-331e-7b8b-f9e4-9ac69e48620a</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h2a5d5612g6cbcg457eg8cbbg38bd46f35196</span><span class='meta-item'><strong>Text UUID</strong>: 17aab532-79cc-4bb8-8ba1-6ae336c2783e</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 12</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 673b5ee0-331e-7b8b-f9e4-9ac69e48620a</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 8.25s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-29' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-57'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-57' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-57' aria-expanded='false' tabindex='0' data-detail-target='details-57' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>57.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>But take courage - we have killed a man who could not die, and stripped the Absolute&#x27;s army of its general.</span></span></span></span><div class='node-detail-panel' id='details-57' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: e7f504e3-3371-b390-055e-fdc932e802c7</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h8adff77agdbf1g4c27ga0dbgba1d3fcf3d68</span><span class='meta-item'><strong>Text UUID</strong>: 93774bd7-d1d6-4354-8e54-32714991b57d</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 3</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: e7f504e3-3371-b390-055e-fdc932e802c7</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 9.75s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span></div></section></div></div></div><div class='node-branch' id='branch-57' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-33'>Node 33</a> <span class='repeat-speaker speaker-label npc'>(Jaheira)</span> <span class='dialog'>You have a Netherstone, and you&#x27;re on the scent of two more.</span></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-35'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-35' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-35' aria-expanded='false' tabindex='0' data-detail-target='details-35' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>35.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>You&#x27;ve tangled with the Dead Three before?</span></span></span></span><div class='node-detail-panel' id='details-35' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 8bf2a7aa-8a44-7ec8-7933-bc8da410f4df</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h93807fd2g0af8g4582g87b2g536afe8c117e</span><span class='meta-item'><strong>Text UUID</strong>: eb5f5d9d-3776-4aa0-92ef-c1802c5e6e75</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-35' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-3'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-3' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-3' aria-expanded='false' tabindex='0' data-detail-target='details-3' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>3.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>Extensively. Mind flayers too - but I never dreamed of seeing gods and illithids working in consort.</span></span></span></span><div class='node-detail-panel' id='details-3' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 055ee2df-eadf-5cac-8009-ec07531bc976</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: hd86b64beg173ag4f67gb0c7g3638f11d1278</span><span class='meta-item'><strong>Text UUID</strong>: 9483c108-b888-4a99-884e-60f524ab7789</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 21</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 055ee2df-eadf-5cac-8009-ec07531bc976</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 10.5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-3' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-46'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-46' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-46' aria-expanded='false' tabindex='0' data-detail-target='details-46' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>46.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>It is most disturbing.</span></span></span></span><div class='node-detail-panel' id='details-46' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: b8b6c53c-74ce-abef-2115-72604c8aa015</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: hc4420110gef43g40fcgb8e6gb66546126054</span><span class='meta-item'><strong>Text UUID</strong>: 91f0fb6b-a822-40db-b001-55905869e4e6</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 7</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: b8b6c53c-74ce-abef-2115-72604c8aa015</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1.93s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-46' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-55'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-55' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>55.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-57'>Node 57</a></span></span></span></span><div class='node-detail-panel' id='details-55' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: dcba3766-f2f3-74a8-26a5-abaf6de04403</span><span class='meta-item'><strong>Jump Target</strong>: Node 57 (e7f504e3-3371-b390-055e-fdc932e802c7)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-15'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-15' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-15' aria-expanded='false' tabindex='0' data-detail-target='details-15' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>15.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Spent a lot of time in mind flayer colonies, have you?</span></span></span></span><div class='node-detail-panel' id='details-15' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 3c9a9d1d-8a7b-c2eb-c61a-35b2a4079afb</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h7e514e92ga8d3g4125g8e44g9db7cdad99bd</span><span class='meta-item'><strong>Text UUID</strong>: ad4b4611-6485-494c-a77a-0a7853e76d29</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-15' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-37'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-37' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-37' aria-expanded='false' tabindex='0' data-detail-target='details-37' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>37.</span><span class='speaker-label npc'>Jaheira</span><span>: </span><span class='dialog'>More than anyone should. But I never dreamed I&#x27;d see the Dead Three working in consort with illithids.</span></span></span></span><div class='node-detail-panel' id='details-37' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 9ddda9dc-4ff3-50d3-cfbe-6752dd4050ee</span><span class='meta-item'><strong>Speaker</strong>: 0 (Jaheira)</span><span class='meta-item'><strong>Text Handle</strong>: h5583395bg5becg48dbgae1ag001757039a43</span><span class='meta-item'><strong>Text UUID</strong>: 54e98d7f-d916-4de3-a785-b23cad2a287b</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 10</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 9ddda9dc-4ff3-50d3-cfbe-6752dd4050ee</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 8.75s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-37' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-46'>Node 46</a> <span class='repeat-speaker speaker-label npc'>(Jaheira)</span> <span class='dialog'>It is most disturbing.</span></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul>
+        
+      </div>
+    </section>
+  </div>
+  <div class="tree-scrollbar-proxy" hidden>
+    <div class="tree-scrollbar-proxy-inner"></div>
+  </div>
+  <script>
+    function getNodeDetailPanel(shell) {
+      if (!shell) {
+        return null;
+      }
+      const content = shell.querySelector(":scope > .node-row > .node-content");
+      if (!content) {
+        return null;
+      }
+      return Array.from(content.children).find((child) => child.classList && child.classList.contains("node-detail-panel")) || null;
+    }
+    function getNodeDetailToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-detail-target]");
+    }
+    function getNodeBranchToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-branch-target]");
+    }
+    function getNodeBranchMarker(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .tree-toggle-marker[data-branch-target]");
+    }
+    const jumpHighlightTimers = new WeakMap();
+    const nodeSummaryClickTimers = new WeakMap();
+    const NODE_DETAIL_DOUBLE_CLICK_MS = 160;
+    const treeShell = document.querySelector(".tree-shell");
+    const treeShellInner = treeShell ? treeShell.querySelector(".tree-shell-inner") : null;
+    const treeScrollbarProxy = document.querySelector(".tree-scrollbar-proxy");
+    const treeScrollbarProxyInner = treeScrollbarProxy
+      ? treeScrollbarProxy.querySelector(".tree-scrollbar-proxy-inner")
+      : null;
+    let syncingTreeScroll = false;
+    let syncingProxyScroll = false;
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+    function setToggleButtonState(button, active) {
+      if (!button) {
+        return;
+      }
+      button.classList.toggle("is-active", active);
+      const hideLabel = button.dataset.hideLabel;
+      const showLabel = button.dataset.showLabel;
+      if (hideLabel && showLabel) {
+        button.textContent = active ? showLabel : hideLabel;
+      }
+    }
+    function syncAllDetailsToggle() {
+      const button = document.querySelector("button[data-toggle-details='all']");
+      if (!button) {
+        return;
+      }
+      const panels = Array.from(document.querySelectorAll(".node-detail-panel"));
+      const allOpen = panels.length > 0 && panels.every((panel) => !panel.hasAttribute("hidden"));
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function syncAllBranchesToggle() {
+      const button = document.querySelector("button[data-toggle-branches='all']");
+      if (!button) {
+        return;
+      }
+      const branchMarkers = Array.from(document.querySelectorAll(".tree-toggle-marker[data-branch-target]"));
+      const allOpen = branchMarkers.length > 0 && branchMarkers.every((marker) => marker.dataset.branchExpanded === "true");
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function updateTreeScrollbarProxy() {
+      if (!treeShell || !treeShellInner || !treeScrollbarProxy || !treeScrollbarProxyInner) {
+        return;
+      }
+      const contentWidth = treeShellInner.scrollWidth;
+      const viewportWidth = treeShell.clientWidth;
+      const needsProxy = contentWidth > viewportWidth + 1;
+      if (!needsProxy) {
+        treeScrollbarProxy.hidden = true;
+        return;
+      }
+      const rect = treeShell.getBoundingClientRect();
+      treeScrollbarProxy.hidden = false;
+      treeScrollbarProxy.style.left = `${Math.max(0, rect.left)}px`;
+      treeScrollbarProxy.style.width = `${Math.max(0, rect.width)}px`;
+      treeScrollbarProxyInner.style.width = `${contentWidth}px`;
+      if (!syncingTreeScroll && Math.abs(treeScrollbarProxy.scrollLeft - treeShell.scrollLeft) > 1) {
+        syncingProxyScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingProxyScroll = false;
+      }
+    }
+    function resetTreeScrollToStart() {
+      document.querySelectorAll(".tree-shell").forEach((shell) => {
+        shell.scrollLeft = 0;
+      });
+      if (treeScrollbarProxy) {
+        treeScrollbarProxy.scrollLeft = 0;
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setBranchOpen(control, openState, syncState = true) {
+      if (!control) {
+        return;
+      }
+      const targetId = control.dataset.branchTarget;
+      const target = targetId ? document.getElementById(targetId) : null;
+      if (!target) {
+        return;
+      }
+      const shell = control.closest(".node-shell");
+      const marker = shell ? getNodeBranchMarker(shell) : null;
+      const summary = shell ? getNodeBranchToggle(shell) : null;
+      if (openState) {
+        target.removeAttribute("hidden");
+      } else {
+        target.setAttribute("hidden", "until-found");
+      }
+      if (marker) {
+        marker.dataset.branchExpanded = openState ? "true" : "false";
+        marker.textContent = openState ? "-" : "+";
+      }
+      if (summary) {
+        summary.setAttribute("aria-expanded", openState ? "true" : "false");
+      }
+      if (syncState) {
+        syncAllBranchesToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setDetailOpen(shell, openState, syncState = true) {
+      const panel = getNodeDetailPanel(shell);
+      const toggle = getNodeDetailToggle(shell);
+      if (!panel) {
+        return;
+      }
+      if (openState) {
+        panel.removeAttribute("hidden");
+      } else {
+        panel.setAttribute("hidden", "until-found");
+      }
+      if (toggle) {
+        toggle.dataset.detailExpanded = openState ? "true" : "false";
+      }
+      if (syncState) {
+        syncAllDetailsToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setAllBranches(openState) {
+      document.querySelectorAll(".tree-toggle-marker[data-branch-target]").forEach((marker) => { setBranchOpen(marker, openState, false); });
+      syncAllBranchesToggle();
+    }
+    function setAllNodeDetails(openState) {
+      document.querySelectorAll(".node-shell").forEach((shell) => {
+        if (getNodeDetailPanel(shell)) {
+          setDetailOpen(shell, openState, false);
+        }
+      });
+      syncAllDetailsToggle();
+    }
+    function openParents(target) {
+      let current = target;
+      while (current) {
+        if (current.classList && current.classList.contains("node-branch")) {
+          const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${current.id}"]`);
+          setBranchOpen(marker, true);
+        }
+        current = current.parentElement;
+      }
+    }
+    function highlightJumpTarget(target) {
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      if (!shell) {
+        return;
+      }
+      const existingTimer = jumpHighlightTimers.get(shell);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+      shell.classList.add("jump-highlight");
+      const timeoutId = window.setTimeout(() => {
+        shell.classList.remove("jump-highlight");
+        jumpHighlightTimers.delete(shell);
+      }, 5000);
+      jumpHighlightTimers.set(shell, timeoutId);
+    }
+    function revealAndFocusNodeTarget(target, href = "") {
+      if (!target) {
+        return;
+      }
+      openParents(target);
+      if (href) {
+        history.replaceState(null, "", href);
+      }
+      requestAnimationFrame(() => {
+        target.scrollIntoView({ block: "center" });
+        highlightJumpTarget(target);
+        updateTreeScrollbarProxy();
+      });
+    }
+    if (treeShell && treeScrollbarProxy) {
+      treeShell.addEventListener("scroll", () => {
+        if (syncingProxyScroll) {
+          return;
+        }
+        syncingTreeScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingTreeScroll = false;
+      });
+      treeScrollbarProxy.addEventListener("scroll", () => {
+        if (syncingTreeScroll) {
+          return;
+        }
+        syncingProxyScroll = true;
+        treeShell.scrollLeft = treeScrollbarProxy.scrollLeft;
+        syncingProxyScroll = false;
+      });
+    }
+    document.addEventListener("click", (event) => {
+      const allBranchesButton = event.target.closest("button[data-toggle-branches='all']");
+      if (allBranchesButton) {
+        const isOpen = allBranchesButton.dataset.active === "true";
+        setAllBranches(!isOpen);
+        return;
+      }
+      const allDetailsButton = event.target.closest("button[data-toggle-details='all']");
+      if (allDetailsButton) {
+        const isOpen = allDetailsButton.dataset.active === "true";
+        setAllNodeDetails(!isOpen);
+        return;
+      }
+      const button = event.target.closest("button[data-toggle-class]");
+      if (button) {
+        const active = document.body.classList.toggle(button.dataset.toggleClass);
+        setToggleButtonState(button, active);
+        return;
+      }
+      const link = event.target.closest("a[href^='#node-']");
+      if (link) {
+        event.preventDefault();
+        const target = document.querySelector(link.getAttribute("href"));
+        if (target) {
+          revealAndFocusNodeTarget(target, link.getAttribute("href"));
+        }
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (summary) {
+        const branchTarget = summary.dataset.branchTarget;
+        const shell = summary.closest(".node-shell");
+        if (!shell) {
+          return;
+        }
+        if (!branchTarget) {
+          if (summary.dataset.detailTarget) {
+            const isOpen = summary.dataset.detailExpanded === "true";
+            setDetailOpen(shell, !isOpen);
+          }
+          return;
+        }
+        const existingTimer = nodeSummaryClickTimers.get(summary);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+          nodeSummaryClickTimers.delete(summary);
+          event.preventDefault();
+          const isOpen = summary.dataset.detailExpanded === "true";
+          setDetailOpen(shell, !isOpen);
+          return;
+        }
+        const timerId = window.setTimeout(() => {
+          nodeSummaryClickTimers.delete(summary);
+          const isOpen = summary.getAttribute("aria-expanded") === "true";
+          setBranchOpen(summary, !isOpen);
+          if (isOpen) {
+            const panel = getNodeDetailPanel(shell);
+            if (panel && !panel.hasAttribute("hidden")) {
+              setDetailOpen(shell, false);
+            }
+          }
+        }, NODE_DETAIL_DOUBLE_CLICK_MS);
+        nodeSummaryClickTimers.set(summary, timerId);
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (!summary) {
+        return;
+      }
+      event.preventDefault();
+      const shell = summary.closest(".node-shell");
+      if (!shell) {
+        return;
+      }
+      if (summary.dataset.branchTarget) {
+        const isOpen = summary.getAttribute("aria-expanded") === "true";
+        setBranchOpen(summary, !isOpen);
+        if (isOpen) {
+          const panel = getNodeDetailPanel(shell);
+          if (panel && !panel.hasAttribute("hidden")) {
+            setDetailOpen(shell, false);
+          }
+        }
+        return;
+      }
+      if (summary.dataset.detailTarget) {
+        const isOpen = summary.dataset.detailExpanded === "true";
+        setDetailOpen(shell, !isOpen);
+      }
+    });
+    document.addEventListener("beforematch", (event) => {
+      const branch = event.target.closest(".node-branch");
+      if (branch && branch.id) {
+        const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${branch.id}"]`);
+        setBranchOpen(marker, true);
+      }
+      const panel = event.target.closest(".node-detail-panel");
+      if (panel) {
+        const shell = panel.closest(".node-shell");
+        if (shell) {
+          openParents(shell);
+          setDetailOpen(shell, true);
+        }
+      }
+    });
+    document.querySelectorAll("button[data-toggle-class]").forEach((button) => {
+      const active = document.body.classList.contains(button.dataset.toggleClass);
+      setToggleButtonState(button, active);
+    });
+    if (window.ResizeObserver && treeShell) {
+      const observer = new ResizeObserver(() => {
+        updateTreeScrollbarProxy();
+      });
+      observer.observe(treeShell);
+      if (treeShellInner) {
+        observer.observe(treeShellInner);
+      }
+    }
+    window.addEventListener("resize", updateTreeScrollbarProxy);
+    window.addEventListener("scroll", updateTreeScrollbarProxy, { passive: true });
+    window.addEventListener("pageshow", () => {
+      if (window.location.hash) {
+        updateTreeScrollbarProxy();
+        return;
+      }
+      resetTreeScrollToStart();
+      window.requestAnimationFrame(() => {
+        resetTreeScrollToStart();
+      });
+      window.setTimeout(() => {
+        resetTreeScrollToStart();
+      }, 0);
+    });
+    syncAllBranchesToggle();
+    document.querySelectorAll("button[data-toggle-details='all']").forEach((button) => {
+      const active = button.dataset.active === "true";
+      setToggleButtonState(button, active);
+    });
+    updateTreeScrollbarProxy();
+    if (window.location.hash) {
+      const target = document.querySelector(window.location.hash);
+      if (target) {
+        revealAndFocusNodeTarget(target, window.location.hash);
+      }
+    }
+  </script>
+</body>
+</html>

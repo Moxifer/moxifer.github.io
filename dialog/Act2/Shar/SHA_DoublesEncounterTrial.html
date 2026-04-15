@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SHA_DoublesEncounterTrial</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #182330;
+      --muted: #586477;
+      --line: #c7d2df;
+      --npc: #b91c1c;
+      --player: #15803d;
+      --system: #2563eb;
+      --rule: #2f6f44;
+      --tag: #0f766e;
+      --check: #7c3aed;
+      --set: #ea580c;
+      --roll: #6d28d9;
+      --approval: #0f766e;
+      --jump: #155eef;
+      --context: #475467;
+      --surface: #f3f6fa;
+      --surface-active: #e6edf5;
+      --surface-hover: #edf3f9;
+      --detail-surface: #e3ebf4;
+      --detail-border: #b4c2d4;
+      --focus: #90a4bc;
+      --highlight: #d9e5f5;
+      --scrollbar-proxy-bg: rgba(255, 255, 255, 0.94);
+      --mono: Consolas, "SFMono-Regular", Menlo, monospace;
+      --sans: Georgia, "Palatino Linotype", serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #fff;
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.35;
+      overflow-x: hidden;
+    }
+    a { color: var(--jump); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: none;
+      padding: 0;
+      border-radius: 0;
+    }
+    .page {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0.55rem 0.9rem 1.8rem;
+      overflow-x: hidden;
+    }
+    .hero {
+      margin-bottom: 0.55rem;
+    }
+    .hero h1 {
+      margin: 0 0 0.2rem;
+      font-size: 1.4rem;
+      line-height: 1.15;
+    }
+    .source {
+      color: var(--muted);
+      font-size: 0.9rem;
+      word-break: break-all;
+      margin-bottom: 0.2rem;
+    }
+    .source-label {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.3rem;
+    }
+    .summary-line {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 0.35rem;
+    }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.45rem;
+      margin-bottom: 0.45rem;
+      padding: 0.35rem 0;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      overflow: visible;
+    }
+    .toolbar-scroll {
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: calc(100% - 7rem);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+    }
+    .controls {
+      display: inline-flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0.45rem;
+      white-space: nowrap;
+      font-size: 0.9rem;
+      min-width: max-content;
+      overflow: visible;
+    }
+    .controls button,
+    .controls summary,
+    .speaker-map > summary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 1.85rem;
+      padding: 0.12rem 0.5rem;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: var(--surface);
+      color: var(--jump);
+      font: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      list-style: none;
+      user-select: none;
+    }
+    .controls button.is-active,
+    .controls details[open] > summary,
+    .speaker-map[open] > summary {
+      background: var(--surface-active);
+      border-color: var(--focus);
+    }
+    .controls button:hover,
+    .controls summary:hover,
+    .speaker-map > summary:hover {
+      background: var(--surface-hover);
+      text-decoration: none;
+    }
+    .controls summary:focus,
+    .controls button:focus,
+    .speaker-map > summary:focus {
+      outline: 1px solid var(--focus);
+      outline-offset: 1px;
+    }
+    .speaker-map {
+      flex: 0 0 auto;
+      position: relative;
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .speaker-map summary,
+    .meta-block summary {
+      cursor: pointer;
+      color: var(--jump);
+      list-style: none;
+    }
+    .speaker-map summary::-webkit-details-marker,
+    .meta-block summary::-webkit-details-marker {
+      display: none;
+    }
+    .speaker-map[open] ul {
+      display: block;
+    }
+    .speaker-map ul {
+      display: none;
+      list-style: none;
+      margin: 0.3rem 0 0;
+      padding: 0.45rem 0.6rem;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 0.2rem);
+      min-width: 20rem;
+      max-width: min(34rem, calc(100vw - 2rem));
+      max-height: 24rem;
+      overflow: auto;
+      background: #fbfcfe;
+      border: 1px solid var(--line);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+      z-index: 30;
+    }
+    .speaker-map li + li {
+      margin-top: 0.1rem;
+    }
+    .speaker-index {
+      display: inline-block;
+      min-width: 2rem;
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 600;
+    }
+    .speaker-name {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.25rem;
+    }
+    .inline-meta, .line-meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .tree-shell {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: visible;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-shell-inner {
+      width: max-content;
+      min-width: 100%;
+    }
+    .tree-scrollbar-proxy {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 1.1rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      background: var(--scrollbar-proxy-bg);
+      border-top: 1px solid var(--line);
+      z-index: 40;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-scrollbar-proxy[hidden] {
+      display: none;
+    }
+    .tree-scrollbar-proxy-inner {
+      height: 1px;
+    }
+    .orphan-section {
+      width: auto;
+      min-width: 0;
+      margin-top: 1rem;
+      padding-top: 0.55rem;
+      border-top: 1px dotted var(--line);
+    }
+    .orphan-section h2 {
+      margin: 0 0 0.15rem;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+    .orphan-note {
+      margin: 0 0 0.35rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .root-list, .child-list {
+      list-style: none;
+      margin: 0;
+      padding-left: 0;
+      width: auto;
+      min-width: 0;
+    }
+    .child-list {
+      margin-left: 1.1rem;
+      padding-left: 0.85rem;
+      border-left: 1px dotted var(--line);
+    }
+    .node-item {
+      margin: 0.18rem 0;
+    }
+    details.node {
+      margin: 0;
+    }
+    details.node:target > summary .node-line {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    .node-leaf:target {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 0;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    summary::-webkit-details-marker {
+      display: none;
+    }
+    details.node > summary::before {
+      content: "▸";
+      display: inline-block;
+      width: 0.9rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      vertical-align: top;
+      padding-top: 0.12rem;
+    }
+    details.node[open] > summary::before {
+      content: "▾";
+    }
+    details.node.no-children > summary::before {
+      content: "•";
+    }
+    .node-line {
+      display: inline;
+      padding: 0.06rem 0.18rem;
+    }
+    .node-leaf {
+      display: inline-block;
+      padding: 0.06rem 0.18rem;
+      border-radius: 6px;
+    }
+    details.node > summary::before {
+      content: "+";
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    details.node[open] > summary::before {
+      content: "-";
+    }
+    details.node.no-children > summary::before {
+      content: ".";
+    }
+    .node-number {
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 700;
+    }
+    .speaker-label {
+      font-weight: 700;
+      margin-left: 0.2rem;
+    }
+    .speaker-label.npc { color: var(--npc); }
+    .speaker-label.player { color: var(--player); }
+    .speaker-label.system { color: var(--system); }
+    .dialog {
+      color: var(--ink);
+      margin-left: 0.2rem;
+    }
+    .node-kind {
+      color: var(--system);
+      margin-left: 0.2rem;
+    }
+    .ruletag {
+      color: var(--rule);
+      margin-left: 0.35rem;
+    }
+    .tags {
+      color: var(--tag);
+      margin-left: 0.35rem;
+    }
+    .checkflag {
+      color: var(--check);
+      margin-left: 0.35rem;
+    }
+    .setflag {
+      color: var(--set);
+      margin-left: 0.35rem;
+    }
+    .rolls {
+      color: var(--roll);
+      margin-left: 0.35rem;
+    }
+    .approval {
+      color: var(--approval);
+      margin-left: 0.35rem;
+    }
+    .nodelink {
+      color: var(--jump);
+      margin-left: 0.35rem;
+    }
+    .context {
+      color: var(--context);
+      margin-left: 0.3rem;
+      cursor: help;
+    }
+    .end {
+      color: #8b1e1e;
+      margin-left: 0.35rem;
+    }
+    .node-shell:target,
+    .node-leaf:target {
+      background: none;
+      border-radius: 0;
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-shell {
+      display: block;
+    }
+    .node-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.32rem;
+      width: max-content;
+      min-width: 100%;
+      transition: background-color 0.18s ease;
+    }
+    .node-shell.jump-highlight > .node-row {
+      background: var(--highlight);
+    }
+    .node-content {
+      min-width: 0;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker,
+    .tree-spacer {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 0.95rem;
+      height: 0.95rem;
+      margin-top: 0.08rem;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker {
+      border: none;
+      background: none;
+      color: var(--muted);
+      padding: 0;
+      font: inherit;
+      font-weight: 800;
+      font-size: 1.18rem;
+      line-height: 1;
+      user-select: none;
+    }
+    .tree-spacer {
+      border: none;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .node-branch[hidden]:not([hidden='until-found']) {
+      display: none;
+    }
+    .repeat {
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+    .node-summary {
+      display: block;
+      cursor: default;
+    }
+    .node-summary.is-interactive {
+      cursor: pointer;
+    }
+    .node-summary.is-interactive:focus-visible {
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-main-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.35rem;
+    }
+    .node-main {
+      display: block;
+      flex: 1 1 auto;
+      min-width: 0;
+      white-space: normal;
+      line-height: 1.28;
+      overflow-wrap: anywhere;
+    }
+    .node-leaf {
+      display: block;
+      border-radius: 0;
+    }
+    .node-number {
+      font-weight: 600;
+    }
+    .speaker-label {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind,
+    .nodelink {
+      overflow-wrap: anywhere;
+    }
+    .nodelink,
+    .end {
+      margin-left: 0;
+    }
+    .node-previews {
+      display: block;
+      margin: 0.12rem 0 0 1.1rem;
+      font-size: 0.88rem;
+      white-space: normal;
+      line-height: 1.28;
+    }
+    .preview-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.12rem 0.45rem;
+    }
+    .preview-token {
+      display: inline;
+      overflow-wrap: anywhere;
+    }
+    .preview-token.tag {
+      color: var(--tag);
+    }
+    .preview-token.rule {
+      color: var(--rule);
+    }
+    .preview-token.check {
+      color: var(--check);
+    }
+    .preview-token.set {
+      color: var(--set);
+    }
+    .preview-note {
+      display: block;
+      margin-top: 0.08rem;
+      color: var(--context);
+      overflow-wrap: anywhere;
+      font-weight: 700;
+    }
+    .preview-note-label {
+      color: var(--context);
+      font-weight: 700;
+    }
+    .preview-note-value {
+      color: #4f463f;
+      font-weight: 600;
+    }
+    .signal-line {
+      display: block;
+      margin: 0.14rem 0 0.2rem;
+    }
+    .signal-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem;
+    }
+    .signal-label {
+      font-weight: 700;
+    }
+    .signal-scope {
+      color: var(--muted);
+    }
+    .tag-line, .tag-line .signal-label { color: var(--tag); }
+    .rule-line, .rule-line .signal-label { color: var(--rule); }
+    .checkflag-line, .checkflag-line .signal-label { color: var(--check); }
+    .setflag-line, .setflag-line .signal-label { color: var(--set); }
+    .roll-line, .roll-line .signal-label { color: var(--roll); }
+    .approval-line, .approval-line .signal-label { color: var(--approval); }
+    .context-line, .context-line .signal-label { color: var(--context); }
+    .context-line .signal-heading {
+      font-weight: 700;
+    }
+    .context-line .signal-item {
+      color: #4f463f;
+    }
+    .signal-values {
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .signal-list {
+      list-style: none;
+      margin: 0.06rem 0 0 0.9rem;
+      padding: 0;
+    }
+    .signal-item {
+      margin: 0.1rem 0;
+      overflow-wrap: anywhere;
+    }
+    .signal-item::before {
+      content: "- ";
+      color: var(--muted);
+    }
+    .signal-body {
+      display: block;
+      margin: 0.06rem 0 0 0.9rem;
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .asset-name {
+      color: var(--ink);
+    }
+    .asset-id {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.92em;
+      overflow-wrap: anywhere;
+    }
+    .asset-state {
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .node-detail-panel {
+      margin: 0.08rem 0 0.18rem 1.1rem;
+      padding: 0.35rem 0.5rem;
+      border: 1px solid var(--detail-border);
+      background: var(--detail-surface);
+      border-radius: 0;
+      display: block;
+      gap: 0;
+      max-width: none;
+    }
+    .node-detail-panel[hidden]:not([hidden='until-found']) {
+      display: none;
+    }
+    .node-detail-panel[hidden='until-found'] {
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: none;
+    }
+    .section {
+      margin: 0.16rem 0;
+      padding: 0;
+      background: none;
+      border: none;
+    }
+    .section h3 {
+      margin: 0 0 0.22rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .node-detail-panel > .section + .section {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-block + .text-block {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-line {
+      font-size: 0.96rem;
+      margin-bottom: 0.15rem;
+    }
+    .text-line {
+      margin: 0.08rem 0;
+      font-size: inherit;
+      overflow-wrap: anywhere;
+    }
+    .badge-row, .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .badge, .meta-item {
+      display: block;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+    }
+    .meta-items {
+      margin: 0.12rem 0 0 0.85rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+      white-space: normal;
+    }
+    .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .meta-item {
+      display: block;
+      margin: 0.06rem 0;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+      overflow-wrap: anywhere;
+    }
+    .meta-item strong {
+      color: var(--ink);
+    }
+    .badge.flags { color: var(--check); }
+    .badge.tags { color: var(--tag); }
+    .flag-groups {
+      display: block;
+      gap: 0;
+    }
+    .flag-group-type {
+      display: inline-block;
+      color: var(--muted);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.15rem;
+    }
+    .rule-tree, .rule-tree ul {
+      margin: 0;
+      padding-left: 1rem;
+    }
+    .body-hide-flags .section-flags,
+    .body-hide-rules .section-rules,
+    .body-hide-details .section-metadata,
+    .body-hide-context .preview-note,
+    .body-hide-context .context-line,
+    .body-hide-context .node-line .context {
+      display: none;
+    }
+    .body-hide-flags .node-line .checkflag,
+    .body-hide-flags .node-line .setflag,
+    .body-hide-rules .node-line .ruletag {
+      display: none;
+    }
+    .body-hide-flags .checkflag-line,
+    .body-hide-flags .setflag-line {
+      display: none;
+    }
+    .body-hide-flags .preview-token.check,
+    .body-hide-flags .preview-token.set {
+      display: none;
+    }
+    .body-hide-context .context-line {
+      display: none;
+    }
+    .body-hide-numbers .node-number {
+      display: none;
+    }
+    .missing, .cycle {
+      padding: 0.2rem 0.35rem;
+      color: #8b1e1e;
+      background: rgba(139, 30, 30, 0.08);
+      border-radius: 6px;
+      display: inline-block;
+    }
+    .missing, .cycle {
+      padding: 0;
+      background: none;
+      border-radius: 0;
+      display: block;
+      overflow-wrap: anywhere;
+    }
+    @media (max-width: 920px) {
+      .page {
+        padding: 0.45rem 0.5rem 0.9rem;
+      }
+      .tree-shell {
+        padding: 0;
+      }
+    }
+  </style>
+</head>
+  <body class="body-hide-numbers">
+  <div class="page">
+    <header class="hero">
+      <h1>SHA_DoublesEncounterTrial</h1>
+      <div class="source"><span class="source-label">Dialog Resource UUID:</span><strong><code>b9c1c1d9-1f55-d7b6-875c-137b0a55b1e7</code></strong></div><div class="source"><span class="source-label">Timeline Resource UUID:</span><strong><code>ee3ffe12-b5b0-8b41-0afa-4be56bf047dd</code></strong></div><div class="source"><span class="source-label">StartDialog UUID:</span><strong><code>0c3bb069-dd54-17a3-7f70-d4decb401997</code></strong></div><div class="source"><span class="source-label">Dialog:</span>Mods\GustavDev\Story\DialogsBinary\Act2\Shar\SHA_DoublesEncounterTrial.lsf.lsx</div><div class="source"><span class="source-label">Timeline:</span>Public\GustavDev\Timeline\Generated\SHA_DoublesEncounterTrial.lsf.lsx</div><div class="source"><span class="source-label">Scene:</span>Public\GustavDev\Timeline\Generated\SHA_DoublesEncounterTrial_Scene.lsf.lsx</div>
+      <div class="summary-line">
+        category=Generic NPC Dialog | nodes=27 | roots=3
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-scroll">
+          <div class="controls">
+            <button type="button" data-toggle-branches="all" data-hide-label="Expand all" data-show-label="Collapse all" data-active="false">Expand all</button>
+            <button type="button" data-toggle-class="body-hide-flags" data-hide-label="Hide flags" data-show-label="Show flags">Hide flags</button>
+            <button type="button" data-toggle-details="all" data-hide-label="Show details" data-show-label="Hide details" data-active="false">Show details</button>
+            <button type="button" data-toggle-class="body-hide-context" data-hide-label="Hide notes" data-show-label="Show notes">Hide notes</button>
+            <button type="button" data-toggle-class="body-hide-numbers" data-hide-label="Hide node numbers" data-show-label="Show node numbers">Hide node numbers</button>
+          </div>
+        </div>
+        <details class="speaker-map">
+          <summary>Speakers</summary>
+          <ul><li><span class='speaker-index'>0</span><span class='speaker-name'>VoiceOfShar</span><span class='inline-meta'>GROUP_SHA_VoiceOfShar | list=4df2c222-7892-7fed-d214-dbcdfa323945 | mapping=a295e16f-6cdd-25be-1646-797ca3f2617b</span></li><li><span class='speaker-index'>1</span><span class='speaker-name'>Player</span><span class='inline-meta'>GROUP_Players | list=e0d1ff71-04a8-4340-ae64-9684d846eb83 | mapping=f508b9dc-2cf6-da03-0f1c-d49920050ff7</span></li><li><span class='speaker-index'>2</span><span class='speaker-name'>ShadowheartIllusion</span><span class='inline-meta'>GROUP_ShadowheartIllusion | list=3ed74f06-3c60-42dc-83f6-f034cb47c679 | mapping=40b59bc0-29f9-4b35-a5e7-e1e80c342bc6 | Peanuts=True</span></li></ul>
+        </details>
+      </div>
+    </header>
+    <section class="tree-shell">
+      <div class="tree-shell-inner">
+        <ul class="root-list"><li class='node-item'><div class='node-shell' id='node-8'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-8' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-8' aria-expanded='true' tabindex='0' data-detail-target='details-8' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>8.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='nodelink'>Alias to <a href='#node-5'>Node 5</a></span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>SHA_Trials_State_FirstStatueUsed</span></span></span></span><div class='node-detail-panel' id='details-8' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 VoiceOfShar</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Specific statue that got used the first time.'>SHA_Trials_State_FirstStatueUsed</span> <span class='asset-id'>{e3b1e9f2-e4e8-4a1c-868b-77c08f7b7e19}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Alias</span><span class='meta-item'><strong>UUID</strong>: 44436a85-3bd2-1486-98d1-3dcc43c1bf54</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Unmapped Attributes</strong>: Greeting, Root</span></div></section></div></div></div><div class='node-branch' id='branch-8'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-5'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-5' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-5' aria-expanded='false' tabindex='0' data-detail-target='details-5' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>5.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*You recognise this as a trial, where initiates would prove themselves to Lady Shar. This one would challenge their combat prowess.*</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Shadowheart-only narration. Visuals should favour her here.</span></span><span class='preview-inline'><span class='preview-token check'>Shadowheart</span><span class='preview-token set'>SHA_Trials_Knows_LearnedAboutTrials</span></span></span></span><div class='node-detail-panel' id='details-5' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Really Shadowheart|'>Shadowheart</span> <span class='asset-id'>{642d2aee-e3df-47e3-9f47-bbcd441bb9e0}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>SHA_Trials_Knows_LearnedAboutTrials</span> <span class='asset-id'>{a9d9efe0-9031-4b82-8c72-8518c178e485}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 16178ca6-3953-72cc-32cf-4178df2a5f0d</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: h8e63bc78g9a32g4436gb3fag5c8c5ffba7d4</span><span class='meta-item'><strong>Text UUID</strong>: cbfcc5ee-ce3a-4a42-a7ec-6a626e900911</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 2</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 16178ca6-3953-72cc-32cf-4178df2a5f0d</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 10.56s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Optional</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-5' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-16'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-16' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-16' aria-expanded='false' tabindex='0' data-detail-target='details-16' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>16.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>(no line text)</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!SHA_Trials_State_TrialInProgress</span><span class='preview-token check'>!SHA_Trials_Event_TrialPassed</span><span class='preview-token set'>ORI_Inclusion_ShadowHeart</span></span></span></span><div class='node-detail-panel' id='details-16' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 VoiceOfShar</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Trial is in progress.'>SHA_Trials_State_TrialInProgress</span> <span class='asset-id'>{87772420-50d7-4937-85ec-95c42fd9fd14}</span> <span class='asset-state'>= False</span></li><li class='signal-item'><span class='asset-name' title='Passed one of the trials'>SHA_Trials_Event_TrialPassed</span> <span class='asset-id'>{a2bf1d24-4f81-4bae-ac3f-68a5760d122c}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='ORI_Inclusion_ShadowHeartdescription'>ORI_Inclusion_ShadowHeart</span> <span class='asset-id'>{b7b419d9-2148-4acd-af40-85a1cae55204}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 9c2531b4-e109-480d-a6b2-a1c0cff781a6</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Optional</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: transitionmode</span></div></section></div></div></div><div class='node-branch' id='branch-16' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-12'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-12' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-12' aria-expanded='false' tabindex='0' data-detail-target='details-12' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>12.</span><span class='speaker-label npc'>ShadowheartIllusion</span><span>: </span><span class='dialog'>If you&#x27;re going to just stand there and stare, at least let me go ahead with the trial.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!SHA_CloneTrial_State_ShadowheartOffered</span><span class='preview-token check'>SHA_Trials_Event_SHAskedtoDoTrial</span><span class='preview-token check'>!0c3bb069-dd54-17a3-7f70-d4decb401997_TrialRequested</span><span class='preview-token check'>SHA_DoublesEncounterTrial_Event_RefusedSH</span><span class='preview-token check'>8a4a686d-6c47-411f-a0b3-d79ff33e2922</span><span class='preview-token set'>0c3bb069-dd54-17a3-7f70-d4decb401997_TrialRequested</span><span class='preview-token set'>0c3bb069-dd54-17a3-7f70-d4decb401997_TrialDenied</span></span></span></span><div class='node-detail-panel' id='details-12' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>SHA_CloneTrial_State_ShadowheartOffered</span> <span class='asset-id'>{61af61fc-a024-470c-ab3b-1ef4aac6443c}</span> <span class='asset-state'>= False</span></li><li class='signal-item'><span class='asset-name' title='Sets the first time that SH asks to take over a trial altar dialogue'>SHA_Trials_Event_SHAskedtoDoTrial</span> <span class='asset-id'>{8b21fe54-5553-651a-418e-da6d9b465cde}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Shadowheart requested to do the trial'>0c3bb069-dd54-17a3-7f70-d4decb401997_TrialRequested</span> <span class='asset-id'>{b08b866f-30b2-3264-858c-c9bdb2460288}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Sets if you refuse SH the chance to do the doubles encounter trial altar'>SHA_DoublesEncounterTrial_Event_RefusedSH</span> <span class='asset-id'>{b4c3c956-e145-c625-4155-f6f2ac503b47}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Script</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>8a4a686d-6c47-411f-a0b3-d79ff33e2922</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Shadowheart requested to do the trial'>0c3bb069-dd54-17a3-7f70-d4decb401997_TrialRequested</span> <span class='asset-id'>{b08b866f-30b2-3264-858c-c9bdb2460288}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='Shadowheart got dnied a trial'>0c3bb069-dd54-17a3-7f70-d4decb401997_TrialDenied</span> <span class='asset-id'>{0e67b3a6-e399-49d5-a7f2-dcea6b2f4688}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 713e3ab0-660c-f96a-a73b-902cc34d5a96</span><span class='meta-item'><strong>Speaker</strong>: 2 (ShadowheartIllusion)</span><span class='meta-item'><strong>Text Handle</strong>: h8d9b95beg7cc1g428cg88ddg75e4ea70ed57</span><span class='meta-item'><strong>Text UUID</strong>: ddff0b40-82e6-43a6-8a54-12e5508d6cc9</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 6</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 713e3ab0-660c-f96a-a73b-902cc34d5a96</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5.35s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span></div></section></div></div></div><div class='node-branch' id='branch-12' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-1'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-1' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>1.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-25'>Node 25</a></span></span></span></span><div class='node-detail-panel' id='details-1' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 0f80618e-7aed-bfe9-dafc-9582dc286608</span><span class='meta-item'><strong>Jump Target</strong>: Node 25 (fbf5c650-54da-4bc0-ae13-7bce5bd62941)</span><span class='meta-item'><strong>Jump Target Point</strong>: 2</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-9'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-9' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-9' aria-expanded='false' tabindex='0' data-detail-target='details-9' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>9.</span><span class='speaker-label npc'>ShadowheartIllusion</span><span>: </span><span class='dialog'>Another trial. I need to do this, same as before.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!SHA_CloneTrial_State_ShadowheartOffered</span><span class='preview-token check'>SHA_Trials_Event_SHAskedtoDoTrial</span><span class='preview-token check'>!0c3bb069-dd54-17a3-7f70-d4decb401997_TrialRequested</span><span class='preview-token check'>!SHA_DoublesEncounterTrial_Event_RefusedSH</span><span class='preview-token check'>8a4a686d-6c47-411f-a0b3-d79ff33e2922</span><span class='preview-token set'>0c3bb069-dd54-17a3-7f70-d4decb401997_TrialRequested</span><span class='preview-token set'>0c3bb069-dd54-17a3-7f70-d4decb401997_TrialDenied</span></span></span></span><div class='node-detail-panel' id='details-9' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>SHA_CloneTrial_State_ShadowheartOffered</span> <span class='asset-id'>{61af61fc-a024-470c-ab3b-1ef4aac6443c}</span> <span class='asset-state'>= False</span></li><li class='signal-item'><span class='asset-name' title='Sets the first time that SH asks to take over a trial altar dialogue'>SHA_Trials_Event_SHAskedtoDoTrial</span> <span class='asset-id'>{8b21fe54-5553-651a-418e-da6d9b465cde}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Shadowheart requested to do the trial'>0c3bb069-dd54-17a3-7f70-d4decb401997_TrialRequested</span> <span class='asset-id'>{b08b866f-30b2-3264-858c-c9bdb2460288}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Sets if you refuse SH the chance to do the doubles encounter trial altar'>SHA_DoublesEncounterTrial_Event_RefusedSH</span> <span class='asset-id'>{b4c3c956-e145-c625-4155-f6f2ac503b47}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Script</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>8a4a686d-6c47-411f-a0b3-d79ff33e2922</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Shadowheart requested to do the trial'>0c3bb069-dd54-17a3-7f70-d4decb401997_TrialRequested</span> <span class='asset-id'>{b08b866f-30b2-3264-858c-c9bdb2460288}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='Shadowheart got dnied a trial'>0c3bb069-dd54-17a3-7f70-d4decb401997_TrialDenied</span> <span class='asset-id'>{0e67b3a6-e399-49d5-a7f2-dcea6b2f4688}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 642b6bd8-eb53-8cfa-c505-15e4c36e6af7</span><span class='meta-item'><strong>Speaker</strong>: 2 (ShadowheartIllusion)</span><span class='meta-item'><strong>Text Handle</strong>: h78fbc082g14c9g4e05gbbd1gbd8da0f4bea5</span><span class='meta-item'><strong>Text UUID</strong>: 214a0145-5637-4e7a-8df9-400bed6d3a13</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 5</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 642b6bd8-eb53-8cfa-c505-15e4c36e6af7</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5.3s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span></div></section></div></div></div><div class='node-branch' id='branch-9' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-1'>Node 1</a> <span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-25'>Node 25</a></span></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-25'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-25' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-25' aria-expanded='false' tabindex='0' data-detail-target='details-25' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>25.</span><span class='speaker-label npc'>ShadowheartIllusion</span><span>: </span><span class='dialog'>This is one of Lady Shar&#x27;s trials. Allow me - please.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!SHA_CloneTrial_State_ShadowheartOffered</span><span class='preview-token check'>!0c3bb069-dd54-17a3-7f70-d4decb401997_TrialRequested</span><span class='preview-token check'>8a4a686d-6c47-411f-a0b3-d79ff33e2922</span><span class='preview-token set'>SHA_Trials_Knows_LearnedAboutTrials</span><span class='preview-token set'>SHA_Trials_Event_SHAskedtoDoTrial</span><span class='preview-token set'>0c3bb069-dd54-17a3-7f70-d4decb401997_TrialRequested</span><span class='preview-token set'>0c3bb069-dd54-17a3-7f70-d4decb401997_TrialDenied</span></span></span></span><div class='node-detail-panel' id='details-25' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>SHA_CloneTrial_State_ShadowheartOffered</span> <span class='asset-id'>{61af61fc-a024-470c-ab3b-1ef4aac6443c}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Shadowheart requested to do the trial'>0c3bb069-dd54-17a3-7f70-d4decb401997_TrialRequested</span> <span class='asset-id'>{b08b866f-30b2-3264-858c-c9bdb2460288}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Script</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>8a4a686d-6c47-411f-a0b3-d79ff33e2922</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>SHA_Trials_Knows_LearnedAboutTrials</span> <span class='asset-id'>{a9d9efe0-9031-4b82-8c72-8518c178e485}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='Sets the first time that SH asks to take over a trial altar dialogue'>SHA_Trials_Event_SHAskedtoDoTrial</span> <span class='asset-id'>{8b21fe54-5553-651a-418e-da6d9b465cde}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Shadowheart requested to do the trial'>0c3bb069-dd54-17a3-7f70-d4decb401997_TrialRequested</span> <span class='asset-id'>{b08b866f-30b2-3264-858c-c9bdb2460288}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='Shadowheart got dnied a trial'>0c3bb069-dd54-17a3-7f70-d4decb401997_TrialDenied</span> <span class='asset-id'>{0e67b3a6-e399-49d5-a7f2-dcea6b2f4688}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: fbf5c650-54da-4bc0-ae13-7bce5bd62941</span><span class='meta-item'><strong>Speaker</strong>: 2 (ShadowheartIllusion)</span><span class='meta-item'><strong>Text Handle</strong>: ha162c13ag33b3g4013g8e92g421d3aba0a83</span><span class='meta-item'><strong>Text UUID</strong>: 08237975-665a-4a0e-81f3-c8f095bd5150</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 10</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: fbf5c650-54da-4bc0-ae13-7bce5bd62941</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6.06s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span></div></section></div></div></div><div class='node-branch' id='branch-25' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-13'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-13' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-13' aria-expanded='false' tabindex='0' data-detail-target='details-13' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>13.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Go ahead.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>SHA_CloneTrial_State_ShadowheartOffered</span><span class='preview-token set'>ORI_Shadowheart_State_NightsongPoint_AgreedToTrials</span><span class='preview-token set'>!SHA_DoublesEncounterTrial_Event_RefusedSH</span></span></span></span><div class='node-detail-panel' id='details-13' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>SHA_CloneTrial_State_ShadowheartOffered</span> <span class='asset-id'>{61af61fc-a024-470c-ab3b-1ef4aac6443c}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='Avatar has allowed Shadowheart to do the trials.'>ORI_Shadowheart_State_NightsongPoint_AgreedToTrials</span> <span class='asset-id'>{6a3a641b-1b49-4ea7-8498-bec2dd6028ce}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Sets if you refuse SH the chance to do the doubles encounter trial altar'>SHA_DoublesEncounterTrial_Event_RefusedSH</span> <span class='asset-id'>{b4c3c956-e145-c625-4155-f6f2ac503b47}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 722792af-7b3c-feda-1507-0a459f938dee</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hdb6f13e7g314dg4595gb63cg59ae99ad9ee9</span><span class='meta-item'><strong>Text UUID</strong>: 9ed276ff-b02d-4696-be10-d93fb8979c6c</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Approval Rating</strong>: 81998191-00d2-4f8c-92b2-59e7d26f9b1f</span></div></section></div></div></div><div class='node-branch' id='branch-13' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-7'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-7' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-7' aria-expanded='false' tabindex='0' data-detail-target='details-7' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>7.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'>(no line text)</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Companion SH produces a dagger in her right hand and cuts their left hand with it. Contact with dagger and hand doesn&#x27;t need to be seen - can just show dagger poised, then a close-up of the player wincing as the cut themselves off-camera. NOTE - dagger appears in cinematic only</span></span><span class='preview-inline'><span class='preview-token set'>SHA_Trials_Event_StartTrial</span><span class='preview-token set'>SHA_Trials_Event_ShadowheartUsedAltar</span></span></span></span><div class='node-detail-panel' id='details-7' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 VoiceOfShar</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Start trial from dialog.'>SHA_Trials_Event_StartTrial</span> <span class='asset-id'>{e585331b-2acc-2624-2f7e-07dd8d425f06}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='Shadowheart used the altar herself while in the trials.'>SHA_Trials_Event_ShadowheartUsedAltar</span> <span class='asset-id'>{c7b9e1bd-b623-3d2a-c952-4a210a1740dc}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagCinematic</span><span class='meta-item'><strong>UUID</strong>: 3cce90f0-6acc-2091-884a-47023380efd7</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 4</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 3cce90f0-6acc-2091-884a-47023380efd7</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 11.62s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 7</span><span class='meta-item'><strong>Timeline Location Changes</strong>: Bloor right SH (acd17a48-32d8-4bd1-be52-357711cdf386) @ 34.16s</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: GroupID, GroupIndex</span></div></section></div></div></div><div class='node-branch' id='branch-7' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-3'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-3' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>3.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>(no line text)</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>!0c3bb069-dd54-17a3-7f70-d4decb401997_TrialDenied</span><span class='preview-token set'>ORI_Inclusion_End_ShadowHeart</span></span></span></span><div class='node-detail-panel' id='details-3' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Shadowheart got dnied a trial'>0c3bb069-dd54-17a3-7f70-d4decb401997_TrialDenied</span> <span class='asset-id'>{0e67b3a6-e399-49d5-a7f2-dcea6b2f4688}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='ORI_Inclusion_End_ShadowHeartdescription'>ORI_Inclusion_End_ShadowHeart</span> <span class='asset-id'>{cdc93794-08f8-4563-b721-c00872170dbf}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 110c02c6-1a6c-4496-a185-8d75f25c24c9</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>End Node</strong>: True</span><span class='meta-item'><strong>Group ID</strong>: 3cce90f0-6acc-2091-884a-47023380efd7</span><span class='meta-item'><strong>Group Index</strong>: 1</span><span class='meta-item'><strong>Unmapped Attributes</strong>: transitionmode</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-26'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-26' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-26' aria-expanded='false' tabindex='0' data-detail-target='details-26' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>26.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>No, keep back.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>SHA_DoublesEncounterTrial_Event_RefusedSH</span></span></span></span><div class='node-detail-panel' id='details-26' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Sets if you refuse SH the chance to do the doubles encounter trial altar'>SHA_DoublesEncounterTrial_Event_RefusedSH</span> <span class='asset-id'>{b4c3c956-e145-c625-4155-f6f2ac503b47}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: fd63218e-2f92-9a85-6b3d-5cc20cb3b4ba</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h617ed20eg59f2g4a27g972bgb987a2e1683d</span><span class='meta-item'><strong>Text UUID</strong>: 79d7853a-ab42-4023-8a61-9b529ed8f5ec</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-26' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-24'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-24' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-24' aria-expanded='false' tabindex='0' data-detail-target='details-24' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>24.</span><span class='speaker-label npc'>ShadowheartIllusion</span><span>: </span><span class='dialog'>I thought we had a shared understanding - and a shared respect. Perhaps not.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>Approval_AtLeast_20_For_Sp2</span></span></span></span><div class='node-detail-panel' id='details-24' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 2 ShadowheartIllusion</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Approval_AtLeast_20_For_Sp2description'>Approval_AtLeast_20_For_Sp2</span> <span class='asset-id'>{91cfff92-fb1e-caf5-9d5c-9c5971b96d04}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: f17baf53-dbc4-7361-fb1f-eed1eaf80506</span><span class='meta-item'><strong>Speaker</strong>: 2 (ShadowheartIllusion)</span><span class='meta-item'><strong>Text Handle</strong>: hafcff7dag0014g479cgba1bgbc98591be248</span><span class='meta-item'><strong>Text UUID</strong>: ae643a7f-821a-4ac0-877a-142bbec2d30d</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 9</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: f17baf53-dbc4-7361-fb1f-eed1eaf80506</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 8.8s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Unmapped Attributes</strong>: ApprovalRatingID</span></div></section></div></div></div><div class='node-branch' id='branch-24' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-14'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-14' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-14' aria-expanded='false' tabindex='0' data-detail-target='details-14' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>14.</span><span class='speaker-label npc'>VoiceOfShar</span><span>: </span><span class='dialog'>(no line text)</span></span></span></span><div class='node-detail-panel' id='details-14' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 745195cc-04c2-d710-f916-cb789a78e629</span><span class='meta-item'><strong>Speaker</strong>: 0 (VoiceOfShar)</span><span class='meta-item'><strong>Unmapped Attributes</strong>: transitionmode</span></div></section></div></div></div><div class='node-branch' id='branch-14' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-19'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-19' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-19' aria-expanded='false' tabindex='0' data-detail-target='details-19' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>19.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Go on then - you do it.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>0c3bb069-dd54-17a3-7f70-d4decb401997_TrialDenied</span><span class='preview-token check'>8a4a686d-6c47-411f-a0b3-d79ff33e2922</span><span class='preview-token set'>ORI_Shadowheart_State_NightsongPoint_AgreedToTrials</span><span class='preview-token set'>!0c3bb069-dd54-17a3-7f70-d4decb401997_TrialDenied</span><span class='preview-token set'>!SHA_DoublesEncounterTrial_Event_RefusedSH</span></span></span></span><div class='node-detail-panel' id='details-19' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Shadowheart got dnied a trial'>0c3bb069-dd54-17a3-7f70-d4decb401997_TrialDenied</span> <span class='asset-id'>{0e67b3a6-e399-49d5-a7f2-dcea6b2f4688}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Script</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>8a4a686d-6c47-411f-a0b3-d79ff33e2922</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Avatar has allowed Shadowheart to do the trials.'>ORI_Shadowheart_State_NightsongPoint_AgreedToTrials</span> <span class='asset-id'>{6a3a641b-1b49-4ea7-8498-bec2dd6028ce}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Shadowheart got dnied a trial'>0c3bb069-dd54-17a3-7f70-d4decb401997_TrialDenied</span> <span class='asset-id'>{0e67b3a6-e399-49d5-a7f2-dcea6b2f4688}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Sets if you refuse SH the chance to do the doubles encounter trial altar'>SHA_DoublesEncounterTrial_Event_RefusedSH</span> <span class='asset-id'>{b4c3c956-e145-c625-4155-f6f2ac503b47}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: ca4e861c-08d9-3460-256a-9cc71d6232e1</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hc2c6a093gfc2eg4b9ag8c3fg6e521a04173e</span><span class='meta-item'><strong>Text UUID</strong>: c6a38715-ac03-4299-9ef2-d10d8a95bc87</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Approval Rating</strong>: 81998191-00d2-4f8c-92b2-59e7d26f9b1f</span></div></section></div></div></div><div class='node-branch' id='branch-19' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-10'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-10' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>10.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-13'>Node 13</a></span></span></span></span><div class='node-detail-panel' id='details-10' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 6a4b2c70-24c7-ac96-94bf-79e1555c2fbf</span><span class='meta-item'><strong>Jump Target</strong>: Node 13 (722792af-7b3c-feda-1507-0a459f938dee)</span><span class='meta-item'><strong>Jump Target Point</strong>: 2</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-11'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-11' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-11' aria-expanded='false' tabindex='0' data-detail-target='details-11' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>11.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'><i>Offer your blood in Shar&#x27;s name.</i></span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!SHA_Trials_State_TrialInProgress</span><span class='preview-token check'>!SHA_Trials_Event_TrialPassed</span><span class='preview-token check'>Shadowheart</span><span class='preview-token set'>SHA_CloneTrial_State_ShadowheartOffered</span><span class='preview-token set'>SHA_Trials_Event_StartTrial</span></span></span></span><div class='node-detail-panel' id='details-11' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 VoiceOfShar</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Trial is in progress.'>SHA_Trials_State_TrialInProgress</span> <span class='asset-id'>{87772420-50d7-4937-85ec-95c42fd9fd14}</span> <span class='asset-state'>= False</span></li><li class='signal-item'><span class='asset-name' title='Passed one of the trials'>SHA_Trials_Event_TrialPassed</span> <span class='asset-id'>{a2bf1d24-4f81-4bae-ac3f-68a5760d122c}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Really Shadowheart|'>Shadowheart</span> <span class='asset-id'>{642d2aee-e3df-47e3-9f47-bbcd441bb9e0}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>SHA_CloneTrial_State_ShadowheartOffered</span> <span class='asset-id'>{61af61fc-a024-470c-ab3b-1ef4aac6443c}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 VoiceOfShar</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Start trial from dialog.'>SHA_Trials_Event_StartTrial</span> <span class='asset-id'>{e585331b-2acc-2624-2f7e-07dd8d425f06}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 6c637e4d-cca5-bd22-3e50-cfcdff90353c</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h59d44c64g6b86g43b5gb408gee39e9bcf6cb</span><span class='meta-item'><strong>Text UUID</strong>: 837edbc5-7277-4c27-ab76-6c5d5a87b696</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-11' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-18'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-18' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>18.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'>(no line text)</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Companion SH produces a dagger in her right hand and cuts their left hand with it. Contact with dagger and hand doesn&#x27;t need to be seen - can just show dagger poised, then a close-up of the player wincing as the cut themselves off-camera. NOTE - dagger appears in cinematic only</span></span><span class='preview-inline'><span class='preview-token set'>!0c3bb069-dd54-17a3-7f70-d4decb401997_TrialDenied</span><span class='preview-token set'>ORI_Inclusion_End_ShadowHeart</span></span></span></span><div class='node-detail-panel' id='details-18' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Shadowheart got dnied a trial'>0c3bb069-dd54-17a3-7f70-d4decb401997_TrialDenied</span> <span class='asset-id'>{0e67b3a6-e399-49d5-a7f2-dcea6b2f4688}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='ORI_Inclusion_End_ShadowHeartdescription'>ORI_Inclusion_End_ShadowHeart</span> <span class='asset-id'>{cdc93794-08f8-4563-b721-c00872170dbf}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagCinematic</span><span class='meta-item'><strong>UUID</strong>: c90f62dc-22fe-72a4-cece-9931287a8f5a</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 12</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: c90f62dc-22fe-72a4-cece-9931287a8f5a</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 12.58s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 5</span><span class='meta-item'><strong>Timeline Location Changes</strong>: Blood right player  (16849cea-5048-47af-a2f5-98d4d90414f3) @ 97.42s</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-21'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-21' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-21' aria-expanded='false' tabindex='0' data-detail-target='details-21' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>21.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'><i>Offer your blood in Shar&#x27;s name.</i></span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token rule'>Cleric of Shar</span><span class='preview-token rule'>Paladin of Shar</span><span class='preview-token check'>!SHA_Trials_State_TrialInProgress</span><span class='preview-token check'>!SHA_Trials_Event_TrialPassed</span><span class='preview-token check'>!Shadowheart</span><span class='preview-token set'>SHA_Trials_Event_StartTrial</span></span></span></span><div class='node-detail-panel' id='details-21' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line rule-line'><div class='signal-heading'><span class='signal-label'>ruletag</span><span class='signal-scope'>type rule</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player or NPC is cleric of Shar.'>Cleric of Shar</span> <span class='asset-id'>{0d1d64b8-70d6-4702-8643-be348b0f3fc6}</span></li><li class='signal-item'><span class='asset-name' title='Player or NPC is a paladin of Shar.'>Paladin of Shar</span> <span class='asset-id'>{62f5382a-27c3-441c-bd57-33db4ca00f10}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 VoiceOfShar</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Trial is in progress.'>SHA_Trials_State_TrialInProgress</span> <span class='asset-id'>{87772420-50d7-4937-85ec-95c42fd9fd14}</span> <span class='asset-state'>= False</span></li><li class='signal-item'><span class='asset-name' title='Passed one of the trials'>SHA_Trials_Event_TrialPassed</span> <span class='asset-id'>{a2bf1d24-4f81-4bae-ac3f-68a5760d122c}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Really Shadowheart|'>Shadowheart</span> <span class='asset-id'>{642d2aee-e3df-47e3-9f47-bbcd441bb9e0}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 VoiceOfShar</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Start trial from dialog.'>SHA_Trials_Event_StartTrial</span> <span class='asset-id'>{e585331b-2acc-2624-2f7e-07dd8d425f06}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section'><h3>Text</h3><div class='text-block'><h3>Variant 1</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='Player or NPC is cleric of Shar.'><code>Cleric of Shar</code></li><li title='Player or NPC is a paladin of Shar.'><code>Paladin of Shar</code></li></ul><div class='text-line'><i>Offer your blood in Shar&#x27;s name.</i></div><div class='line-meta'><code>h5f43de6age5ffg4fd1g9ecdg1ff630e47cf0</code> | <code>bb28d7fd-9f72-4c80-a870-2f77e84704ee</code> | stub</div></div><div class='text-block'><h3>Variant 2</h3><div class='text-line'><i>Spill some of your blood in the bowl.</i></div><div class='line-meta'><code>h87a3c892gdcd3g4282g9bb4ge5d504dd1770</code> | <code>57be6ee4-f5e6-47c3-8426-2d7260e425b6</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: d14106ee-369f-4b21-882f-865ba5f3d24b</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h5f43de6age5ffg4fd1g9ecdg1ff630e47cf0</span><span class='meta-item'><strong>Text 1 UUID</strong>: bb28d7fd-9f72-4c80-a870-2f77e84704ee</span><span class='meta-item'><strong>Text 2 Handle</strong>: h87a3c892gdcd3g4282g9bb4ge5d504dd1770</span><span class='meta-item'><strong>Text 2 UUID</strong>: 57be6ee4-f5e6-47c3-8426-2d7260e425b6</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-21' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-4'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-4' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>4.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'>(no line text)</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>The (non-SH) player produces a dagger in their right hand and cuts their left hand with it. Contact with dagger and hand doesn&#x27;t need to be seen - can just show dagger poised, then a close-up of the player wincing as the cut themselves off-camera. NOTE - dagger appears in cinematic only</span></span><span class='preview-inline'><span class='preview-token set'>!0c3bb069-dd54-17a3-7f70-d4decb401997_TrialDenied</span><span class='preview-token set'>ORI_Inclusion_End_ShadowHeart</span></span></span></span><div class='node-detail-panel' id='details-4' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Shadowheart got dnied a trial'>0c3bb069-dd54-17a3-7f70-d4decb401997_TrialDenied</span> <span class='asset-id'>{0e67b3a6-e399-49d5-a7f2-dcea6b2f4688}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='ORI_Inclusion_End_ShadowHeartdescription'>ORI_Inclusion_End_ShadowHeart</span> <span class='asset-id'>{cdc93794-08f8-4563-b721-c00872170dbf}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagCinematic</span><span class='meta-item'><strong>UUID</strong>: 13ceae93-b995-dff0-bff2-be565e3c60ef</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 11</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 13ceae93-b995-dff0-bff2-be565e3c60ef</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 12.77s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 5</span><span class='meta-item'><strong>Timeline Location Changes</strong>: Blood right player  (16849cea-5048-47af-a2f5-98d4d90414f3) @ 84.65s</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-17'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-17' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-17' aria-expanded='false' tabindex='0' data-detail-target='details-17' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>17.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'><i>Look upon the statue.</i></span></span></span></span><div class='node-detail-panel' id='details-17' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: b1d1027b-0087-4cb8-9bc6-fd550f358d14</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h121a6b0aga865g49a5gbae9g4dd0aa758572</span><span class='meta-item'><strong>Text UUID</strong>: f5dab3c6-6a7c-4e85-9a4d-305837011743</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-17' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-6'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-6' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>6.</span><span class='speaker-label npc'>VoiceOfShar</span><span>: </span><span class='dialog'>Vanquish your old life to receive my wisdom.</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Player looks at the Shar statue before them and hear&#x27;s Shar&#x27;s disembodied voice</span></span></span></span><div class='node-detail-panel' id='details-6' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 3061f801-d058-41a7-9524-a6011441568b</span><span class='meta-item'><strong>Speaker</strong>: 0 (VoiceOfShar)</span><span class='meta-item'><strong>Text Handle</strong>: hbe67398age374g4db6gb031g4ea6ce6e7d08</span><span class='meta-item'><strong>Text UUID</strong>: 2f0ef973-8abf-459a-abcb-dabb70d4895c</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 3</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 3061f801-d058-41a7-9524-a6011441568b</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5.5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-23'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-23' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>23.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'><i>Leave.</i></span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>!0c3bb069-dd54-17a3-7f70-d4decb401997_TrialDenied</span><span class='preview-token set'>ORI_Inclusion_End_ShadowHeart</span></span></span></span><div class='node-detail-panel' id='details-23' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Shadowheart got dnied a trial'>0c3bb069-dd54-17a3-7f70-d4decb401997_TrialDenied</span> <span class='asset-id'>{0e67b3a6-e399-49d5-a7f2-dcea6b2f4688}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='ORI_Inclusion_End_ShadowHeartdescription'>ORI_Inclusion_End_ShadowHeart</span> <span class='asset-id'>{cdc93794-08f8-4563-b721-c00872170dbf}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: d96c78f9-2603-4857-a176-3aaadfac1173</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h5d6ff940ga414g4bd0g8f72g7d84017a4be4</span><span class='meta-item'><strong>Text UUID</strong>: 5d263930-db8c-4703-a901-920e8142bd34</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-15'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-15' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-15' aria-expanded='false' tabindex='0' data-detail-target='details-15' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>15.</span><span class='speaker-label npc'>ShadowheartIllusion</span><span>: </span><span class='dialog'>Try it for yourself then - perhaps I&#x27;ll learn from your death.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!Approval_AtLeast_20_For_Sp2</span></span></span></span><div class='node-detail-panel' id='details-15' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 2 ShadowheartIllusion</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Approval_AtLeast_20_For_Sp2description'>Approval_AtLeast_20_For_Sp2</span> <span class='asset-id'>{91cfff92-fb1e-caf5-9d5c-9c5971b96d04}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 9494b617-32d7-2e84-a169-06cf941f9abc</span><span class='meta-item'><strong>Speaker</strong>: 2 (ShadowheartIllusion)</span><span class='meta-item'><strong>Text Handle</strong>: h6a90f82eg089eg4d5eg86cag38bf16e18313</span><span class='meta-item'><strong>Text UUID</strong>: 8a7867c6-61d4-4e61-be60-15fe4b68b86d</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 7</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 9494b617-32d7-2e84-a169-06cf941f9abc</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6.06s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Unmapped Attributes</strong>: ApprovalRatingID</span></div></section></div></div></div><div class='node-branch' id='branch-15' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-14'>Node 14</a> <span class='repeat-speaker speaker-label npc'>(VoiceOfShar)</span> <span class='dialog'>(no line text)</span></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-2'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-2' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>2.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-14'>Node 14</a></span></span></span></span><div class='node-detail-panel' id='details-2' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 0fb92124-7202-cf36-930f-575b17145875</span><span class='meta-item'><strong>Jump Target</strong>: Node 14 (745195cc-04c2-d710-f916-cb789a78e629)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-27'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-27' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-27' aria-expanded='true' tabindex='0' data-detail-target='details-27' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>27.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*The bowl contains an ancient, rust-coloured bloodstain. It forms a neat disc, as if spilled calmly and willingly.*</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>The player looks at a large bowl being held by a Shar statue. Close-up of a dried blood stain in the base of the bowl.</span></span><span class='preview-inline'><span class='preview-token check'>!SHA_Trials_State_StatueUsed</span><span class='preview-token set'>SHA_Trials_State_StatueUsed</span><span class='preview-token set'>SHA_Trials_State_FirstStatueUsed</span></span></span></span><div class='node-detail-panel' id='details-27' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='First time using one of the shar statues.'>SHA_Trials_State_StatueUsed</span> <span class='asset-id'>{75e56e06-650c-4542-8670-c8f40f501f93}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='First time using one of the shar statues.'>SHA_Trials_State_StatueUsed</span> <span class='asset-id'>{75e56e06-650c-4542-8670-c8f40f501f93}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 VoiceOfShar</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Specific statue that got used the first time.'>SHA_Trials_State_FirstStatueUsed</span> <span class='asset-id'>{e3b1e9f2-e4e8-4a1c-868b-77c08f7b7e19}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: fd7b1e2c-fef8-c819-f212-1e2b3d48766a</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: he0104ddcg403eg4d68g8fefgbbdaa7dd782f</span><span class='meta-item'><strong>Text UUID</strong>: 1dde1c09-c605-449f-8696-26a55daa7b32</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 1</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: fd7b1e2c-fef8-c819-f212-1e2b3d48766a</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 9.1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-27'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-5'>Node 5</a> <span class='repeat-speaker speaker-label npc'>(Narrator)</span> <span class='dialog'>*You recognise this as a trial, where initiates would prove themselves to Lady Shar. This one would challenge their combat prowess.*</span></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-20'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-20' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-20' aria-expanded='true' tabindex='0' data-detail-target='details-20' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>20.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*Another bowl, bearing the stains of an ancient blood offering.*</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>The player looks at a large bowl being held by a Shar statue. Close-up of a dried blood stain in the base of the bowl.</span></span><span class='preview-inline'><span class='preview-token check'>SHA_Trials_State_StatueUsed</span></span></span></span><div class='node-detail-panel' id='details-20' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='First time using one of the shar statues.'>SHA_Trials_State_StatueUsed</span> <span class='asset-id'>{75e56e06-650c-4542-8670-c8f40f501f93}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: cd373b87-78ae-41c8-0f19-70754f8c9fd6</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: h4442a323gd1bcg4ae3g9cdeg3f259caa13fb</span><span class='meta-item'><strong>Text UUID</strong>: db685a47-9264-4a48-bffa-3b1a23c09ff4</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 0</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: cd373b87-78ae-41c8-0f19-70754f8c9fd6</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 9s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-20'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-22'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-22' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-22' aria-expanded='false' tabindex='0' data-detail-target='details-22' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>22.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*Another of Lady Shar&#x27;s trials, that her initiates must face. This one would challenge their combat prowess.*</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Shadowheart-only narration. Visuals should favour her here.</span></span><span class='preview-inline'><span class='preview-token check'>Shadowheart</span><span class='preview-token set'>SHA_Trials_Knows_LearnedAboutTrials</span></span></span></span><div class='node-detail-panel' id='details-22' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Really Shadowheart|'>Shadowheart</span> <span class='asset-id'>{642d2aee-e3df-47e3-9f47-bbcd441bb9e0}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>SHA_Trials_Knows_LearnedAboutTrials</span> <span class='asset-id'>{a9d9efe0-9031-4b82-8c72-8518c178e485}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: d35bdeb5-89da-b826-2ec9-1eb7a6280006</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: h772f2b9ag1a33g4826gb564gf15f2124e681</span><span class='meta-item'><strong>Text UUID</strong>: b98ee6fb-1b40-439e-a401-f6ec7b194f13</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 8</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: d35bdeb5-89da-b826-2ec9-1eb7a6280006</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 7.3s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Optional</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-22' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-16'>Node 16</a> <span class='repeat-speaker speaker-label player'>(Player)</span> <span class='dialog'>(no line text)</span></div></li></ul></div></div></li></ul></div></div></li></ul>
+        
+      </div>
+    </section>
+  </div>
+  <div class="tree-scrollbar-proxy" hidden>
+    <div class="tree-scrollbar-proxy-inner"></div>
+  </div>
+  <script>
+    function getNodeDetailPanel(shell) {
+      if (!shell) {
+        return null;
+      }
+      const content = shell.querySelector(":scope > .node-row > .node-content");
+      if (!content) {
+        return null;
+      }
+      return Array.from(content.children).find((child) => child.classList && child.classList.contains("node-detail-panel")) || null;
+    }
+    function getNodeDetailToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-detail-target]");
+    }
+    function getNodeBranchToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-branch-target]");
+    }
+    function getNodeBranchMarker(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .tree-toggle-marker[data-branch-target]");
+    }
+    const jumpHighlightTimers = new WeakMap();
+    const nodeSummaryClickTimers = new WeakMap();
+    const NODE_DETAIL_DOUBLE_CLICK_MS = 160;
+    const treeShell = document.querySelector(".tree-shell");
+    const treeShellInner = treeShell ? treeShell.querySelector(".tree-shell-inner") : null;
+    const treeScrollbarProxy = document.querySelector(".tree-scrollbar-proxy");
+    const treeScrollbarProxyInner = treeScrollbarProxy
+      ? treeScrollbarProxy.querySelector(".tree-scrollbar-proxy-inner")
+      : null;
+    let syncingTreeScroll = false;
+    let syncingProxyScroll = false;
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+    function setToggleButtonState(button, active) {
+      if (!button) {
+        return;
+      }
+      button.classList.toggle("is-active", active);
+      const hideLabel = button.dataset.hideLabel;
+      const showLabel = button.dataset.showLabel;
+      if (hideLabel && showLabel) {
+        button.textContent = active ? showLabel : hideLabel;
+      }
+    }
+    function syncAllDetailsToggle() {
+      const button = document.querySelector("button[data-toggle-details='all']");
+      if (!button) {
+        return;
+      }
+      const panels = Array.from(document.querySelectorAll(".node-detail-panel"));
+      const allOpen = panels.length > 0 && panels.every((panel) => !panel.hasAttribute("hidden"));
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function syncAllBranchesToggle() {
+      const button = document.querySelector("button[data-toggle-branches='all']");
+      if (!button) {
+        return;
+      }
+      const branchMarkers = Array.from(document.querySelectorAll(".tree-toggle-marker[data-branch-target]"));
+      const allOpen = branchMarkers.length > 0 && branchMarkers.every((marker) => marker.dataset.branchExpanded === "true");
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function updateTreeScrollbarProxy() {
+      if (!treeShell || !treeShellInner || !treeScrollbarProxy || !treeScrollbarProxyInner) {
+        return;
+      }
+      const contentWidth = treeShellInner.scrollWidth;
+      const viewportWidth = treeShell.clientWidth;
+      const needsProxy = contentWidth > viewportWidth + 1;
+      if (!needsProxy) {
+        treeScrollbarProxy.hidden = true;
+        return;
+      }
+      const rect = treeShell.getBoundingClientRect();
+      treeScrollbarProxy.hidden = false;
+      treeScrollbarProxy.style.left = `${Math.max(0, rect.left)}px`;
+      treeScrollbarProxy.style.width = `${Math.max(0, rect.width)}px`;
+      treeScrollbarProxyInner.style.width = `${contentWidth}px`;
+      if (!syncingTreeScroll && Math.abs(treeScrollbarProxy.scrollLeft - treeShell.scrollLeft) > 1) {
+        syncingProxyScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingProxyScroll = false;
+      }
+    }
+    function resetTreeScrollToStart() {
+      document.querySelectorAll(".tree-shell").forEach((shell) => {
+        shell.scrollLeft = 0;
+      });
+      if (treeScrollbarProxy) {
+        treeScrollbarProxy.scrollLeft = 0;
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setBranchOpen(control, openState, syncState = true) {
+      if (!control) {
+        return;
+      }
+      const targetId = control.dataset.branchTarget;
+      const target = targetId ? document.getElementById(targetId) : null;
+      if (!target) {
+        return;
+      }
+      const shell = control.closest(".node-shell");
+      const marker = shell ? getNodeBranchMarker(shell) : null;
+      const summary = shell ? getNodeBranchToggle(shell) : null;
+      if (openState) {
+        target.removeAttribute("hidden");
+      } else {
+        target.setAttribute("hidden", "until-found");
+      }
+      if (marker) {
+        marker.dataset.branchExpanded = openState ? "true" : "false";
+        marker.textContent = openState ? "-" : "+";
+      }
+      if (summary) {
+        summary.setAttribute("aria-expanded", openState ? "true" : "false");
+      }
+      if (syncState) {
+        syncAllBranchesToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setDetailOpen(shell, openState, syncState = true) {
+      const panel = getNodeDetailPanel(shell);
+      const toggle = getNodeDetailToggle(shell);
+      if (!panel) {
+        return;
+      }
+      if (openState) {
+        panel.removeAttribute("hidden");
+      } else {
+        panel.setAttribute("hidden", "until-found");
+      }
+      if (toggle) {
+        toggle.dataset.detailExpanded = openState ? "true" : "false";
+      }
+      if (syncState) {
+        syncAllDetailsToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setAllBranches(openState) {
+      document.querySelectorAll(".tree-toggle-marker[data-branch-target]").forEach((marker) => { setBranchOpen(marker, openState, false); });
+      syncAllBranchesToggle();
+    }
+    function setAllNodeDetails(openState) {
+      document.querySelectorAll(".node-shell").forEach((shell) => {
+        if (getNodeDetailPanel(shell)) {
+          setDetailOpen(shell, openState, false);
+        }
+      });
+      syncAllDetailsToggle();
+    }
+    function openParents(target) {
+      let current = target;
+      while (current) {
+        if (current.classList && current.classList.contains("node-branch")) {
+          const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${current.id}"]`);
+          setBranchOpen(marker, true);
+        }
+        current = current.parentElement;
+      }
+    }
+    function highlightJumpTarget(target) {
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      if (!shell) {
+        return;
+      }
+      const existingTimer = jumpHighlightTimers.get(shell);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+      shell.classList.add("jump-highlight");
+      const timeoutId = window.setTimeout(() => {
+        shell.classList.remove("jump-highlight");
+        jumpHighlightTimers.delete(shell);
+      }, 5000);
+      jumpHighlightTimers.set(shell, timeoutId);
+    }
+    function revealAndFocusNodeTarget(target, href = "") {
+      if (!target) {
+        return;
+      }
+      openParents(target);
+      if (href) {
+        history.replaceState(null, "", href);
+      }
+      requestAnimationFrame(() => {
+        target.scrollIntoView({ block: "center" });
+        highlightJumpTarget(target);
+        updateTreeScrollbarProxy();
+      });
+    }
+    if (treeShell && treeScrollbarProxy) {
+      treeShell.addEventListener("scroll", () => {
+        if (syncingProxyScroll) {
+          return;
+        }
+        syncingTreeScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingTreeScroll = false;
+      });
+      treeScrollbarProxy.addEventListener("scroll", () => {
+        if (syncingTreeScroll) {
+          return;
+        }
+        syncingProxyScroll = true;
+        treeShell.scrollLeft = treeScrollbarProxy.scrollLeft;
+        syncingProxyScroll = false;
+      });
+    }
+    document.addEventListener("click", (event) => {
+      const allBranchesButton = event.target.closest("button[data-toggle-branches='all']");
+      if (allBranchesButton) {
+        const isOpen = allBranchesButton.dataset.active === "true";
+        setAllBranches(!isOpen);
+        return;
+      }
+      const allDetailsButton = event.target.closest("button[data-toggle-details='all']");
+      if (allDetailsButton) {
+        const isOpen = allDetailsButton.dataset.active === "true";
+        setAllNodeDetails(!isOpen);
+        return;
+      }
+      const button = event.target.closest("button[data-toggle-class]");
+      if (button) {
+        const active = document.body.classList.toggle(button.dataset.toggleClass);
+        setToggleButtonState(button, active);
+        return;
+      }
+      const link = event.target.closest("a[href^='#node-']");
+      if (link) {
+        event.preventDefault();
+        const target = document.querySelector(link.getAttribute("href"));
+        if (target) {
+          revealAndFocusNodeTarget(target, link.getAttribute("href"));
+        }
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (summary) {
+        const branchTarget = summary.dataset.branchTarget;
+        const shell = summary.closest(".node-shell");
+        if (!shell) {
+          return;
+        }
+        if (!branchTarget) {
+          if (summary.dataset.detailTarget) {
+            const isOpen = summary.dataset.detailExpanded === "true";
+            setDetailOpen(shell, !isOpen);
+          }
+          return;
+        }
+        const existingTimer = nodeSummaryClickTimers.get(summary);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+          nodeSummaryClickTimers.delete(summary);
+          event.preventDefault();
+          const isOpen = summary.dataset.detailExpanded === "true";
+          setDetailOpen(shell, !isOpen);
+          return;
+        }
+        const timerId = window.setTimeout(() => {
+          nodeSummaryClickTimers.delete(summary);
+          const isOpen = summary.getAttribute("aria-expanded") === "true";
+          setBranchOpen(summary, !isOpen);
+          if (isOpen) {
+            const panel = getNodeDetailPanel(shell);
+            if (panel && !panel.hasAttribute("hidden")) {
+              setDetailOpen(shell, false);
+            }
+          }
+        }, NODE_DETAIL_DOUBLE_CLICK_MS);
+        nodeSummaryClickTimers.set(summary, timerId);
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (!summary) {
+        return;
+      }
+      event.preventDefault();
+      const shell = summary.closest(".node-shell");
+      if (!shell) {
+        return;
+      }
+      if (summary.dataset.branchTarget) {
+        const isOpen = summary.getAttribute("aria-expanded") === "true";
+        setBranchOpen(summary, !isOpen);
+        if (isOpen) {
+          const panel = getNodeDetailPanel(shell);
+          if (panel && !panel.hasAttribute("hidden")) {
+            setDetailOpen(shell, false);
+          }
+        }
+        return;
+      }
+      if (summary.dataset.detailTarget) {
+        const isOpen = summary.dataset.detailExpanded === "true";
+        setDetailOpen(shell, !isOpen);
+      }
+    });
+    document.addEventListener("beforematch", (event) => {
+      const branch = event.target.closest(".node-branch");
+      if (branch && branch.id) {
+        const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${branch.id}"]`);
+        setBranchOpen(marker, true);
+      }
+      const panel = event.target.closest(".node-detail-panel");
+      if (panel) {
+        const shell = panel.closest(".node-shell");
+        if (shell) {
+          openParents(shell);
+          setDetailOpen(shell, true);
+        }
+      }
+    });
+    document.querySelectorAll("button[data-toggle-class]").forEach((button) => {
+      const active = document.body.classList.contains(button.dataset.toggleClass);
+      setToggleButtonState(button, active);
+    });
+    if (window.ResizeObserver && treeShell) {
+      const observer = new ResizeObserver(() => {
+        updateTreeScrollbarProxy();
+      });
+      observer.observe(treeShell);
+      if (treeShellInner) {
+        observer.observe(treeShellInner);
+      }
+    }
+    window.addEventListener("resize", updateTreeScrollbarProxy);
+    window.addEventListener("scroll", updateTreeScrollbarProxy, { passive: true });
+    window.addEventListener("pageshow", () => {
+      if (window.location.hash) {
+        updateTreeScrollbarProxy();
+        return;
+      }
+      resetTreeScrollToStart();
+      window.requestAnimationFrame(() => {
+        resetTreeScrollToStart();
+      });
+      window.setTimeout(() => {
+        resetTreeScrollToStart();
+      }, 0);
+    });
+    syncAllBranchesToggle();
+    document.querySelectorAll("button[data-toggle-details='all']").forEach((button) => {
+      const active = button.dataset.active === "true";
+      setToggleButtonState(button, active);
+    });
+    updateTreeScrollbarProxy();
+    if (window.location.hash) {
+      const target = document.querySelector(window.location.hash);
+      if (target) {
+        revealAndFocusNodeTarget(target, window.location.hash);
+      }
+    }
+  </script>
+</body>
+</html>

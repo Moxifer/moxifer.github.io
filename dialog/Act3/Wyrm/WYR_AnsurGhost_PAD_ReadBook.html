@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WYR_AnsurGhost_PAD_ReadBook</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #182330;
+      --muted: #586477;
+      --line: #c7d2df;
+      --npc: #b91c1c;
+      --player: #15803d;
+      --system: #2563eb;
+      --rule: #2f6f44;
+      --tag: #0f766e;
+      --check: #7c3aed;
+      --set: #ea580c;
+      --roll: #6d28d9;
+      --approval: #0f766e;
+      --jump: #155eef;
+      --context: #475467;
+      --surface: #f3f6fa;
+      --surface-active: #e6edf5;
+      --surface-hover: #edf3f9;
+      --detail-surface: #e3ebf4;
+      --detail-border: #b4c2d4;
+      --focus: #90a4bc;
+      --highlight: #d9e5f5;
+      --scrollbar-proxy-bg: rgba(255, 255, 255, 0.94);
+      --mono: Consolas, "SFMono-Regular", Menlo, monospace;
+      --sans: Georgia, "Palatino Linotype", serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #fff;
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.35;
+      overflow-x: hidden;
+    }
+    a { color: var(--jump); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: none;
+      padding: 0;
+      border-radius: 0;
+    }
+    .page {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0.55rem 0.9rem 1.8rem;
+      overflow-x: hidden;
+    }
+    .hero {
+      margin-bottom: 0.55rem;
+    }
+    .hero h1 {
+      margin: 0 0 0.2rem;
+      font-size: 1.4rem;
+      line-height: 1.15;
+    }
+    .source {
+      color: var(--muted);
+      font-size: 0.9rem;
+      word-break: break-all;
+      margin-bottom: 0.2rem;
+    }
+    .source-label {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.3rem;
+    }
+    .summary-line {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 0.35rem;
+    }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.45rem;
+      margin-bottom: 0.45rem;
+      padding: 0.35rem 0;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      overflow: visible;
+    }
+    .toolbar-scroll {
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: calc(100% - 7rem);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+    }
+    .controls {
+      display: inline-flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0.45rem;
+      white-space: nowrap;
+      font-size: 0.9rem;
+      min-width: max-content;
+      overflow: visible;
+    }
+    .controls button,
+    .controls summary,
+    .speaker-map > summary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 1.85rem;
+      padding: 0.12rem 0.5rem;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: var(--surface);
+      color: var(--jump);
+      font: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      list-style: none;
+      user-select: none;
+    }
+    .controls button.is-active,
+    .controls details[open] > summary,
+    .speaker-map[open] > summary {
+      background: var(--surface-active);
+      border-color: var(--focus);
+    }
+    .controls button:hover,
+    .controls summary:hover,
+    .speaker-map > summary:hover {
+      background: var(--surface-hover);
+      text-decoration: none;
+    }
+    .controls summary:focus,
+    .controls button:focus,
+    .speaker-map > summary:focus {
+      outline: 1px solid var(--focus);
+      outline-offset: 1px;
+    }
+    .speaker-map {
+      flex: 0 0 auto;
+      position: relative;
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .speaker-map summary,
+    .meta-block summary {
+      cursor: pointer;
+      color: var(--jump);
+      list-style: none;
+    }
+    .speaker-map summary::-webkit-details-marker,
+    .meta-block summary::-webkit-details-marker {
+      display: none;
+    }
+    .speaker-map[open] ul {
+      display: block;
+    }
+    .speaker-map ul {
+      display: none;
+      list-style: none;
+      margin: 0.3rem 0 0;
+      padding: 0.45rem 0.6rem;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 0.2rem);
+      min-width: 20rem;
+      max-width: min(34rem, calc(100vw - 2rem));
+      max-height: 24rem;
+      overflow: auto;
+      background: #fbfcfe;
+      border: 1px solid var(--line);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+      z-index: 30;
+    }
+    .speaker-map li + li {
+      margin-top: 0.1rem;
+    }
+    .speaker-index {
+      display: inline-block;
+      min-width: 2rem;
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 600;
+    }
+    .speaker-name {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.25rem;
+    }
+    .inline-meta, .line-meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .tree-shell {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: visible;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-shell-inner {
+      width: max-content;
+      min-width: 100%;
+    }
+    .tree-scrollbar-proxy {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 1.1rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      background: var(--scrollbar-proxy-bg);
+      border-top: 1px solid var(--line);
+      z-index: 40;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-scrollbar-proxy[hidden] {
+      display: none;
+    }
+    .tree-scrollbar-proxy-inner {
+      height: 1px;
+    }
+    .orphan-section {
+      width: auto;
+      min-width: 0;
+      margin-top: 1rem;
+      padding-top: 0.55rem;
+      border-top: 1px dotted var(--line);
+    }
+    .orphan-section h2 {
+      margin: 0 0 0.15rem;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+    .orphan-note {
+      margin: 0 0 0.35rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .root-list, .child-list {
+      list-style: none;
+      margin: 0;
+      padding-left: 0;
+      width: auto;
+      min-width: 0;
+    }
+    .child-list {
+      margin-left: 1.1rem;
+      padding-left: 0.85rem;
+      border-left: 1px dotted var(--line);
+    }
+    .node-item {
+      margin: 0.18rem 0;
+    }
+    details.node {
+      margin: 0;
+    }
+    details.node:target > summary .node-line {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    .node-leaf:target {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 0;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    summary::-webkit-details-marker {
+      display: none;
+    }
+    details.node > summary::before {
+      content: "▸";
+      display: inline-block;
+      width: 0.9rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      vertical-align: top;
+      padding-top: 0.12rem;
+    }
+    details.node[open] > summary::before {
+      content: "▾";
+    }
+    details.node.no-children > summary::before {
+      content: "•";
+    }
+    .node-line {
+      display: inline;
+      padding: 0.06rem 0.18rem;
+    }
+    .node-leaf {
+      display: inline-block;
+      padding: 0.06rem 0.18rem;
+      border-radius: 6px;
+    }
+    details.node > summary::before {
+      content: "+";
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    details.node[open] > summary::before {
+      content: "-";
+    }
+    details.node.no-children > summary::before {
+      content: ".";
+    }
+    .node-number {
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 700;
+    }
+    .speaker-label {
+      font-weight: 700;
+      margin-left: 0.2rem;
+    }
+    .speaker-label.npc { color: var(--npc); }
+    .speaker-label.player { color: var(--player); }
+    .speaker-label.system { color: var(--system); }
+    .dialog {
+      color: var(--ink);
+      margin-left: 0.2rem;
+    }
+    .node-kind {
+      color: var(--system);
+      margin-left: 0.2rem;
+    }
+    .ruletag {
+      color: var(--rule);
+      margin-left: 0.35rem;
+    }
+    .tags {
+      color: var(--tag);
+      margin-left: 0.35rem;
+    }
+    .checkflag {
+      color: var(--check);
+      margin-left: 0.35rem;
+    }
+    .setflag {
+      color: var(--set);
+      margin-left: 0.35rem;
+    }
+    .rolls {
+      color: var(--roll);
+      margin-left: 0.35rem;
+    }
+    .approval {
+      color: var(--approval);
+      margin-left: 0.35rem;
+    }
+    .nodelink {
+      color: var(--jump);
+      margin-left: 0.35rem;
+    }
+    .context {
+      color: var(--context);
+      margin-left: 0.3rem;
+      cursor: help;
+    }
+    .end {
+      color: #8b1e1e;
+      margin-left: 0.35rem;
+    }
+    .node-shell:target,
+    .node-leaf:target {
+      background: none;
+      border-radius: 0;
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-shell {
+      display: block;
+    }
+    .node-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.32rem;
+      width: max-content;
+      min-width: 100%;
+      transition: background-color 0.18s ease;
+    }
+    .node-shell.jump-highlight > .node-row {
+      background: var(--highlight);
+    }
+    .node-content {
+      min-width: 0;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker,
+    .tree-spacer {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 0.95rem;
+      height: 0.95rem;
+      margin-top: 0.08rem;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker {
+      border: none;
+      background: none;
+      color: var(--muted);
+      padding: 0;
+      font: inherit;
+      font-weight: 800;
+      font-size: 1.18rem;
+      line-height: 1;
+      user-select: none;
+    }
+    .tree-spacer {
+      border: none;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .node-branch[hidden]:not([hidden='until-found']) {
+      display: none;
+    }
+    .repeat {
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+    .node-summary {
+      display: block;
+      cursor: default;
+    }
+    .node-summary.is-interactive {
+      cursor: pointer;
+    }
+    .node-summary.is-interactive:focus-visible {
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-main-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.35rem;
+    }
+    .node-main {
+      display: block;
+      flex: 1 1 auto;
+      min-width: 0;
+      white-space: normal;
+      line-height: 1.28;
+      overflow-wrap: anywhere;
+    }
+    .node-leaf {
+      display: block;
+      border-radius: 0;
+    }
+    .node-number {
+      font-weight: 600;
+    }
+    .speaker-label {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind,
+    .nodelink {
+      overflow-wrap: anywhere;
+    }
+    .nodelink,
+    .end {
+      margin-left: 0;
+    }
+    .node-previews {
+      display: block;
+      margin: 0.12rem 0 0 1.1rem;
+      font-size: 0.88rem;
+      white-space: normal;
+      line-height: 1.28;
+    }
+    .preview-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.12rem 0.45rem;
+    }
+    .preview-token {
+      display: inline;
+      overflow-wrap: anywhere;
+    }
+    .preview-token.tag {
+      color: var(--tag);
+    }
+    .preview-token.rule {
+      color: var(--rule);
+    }
+    .preview-token.check {
+      color: var(--check);
+    }
+    .preview-token.set {
+      color: var(--set);
+    }
+    .preview-note {
+      display: block;
+      margin-top: 0.08rem;
+      color: var(--context);
+      overflow-wrap: anywhere;
+      font-weight: 700;
+    }
+    .preview-note-label {
+      color: var(--context);
+      font-weight: 700;
+    }
+    .preview-note-value {
+      color: #4f463f;
+      font-weight: 600;
+    }
+    .signal-line {
+      display: block;
+      margin: 0.14rem 0 0.2rem;
+    }
+    .signal-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem;
+    }
+    .signal-label {
+      font-weight: 700;
+    }
+    .signal-scope {
+      color: var(--muted);
+    }
+    .tag-line, .tag-line .signal-label { color: var(--tag); }
+    .rule-line, .rule-line .signal-label { color: var(--rule); }
+    .checkflag-line, .checkflag-line .signal-label { color: var(--check); }
+    .setflag-line, .setflag-line .signal-label { color: var(--set); }
+    .roll-line, .roll-line .signal-label { color: var(--roll); }
+    .approval-line, .approval-line .signal-label { color: var(--approval); }
+    .context-line, .context-line .signal-label { color: var(--context); }
+    .context-line .signal-heading {
+      font-weight: 700;
+    }
+    .context-line .signal-item {
+      color: #4f463f;
+    }
+    .signal-values {
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .signal-list {
+      list-style: none;
+      margin: 0.06rem 0 0 0.9rem;
+      padding: 0;
+    }
+    .signal-item {
+      margin: 0.1rem 0;
+      overflow-wrap: anywhere;
+    }
+    .signal-item::before {
+      content: "- ";
+      color: var(--muted);
+    }
+    .signal-body {
+      display: block;
+      margin: 0.06rem 0 0 0.9rem;
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .asset-name {
+      color: var(--ink);
+    }
+    .asset-id {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.92em;
+      overflow-wrap: anywhere;
+    }
+    .asset-state {
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .node-detail-panel {
+      margin: 0.08rem 0 0.18rem 1.1rem;
+      padding: 0.35rem 0.5rem;
+      border: 1px solid var(--detail-border);
+      background: var(--detail-surface);
+      border-radius: 0;
+      display: block;
+      gap: 0;
+      max-width: none;
+    }
+    .node-detail-panel[hidden]:not([hidden='until-found']) {
+      display: none;
+    }
+    .node-detail-panel[hidden='until-found'] {
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: none;
+    }
+    .section {
+      margin: 0.16rem 0;
+      padding: 0;
+      background: none;
+      border: none;
+    }
+    .section h3 {
+      margin: 0 0 0.22rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .node-detail-panel > .section + .section {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-block + .text-block {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-line {
+      font-size: 0.96rem;
+      margin-bottom: 0.15rem;
+    }
+    .text-line {
+      margin: 0.08rem 0;
+      font-size: inherit;
+      overflow-wrap: anywhere;
+    }
+    .badge-row, .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .badge, .meta-item {
+      display: block;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+    }
+    .meta-items {
+      margin: 0.12rem 0 0 0.85rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+      white-space: normal;
+    }
+    .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .meta-item {
+      display: block;
+      margin: 0.06rem 0;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+      overflow-wrap: anywhere;
+    }
+    .meta-item strong {
+      color: var(--ink);
+    }
+    .badge.flags { color: var(--check); }
+    .badge.tags { color: var(--tag); }
+    .flag-groups {
+      display: block;
+      gap: 0;
+    }
+    .flag-group-type {
+      display: inline-block;
+      color: var(--muted);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.15rem;
+    }
+    .rule-tree, .rule-tree ul {
+      margin: 0;
+      padding-left: 1rem;
+    }
+    .body-hide-flags .section-flags,
+    .body-hide-rules .section-rules,
+    .body-hide-details .section-metadata,
+    .body-hide-context .preview-note,
+    .body-hide-context .context-line,
+    .body-hide-context .node-line .context {
+      display: none;
+    }
+    .body-hide-flags .node-line .checkflag,
+    .body-hide-flags .node-line .setflag,
+    .body-hide-rules .node-line .ruletag {
+      display: none;
+    }
+    .body-hide-flags .checkflag-line,
+    .body-hide-flags .setflag-line {
+      display: none;
+    }
+    .body-hide-flags .preview-token.check,
+    .body-hide-flags .preview-token.set {
+      display: none;
+    }
+    .body-hide-context .context-line {
+      display: none;
+    }
+    .body-hide-numbers .node-number {
+      display: none;
+    }
+    .missing, .cycle {
+      padding: 0.2rem 0.35rem;
+      color: #8b1e1e;
+      background: rgba(139, 30, 30, 0.08);
+      border-radius: 6px;
+      display: inline-block;
+    }
+    .missing, .cycle {
+      padding: 0;
+      background: none;
+      border-radius: 0;
+      display: block;
+      overflow-wrap: anywhere;
+    }
+    @media (max-width: 920px) {
+      .page {
+        padding: 0.45rem 0.5rem 0.9rem;
+      }
+      .tree-shell {
+        padding: 0;
+      }
+    }
+  </style>
+</head>
+  <body class="body-hide-numbers">
+  <div class="page">
+    <header class="hero">
+      <h1>WYR_AnsurGhost_PAD_ReadBook</h1>
+      <div class="source"><span class="source-label">Dialog Resource UUID:</span><strong><code>d26dade5-4c33-3b65-4c41-1a6ee05f2b58</code></strong></div><div class="source"><span class="source-label">Timeline Resource UUID:</span><strong><code>20c8217c-bc23-deba-2d8a-79b1809636d5</code></strong></div><div class="source"><span class="source-label">StartDialog UUID:</span><strong><code>747f05dd-f90a-f11c-bac8-df6253651e1d</code></strong></div><div class="source"><span class="source-label">Dialog:</span>Mods\GustavDev\Story\DialogsBinary\Act3\Wyrm\WYR_AnsurGhost_PAD_ReadBook.lsf.lsx</div><div class="source"><span class="source-label">Timeline:</span>Public\GustavDev\Timeline\Generated\WYR_AnsurGhost_PAD_ReadBook.lsf.lsx</div><div class="source"><span class="source-label">Scene:</span>Public\GustavDev\Timeline\Generated\WYR_AnsurGhost_PAD_ReadBook_Scene.lsf.lsx</div>
+      <div class="summary-line">
+        category=Voice bark | nodes=2 | roots=2
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-scroll">
+          <div class="controls">
+            <button type="button" data-toggle-branches="all" data-hide-label="Expand all" data-show-label="Collapse all" data-active="false">Expand all</button>
+            <button type="button" data-toggle-class="body-hide-flags" data-hide-label="Hide flags" data-show-label="Show flags">Hide flags</button>
+            <button type="button" data-toggle-details="all" data-hide-label="Show details" data-show-label="Hide details" data-active="false">Show details</button>
+            <button type="button" data-toggle-class="body-hide-context" data-hide-label="Hide notes" data-show-label="Show notes">Hide notes</button>
+            <button type="button" data-toggle-class="body-hide-numbers" data-hide-label="Hide node numbers" data-show-label="Show node numbers">Hide node numbers</button>
+          </div>
+        </div>
+        <details class="speaker-map">
+          <summary>Speakers</summary>
+          <ul><li><span class='speaker-index'>0</span><span class='speaker-name'>Player</span><span class='inline-meta'>GROUP_Players | list=e0d1ff71-04a8-4340-ae64-9684d846eb83 | mapping=ffb9d098-151d-4a82-a658-720558e65490</span></li></ul>
+        </details>
+      </div>
+    </header>
+    <section class="tree-shell">
+      <div class="tree-shell-inner">
+        <ul class="root-list"><li class='node-item'><div class='node-shell' id='node-1'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-1' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>1.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>The path to Ansur needs &#x27;a true hero&#x27;s spark&#x27;? Would they accept a &#x27;morally-questionable hero&#x27;s spark&#x27;?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token rule'>Astarion</span><span class='preview-token rule'>Lae&#x27;zel</span><span class='preview-token rule'>Gale</span><span class='preview-token rule'>Shadowheart</span><span class='preview-token rule'>Wyll</span><span class='preview-token rule'>+5 more</span><span class='preview-token check'>GLO_State_KnowsAboutWyrm</span></span></span></span><div class='node-detail-panel' id='details-1' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line rule-line'><div class='signal-heading'><span class='signal-label'>ruletag</span><span class='signal-scope'>type rule</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='| Really Astarion, Vampire companion |'>Astarion</span> <span class='asset-id'>{ffd08582-7396-4cac-bcd4-8f9cd0fd8ef3}</span></li><li class='signal-item'><span class='asset-name' title='| Lae&#x27;zel, the Gith Companion |'>Lae&#x27;zel</span> <span class='asset-id'>{b5682d1d-c395-489c-9675-1f9b0c328ea5}</span></li><li class='signal-item'><span class='asset-name' title='|Gale companion, shapeshifted or not|'>Gale</span> <span class='asset-id'>{9b0354c0-56d9-4723-8034-918ac9abab19}</span></li><li class='signal-item'><span class='asset-name' title='|Really Shadowheart|'>Shadowheart</span> <span class='asset-id'>{642d2aee-e3df-47e3-9f47-bbcd441bb9e0}</span></li><li class='signal-item'><span class='asset-name' title='|Really Wyll, superhero warlock|'>Wyll</span> <span class='asset-id'>{5f40def5-d3ec-4698-a367-01a339888956}</span></li><li class='signal-item'><span class='asset-name' title='|Karlach, Hells&#x27; champion. Tiefling origin. Whether or not she&#x27;s shapeshifted.|'>Karlach</span> <span class='asset-id'>{1a2f70d6-8ead-4eb5-a824-79ee1971764a}</span></li><li class='signal-item'><span class='asset-name' title='|Jaheira companion, shapeshifted or not|'>Jaheira</span> <span class='asset-id'>{8457eb5f-036c-4143-b6cf-447a9f555c7a}</span></li><li class='signal-item'><span class='asset-name' title='|Halsin, shapeshifted or not|'>Halsin</span> <span class='asset-id'>{9b8709f9-8d2a-4b4e-a465-8505c561d7f5}</span></li><li class='signal-item'><span class='asset-name'>Minthara</span> <span class='asset-id'>{3e84e1cd-2193-4f9f-80b4-c2ededefaea6}</span></li><li class='signal-item'><span class='asset-name'>Minsc</span> <span class='asset-id'>{aeb694fc-83fb-452d-819a-b97ba442dc42}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player  knows about the Wyrm in Wyrm&#x27;s Rock'>GLO_State_KnowsAboutWyrm</span> <span class='asset-id'>{bcbce515-d3e8-c0c9-49ce-20925eabf90e}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section'><h3>Text</h3><div class='text-block'><h3>Variant 1</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='| Really Astarion, Vampire companion |'><code>Astarion</code></li></ul><div class='text-line'>The path to Ansur needs &#x27;a true hero&#x27;s spark&#x27;? Would they accept a &#x27;morally-questionable hero&#x27;s spark&#x27;?</div><div class='line-meta'><code>h141af505gacd8g40fcgb6c2g0bb4c10060c1</code> | <code>8f0079e0-6da1-4fbf-8e00-417a1d75bee9</code> | stub</div></div><div class='text-block'><h3>Variant 2</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='| Lae&#x27;zel, the Gith Companion |'><code>Lae&#x27;zel</code></li></ul><div class='text-line'>The way to Ansur is in Wyrm&#x27;s Rock Prison. Torches are locks - and a spark is the key.</div><div class='line-meta'><code>h6c9b3b4ag1917g4daaga487g453ad1b04632</code> | <code>fa353bd4-f570-4261-b155-76745b461b03</code> | stub</div></div><div class='text-block'><h3>Variant 3</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='|Gale companion, shapeshifted or not|'><code>Gale</code></li></ul><div class='text-line'>So, the fabled Ansur is to be found beneath the flagstones of Wyrm&#x27;s Rock Prison. I&#x27;ve a spark or two up my sleeve - could that be enough to light the way?</div><div class='line-meta'><code>h28bbe028g6c4dg4affga424g3cb3e2dbf47f</code> | <code>83d02509-5762-45f7-9ba1-c95a25d2a31f</code> | stub</div></div><div class='text-block'><h3>Variant 4</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='|Really Shadowheart|'><code>Shadowheart</code></li></ul><div class='text-line'>The prison in Wyrm&#x27;s Rock conceals a path  to Ansur. Not sure what this &#x27;spark&#x27; business means, though.</div><div class='line-meta'><code>hda4bbca3g2b62g46e5g8160g4bca9e3229a6</code> | <code>24d4b377-8898-4562-9acd-ce99759a1f21</code> | stub</div></div><div class='text-block'><h3>Variant 5</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='|Really Wyll, superhero warlock|'><code>Wyll</code></li></ul><div class='text-line'>&#x27;When the shock of a true hero&#x27;s spark flickers, the torches alight.&#x27; Not just a poem - a puzzle. I&#x27;ll find the way to Ansur in Wyrm&#x27;s Rock Prison.</div><div class='line-meta'><code>hc69e74a5g4d38g4bc6ga687g3da01aa30596</code> | <code>db4f46ce-9aec-40f4-bfd0-3dd45a82117a</code> | stub</div></div><div class='text-block'><h3>Variant 6</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='|Karlach, Hells&#x27; champion. Tiefling origin. Whether or not she&#x27;s shapeshifted.|'><code>Karlach</code></li></ul><div class='text-line'>Is this real? An entrance to Ansur&#x27;s lair beneath Wyrm&#x27;s Rock Prison. Sounds like we need torches... and a spark?</div><div class='line-meta'><code>h4322c08dg4bffg4d67gbb33g00fca23434a5</code> | <code>ff51a5cd-5c23-4ef6-a886-b047950412b9</code> | stub</div></div><div class='text-block'><h3>Variant 7</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='|Jaheira companion, shapeshifted or not|'><code>Jaheira</code></li></ul><div class='text-line'>Ansur made his lair beneath the prison at Wyrm&#x27;s Rock. Perhaps the rest will become clear once we get there.</div><div class='line-meta'><code>h255c65c0g02f5g4ddbgbcacg45af3c48bad0</code> | <code>0d7d4ac9-cf1a-4dc0-aa90-17745460f0b9</code> | stub</div></div><div class='text-block'><h3>Variant 8</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='|Halsin, shapeshifted or not|'><code>Halsin</code></li></ul><div class='text-line'>The path to Ansur lies somewhere within the prison at Wyrm&#x27;s Rock. But what of this mention of torches and sparks?</div><div class='line-meta'><code>h1dd69e18g56ddg4811ga20cgabeb689f652c</code> | <code>13615f0f-5f1c-4725-bebc-89f2a231755d</code> | stub</div></div><div class='text-block'><h3>Variant 9</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title=''><code>Minthara</code></li></ul><div class='text-line'>We must search beneath Wyrm&#x27;s Rock to find a passage to Ansur&#x27;s lair.  We can decipher the riddle once we arrive.</div><div class='line-meta'><code>h385adf97g6104g48f5ga5fbg2e6260d03901</code> | <code>8cb971d6-b542-4616-989c-43229a63ebbc</code> | stub</div></div><div class='text-block'><h3>Variant 10</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title=''><code>Minsc</code></li></ul><div class='text-line'>The book says Ansur lies beneath Wyrm&#x27;s Rock. But torches? Sparks? I would like to punch this poet.</div><div class='line-meta'><code>he3a8412egb21dg4f5aga037g92dbce3c4dee</code> | <code>f91002bb-739b-4f57-b727-844f6ebcecfc</code> | stub</div></div><div class='text-block'><h3>Variant 11</h3><div class='text-line'>Ansur is sleeping under Wyrm&#x27;s Rock Prison. But what&#x27;s this of a true hero&#x27;s spark?</div><div class='line-meta'><code>haf16a610g0015g4a1ag872egdbe9b812482d</code> | <code>5538e31b-2639-4f64-a681-598b7a0ae435</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: c2a6d2b7-410e-4f8b-8041-156af1f57394</span><span class='meta-item'><strong>Speaker</strong>: 0 (Player)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h141af505gacd8g40fcgb6c2g0bb4c10060c1</span><span class='meta-item'><strong>Text 1 UUID</strong>: 8f0079e0-6da1-4fbf-8e00-417a1d75bee9</span><span class='meta-item'><strong>Text 2 Handle</strong>: h6c9b3b4ag1917g4daaga487g453ad1b04632</span><span class='meta-item'><strong>Text 2 UUID</strong>: fa353bd4-f570-4261-b155-76745b461b03</span><span class='meta-item'><strong>Text 3 Handle</strong>: h28bbe028g6c4dg4affga424g3cb3e2dbf47f</span><span class='meta-item'><strong>Text 3 UUID</strong>: 83d02509-5762-45f7-9ba1-c95a25d2a31f</span><span class='meta-item'><strong>Text 4 Handle</strong>: hda4bbca3g2b62g46e5g8160g4bca9e3229a6</span><span class='meta-item'><strong>Text 4 UUID</strong>: 24d4b377-8898-4562-9acd-ce99759a1f21</span><span class='meta-item'><strong>Text 5 Handle</strong>: hc69e74a5g4d38g4bc6ga687g3da01aa30596</span><span class='meta-item'><strong>Text 5 UUID</strong>: db4f46ce-9aec-40f4-bfd0-3dd45a82117a</span><span class='meta-item'><strong>Text 6 Handle</strong>: h4322c08dg4bffg4d67gbb33g00fca23434a5</span><span class='meta-item'><strong>Text 6 UUID</strong>: ff51a5cd-5c23-4ef6-a886-b047950412b9</span><span class='meta-item'><strong>Text 7 Handle</strong>: h255c65c0g02f5g4ddbgbcacg45af3c48bad0</span><span class='meta-item'><strong>Text 7 UUID</strong>: 0d7d4ac9-cf1a-4dc0-aa90-17745460f0b9</span><span class='meta-item'><strong>Text 8 Handle</strong>: h1dd69e18g56ddg4811ga20cgabeb689f652c</span><span class='meta-item'><strong>Text 8 UUID</strong>: 13615f0f-5f1c-4725-bebc-89f2a231755d</span><span class='meta-item'><strong>Text 9 Handle</strong>: h385adf97g6104g48f5ga5fbg2e6260d03901</span><span class='meta-item'><strong>Text 9 UUID</strong>: 8cb971d6-b542-4616-989c-43229a63ebbc</span><span class='meta-item'><strong>Text 10 Handle</strong>: he3a8412egb21dg4f5aga037g92dbce3c4dee</span><span class='meta-item'><strong>Text 10 UUID</strong>: f91002bb-739b-4f57-b727-844f6ebcecfc</span><span class='meta-item'><strong>Text 11 Handle</strong>: haf16a610g0015g4a1ag872egdbe9b812482d</span><span class='meta-item'><strong>Text 11 UUID</strong>: 5538e31b-2639-4f64-a681-598b7a0ae435</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 0</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: c2a6d2b7-410e-4f8b-8041-156af1f57394</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 9.04s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-2'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-2' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>2.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>A dragon sleeping under Baldur&#x27;s Gate, waiting for a &#x27;true hero&#x27;? Would he accept a &#x27;morally-questionable hero&#x27;, I wonder?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token rule'>Astarion</span><span class='preview-token rule'>Lae&#x27;zel</span><span class='preview-token rule'>Gale</span><span class='preview-token rule'>Shadowheart</span><span class='preview-token rule'>Wyll</span><span class='preview-token rule'>+5 more</span><span class='preview-token check'>!GLO_State_KnowsAboutWyrm</span></span></span></span><div class='node-detail-panel' id='details-2' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line rule-line'><div class='signal-heading'><span class='signal-label'>ruletag</span><span class='signal-scope'>type rule</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='| Really Astarion, Vampire companion |'>Astarion</span> <span class='asset-id'>{ffd08582-7396-4cac-bcd4-8f9cd0fd8ef3}</span></li><li class='signal-item'><span class='asset-name' title='| Lae&#x27;zel, the Gith Companion |'>Lae&#x27;zel</span> <span class='asset-id'>{b5682d1d-c395-489c-9675-1f9b0c328ea5}</span></li><li class='signal-item'><span class='asset-name' title='|Gale companion, shapeshifted or not|'>Gale</span> <span class='asset-id'>{9b0354c0-56d9-4723-8034-918ac9abab19}</span></li><li class='signal-item'><span class='asset-name' title='|Really Shadowheart|'>Shadowheart</span> <span class='asset-id'>{642d2aee-e3df-47e3-9f47-bbcd441bb9e0}</span></li><li class='signal-item'><span class='asset-name' title='|Really Wyll, superhero warlock|'>Wyll</span> <span class='asset-id'>{5f40def5-d3ec-4698-a367-01a339888956}</span></li><li class='signal-item'><span class='asset-name' title='|Karlach, Hells&#x27; champion. Tiefling origin. Whether or not she&#x27;s shapeshifted.|'>Karlach</span> <span class='asset-id'>{1a2f70d6-8ead-4eb5-a824-79ee1971764a}</span></li><li class='signal-item'><span class='asset-name' title='|Jaheira companion, shapeshifted or not|'>Jaheira</span> <span class='asset-id'>{8457eb5f-036c-4143-b6cf-447a9f555c7a}</span></li><li class='signal-item'><span class='asset-name' title='|Halsin, shapeshifted or not|'>Halsin</span> <span class='asset-id'>{9b8709f9-8d2a-4b4e-a465-8505c561d7f5}</span></li><li class='signal-item'><span class='asset-name'>Minthara</span> <span class='asset-id'>{3e84e1cd-2193-4f9f-80b4-c2ededefaea6}</span></li><li class='signal-item'><span class='asset-name'>Minsc</span> <span class='asset-id'>{aeb694fc-83fb-452d-819a-b97ba442dc42}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player  knows about the Wyrm in Wyrm&#x27;s Rock'>GLO_State_KnowsAboutWyrm</span> <span class='asset-id'>{bcbce515-d3e8-c0c9-49ce-20925eabf90e}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section'><h3>Text</h3><div class='text-block'><h3>Variant 1</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='| Really Astarion, Vampire companion |'><code>Astarion</code></li></ul><div class='text-line'>A dragon sleeping under Baldur&#x27;s Gate, waiting for a &#x27;true hero&#x27;? Would he accept a &#x27;morally-questionable hero&#x27;, I wonder?</div><div class='line-meta'><code>h075ef30eg799dg4dbfg88c9g0835ffc8fbd1</code> | <code>f53d86be-1da4-4d38-b5b8-a711e09397ec</code> | stub</div></div><div class='text-block'><h3>Variant 2</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='| Lae&#x27;zel, the Gith Companion |'><code>Lae&#x27;zel</code></li></ul><div class='text-line'>A dragon slumbering underneath Baldur&#x27;s Gate. A fable, surely - but a powerful one.</div><div class='line-meta'><code>h0f88565dgc23dg4904g929cg529e3c817a25</code> | <code>e5c3ccc9-04b8-4fae-a2ec-8cc32b5922e8</code> | stub</div></div><div class='text-block'><h3>Variant 3</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='|Gale companion, shapeshifted or not|'><code>Gale</code></li></ul><div class='text-line'>A poetic image indeed - the fabled Ansur, slumbering beneath the city he once protected.  Though obscured by the sands of time, such a legend may yet carry a grain of truth.</div><div class='line-meta'><code>he3ae9a77g127eg4975gafb4g34311b844760</code> | <code>30db3bfa-4b3e-4601-bafb-57a5c90b9b2e</code> | stub</div></div><div class='text-block'><h3>Variant 4</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='|Really Shadowheart|'><code>Shadowheart</code></li></ul><div class='text-line'>A sleeping dragon under the city, waiting for a hero to awaken him? Sounds like a childrens&#x27; tale.</div><div class='line-meta'><code>hd4aaabd1g4375g42d3ga0bdg02e0d381cc48</code> | <code>51ed5755-29b7-41eb-bb24-853fffa75c3f</code> | stub</div></div><div class='text-block'><h3>Variant 5</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='|Really Wyll, superhero warlock|'><code>Wyll</code></li></ul><div class='text-line'>A guardian dragon living under Baldur&#x27;s Gate? How have I never heard the tale?</div><div class='line-meta'><code>hd0770d83g4996g4563gac88g47ad136eba12</code> | <code>593ce10c-fdd3-4842-a5fd-54fe3189e123</code> | stub</div></div><div class='text-block'><h3>Variant 6</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='|Karlach, Hells&#x27; champion. Tiefling origin. Whether or not she&#x27;s shapeshifted.|'><code>Karlach</code></li></ul><div class='text-line'>Whoever wrote this believed the dragon Ansur lived below Wyrm&#x27;s Rock Prison. Interesting.</div><div class='line-meta'><code>he2d625f2g821ag40ecgbe06g5b2b0d0c4cf8</code> | <code>b949be67-13c8-49eb-8f02-ffa398ac81a1</code> | stub</div></div><div class='text-block'><h3>Variant 7</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='|Jaheira companion, shapeshifted or not|'><code>Jaheira</code></li></ul><div class='text-line'>A dragon sleeping beneath the city - no urban tale that I&#x27;ve heard. But someone took it seriously enough..</div><div class='line-meta'><code>h473993cag9068g43dbg827dgf78b4de97587</code> | <code>037a59c6-bc33-408d-abb7-7895f8d0dee8</code> | stub</div></div><div class='text-block'><h3>Variant 8</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='|Halsin, shapeshifted or not|'><code>Halsin</code></li></ul><div class='text-line'>A dragon slumbers beneath Baldur&#x27;s Gate, awaiting a hero to stir him. </div><div class='line-meta'><code>h673d0f85g977fg41f8ga65fg1350462be94d</code> | <code>972c2be1-cab4-4fcb-9812-fa95fda79796</code> | stub</div></div><div class='text-block'><h3>Variant 9</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title=''><code>Minthara</code></li></ul><div class='text-line'>If there truly is a dragon living beneath Baldur&#x27;s Gate, we should go and tug its tail. It&#x27;s doing a terrible job of protecting the city.</div><div class='line-meta'><code>h5b75b867gf574g4835g97eagf034977d4d9f</code> | <code>c68f5f54-4ff3-42b2-9007-8840607e3b86</code> | stub</div></div><div class='text-block'><h3>Variant 10</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title=''><code>Minsc</code></li></ul><div class='text-line'>Something something dragon... hero... below the city. Minsc gets the gist, I think.</div><div class='line-meta'><code>hafd3b43fg346fg40faga7d7ge728be228240</code> | <code>e02456ac-c5ef-4c09-8d7d-ac40309641f4</code> | stub</div></div><div class='text-block'><h3>Variant 11</h3><div class='text-line'>A dragon lives under Baldur&#x27;s Gate, waiting for a hero to wake him. Or so the author believes.</div><div class='line-meta'><code>h446ca4e6g2005g4d6cg9e04g05136f897863</code> | <code>cd8e5069-e9c8-4294-be5a-9df52c6824b5</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: cff19306-2bc2-facf-d9ae-ee87d4ede8bb</span><span class='meta-item'><strong>Speaker</strong>: 0 (Player)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h075ef30eg799dg4dbfg88c9g0835ffc8fbd1</span><span class='meta-item'><strong>Text 1 UUID</strong>: f53d86be-1da4-4d38-b5b8-a711e09397ec</span><span class='meta-item'><strong>Text 2 Handle</strong>: h0f88565dgc23dg4904g929cg529e3c817a25</span><span class='meta-item'><strong>Text 2 UUID</strong>: e5c3ccc9-04b8-4fae-a2ec-8cc32b5922e8</span><span class='meta-item'><strong>Text 3 Handle</strong>: he3ae9a77g127eg4975gafb4g34311b844760</span><span class='meta-item'><strong>Text 3 UUID</strong>: 30db3bfa-4b3e-4601-bafb-57a5c90b9b2e</span><span class='meta-item'><strong>Text 4 Handle</strong>: hd4aaabd1g4375g42d3ga0bdg02e0d381cc48</span><span class='meta-item'><strong>Text 4 UUID</strong>: 51ed5755-29b7-41eb-bb24-853fffa75c3f</span><span class='meta-item'><strong>Text 5 Handle</strong>: hd0770d83g4996g4563gac88g47ad136eba12</span><span class='meta-item'><strong>Text 5 UUID</strong>: 593ce10c-fdd3-4842-a5fd-54fe3189e123</span><span class='meta-item'><strong>Text 6 Handle</strong>: he2d625f2g821ag40ecgbe06g5b2b0d0c4cf8</span><span class='meta-item'><strong>Text 6 UUID</strong>: b949be67-13c8-49eb-8f02-ffa398ac81a1</span><span class='meta-item'><strong>Text 7 Handle</strong>: h473993cag9068g43dbg827dgf78b4de97587</span><span class='meta-item'><strong>Text 7 UUID</strong>: 037a59c6-bc33-408d-abb7-7895f8d0dee8</span><span class='meta-item'><strong>Text 8 Handle</strong>: h673d0f85g977fg41f8ga65fg1350462be94d</span><span class='meta-item'><strong>Text 8 UUID</strong>: 972c2be1-cab4-4fcb-9812-fa95fda79796</span><span class='meta-item'><strong>Text 9 Handle</strong>: h5b75b867gf574g4835g97eagf034977d4d9f</span><span class='meta-item'><strong>Text 9 UUID</strong>: c68f5f54-4ff3-42b2-9007-8840607e3b86</span><span class='meta-item'><strong>Text 10 Handle</strong>: hafd3b43fg346fg40faga7d7ge728be228240</span><span class='meta-item'><strong>Text 10 UUID</strong>: e02456ac-c5ef-4c09-8d7d-ac40309641f4</span><span class='meta-item'><strong>Text 11 Handle</strong>: h446ca4e6g2005g4d6cg9e04g05136f897863</span><span class='meta-item'><strong>Text 11 UUID</strong>: cd8e5069-e9c8-4294-be5a-9df52c6824b5</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 1</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: cff19306-2bc2-facf-d9ae-ee87d4ede8bb</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 11.51s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li></ul>
+        
+      </div>
+    </section>
+  </div>
+  <div class="tree-scrollbar-proxy" hidden>
+    <div class="tree-scrollbar-proxy-inner"></div>
+  </div>
+  <script>
+    function getNodeDetailPanel(shell) {
+      if (!shell) {
+        return null;
+      }
+      const content = shell.querySelector(":scope > .node-row > .node-content");
+      if (!content) {
+        return null;
+      }
+      return Array.from(content.children).find((child) => child.classList && child.classList.contains("node-detail-panel")) || null;
+    }
+    function getNodeDetailToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-detail-target]");
+    }
+    function getNodeBranchToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-branch-target]");
+    }
+    function getNodeBranchMarker(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .tree-toggle-marker[data-branch-target]");
+    }
+    const jumpHighlightTimers = new WeakMap();
+    const nodeSummaryClickTimers = new WeakMap();
+    const NODE_DETAIL_DOUBLE_CLICK_MS = 160;
+    const treeShell = document.querySelector(".tree-shell");
+    const treeShellInner = treeShell ? treeShell.querySelector(".tree-shell-inner") : null;
+    const treeScrollbarProxy = document.querySelector(".tree-scrollbar-proxy");
+    const treeScrollbarProxyInner = treeScrollbarProxy
+      ? treeScrollbarProxy.querySelector(".tree-scrollbar-proxy-inner")
+      : null;
+    let syncingTreeScroll = false;
+    let syncingProxyScroll = false;
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+    function setToggleButtonState(button, active) {
+      if (!button) {
+        return;
+      }
+      button.classList.toggle("is-active", active);
+      const hideLabel = button.dataset.hideLabel;
+      const showLabel = button.dataset.showLabel;
+      if (hideLabel && showLabel) {
+        button.textContent = active ? showLabel : hideLabel;
+      }
+    }
+    function syncAllDetailsToggle() {
+      const button = document.querySelector("button[data-toggle-details='all']");
+      if (!button) {
+        return;
+      }
+      const panels = Array.from(document.querySelectorAll(".node-detail-panel"));
+      const allOpen = panels.length > 0 && panels.every((panel) => !panel.hasAttribute("hidden"));
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function syncAllBranchesToggle() {
+      const button = document.querySelector("button[data-toggle-branches='all']");
+      if (!button) {
+        return;
+      }
+      const branchMarkers = Array.from(document.querySelectorAll(".tree-toggle-marker[data-branch-target]"));
+      const allOpen = branchMarkers.length > 0 && branchMarkers.every((marker) => marker.dataset.branchExpanded === "true");
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function updateTreeScrollbarProxy() {
+      if (!treeShell || !treeShellInner || !treeScrollbarProxy || !treeScrollbarProxyInner) {
+        return;
+      }
+      const contentWidth = treeShellInner.scrollWidth;
+      const viewportWidth = treeShell.clientWidth;
+      const needsProxy = contentWidth > viewportWidth + 1;
+      if (!needsProxy) {
+        treeScrollbarProxy.hidden = true;
+        return;
+      }
+      const rect = treeShell.getBoundingClientRect();
+      treeScrollbarProxy.hidden = false;
+      treeScrollbarProxy.style.left = `${Math.max(0, rect.left)}px`;
+      treeScrollbarProxy.style.width = `${Math.max(0, rect.width)}px`;
+      treeScrollbarProxyInner.style.width = `${contentWidth}px`;
+      if (!syncingTreeScroll && Math.abs(treeScrollbarProxy.scrollLeft - treeShell.scrollLeft) > 1) {
+        syncingProxyScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingProxyScroll = false;
+      }
+    }
+    function resetTreeScrollToStart() {
+      document.querySelectorAll(".tree-shell").forEach((shell) => {
+        shell.scrollLeft = 0;
+      });
+      if (treeScrollbarProxy) {
+        treeScrollbarProxy.scrollLeft = 0;
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setBranchOpen(control, openState, syncState = true) {
+      if (!control) {
+        return;
+      }
+      const targetId = control.dataset.branchTarget;
+      const target = targetId ? document.getElementById(targetId) : null;
+      if (!target) {
+        return;
+      }
+      const shell = control.closest(".node-shell");
+      const marker = shell ? getNodeBranchMarker(shell) : null;
+      const summary = shell ? getNodeBranchToggle(shell) : null;
+      if (openState) {
+        target.removeAttribute("hidden");
+      } else {
+        target.setAttribute("hidden", "until-found");
+      }
+      if (marker) {
+        marker.dataset.branchExpanded = openState ? "true" : "false";
+        marker.textContent = openState ? "-" : "+";
+      }
+      if (summary) {
+        summary.setAttribute("aria-expanded", openState ? "true" : "false");
+      }
+      if (syncState) {
+        syncAllBranchesToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setDetailOpen(shell, openState, syncState = true) {
+      const panel = getNodeDetailPanel(shell);
+      const toggle = getNodeDetailToggle(shell);
+      if (!panel) {
+        return;
+      }
+      if (openState) {
+        panel.removeAttribute("hidden");
+      } else {
+        panel.setAttribute("hidden", "until-found");
+      }
+      if (toggle) {
+        toggle.dataset.detailExpanded = openState ? "true" : "false";
+      }
+      if (syncState) {
+        syncAllDetailsToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setAllBranches(openState) {
+      document.querySelectorAll(".tree-toggle-marker[data-branch-target]").forEach((marker) => { setBranchOpen(marker, openState, false); });
+      syncAllBranchesToggle();
+    }
+    function setAllNodeDetails(openState) {
+      document.querySelectorAll(".node-shell").forEach((shell) => {
+        if (getNodeDetailPanel(shell)) {
+          setDetailOpen(shell, openState, false);
+        }
+      });
+      syncAllDetailsToggle();
+    }
+    function openParents(target) {
+      let current = target;
+      while (current) {
+        if (current.classList && current.classList.contains("node-branch")) {
+          const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${current.id}"]`);
+          setBranchOpen(marker, true);
+        }
+        current = current.parentElement;
+      }
+    }
+    function highlightJumpTarget(target) {
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      if (!shell) {
+        return;
+      }
+      const existingTimer = jumpHighlightTimers.get(shell);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+      shell.classList.add("jump-highlight");
+      const timeoutId = window.setTimeout(() => {
+        shell.classList.remove("jump-highlight");
+        jumpHighlightTimers.delete(shell);
+      }, 5000);
+      jumpHighlightTimers.set(shell, timeoutId);
+    }
+    function revealAndFocusNodeTarget(target, href = "") {
+      if (!target) {
+        return;
+      }
+      openParents(target);
+      if (href) {
+        history.replaceState(null, "", href);
+      }
+      requestAnimationFrame(() => {
+        target.scrollIntoView({ block: "center" });
+        highlightJumpTarget(target);
+        updateTreeScrollbarProxy();
+      });
+    }
+    if (treeShell && treeScrollbarProxy) {
+      treeShell.addEventListener("scroll", () => {
+        if (syncingProxyScroll) {
+          return;
+        }
+        syncingTreeScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingTreeScroll = false;
+      });
+      treeScrollbarProxy.addEventListener("scroll", () => {
+        if (syncingTreeScroll) {
+          return;
+        }
+        syncingProxyScroll = true;
+        treeShell.scrollLeft = treeScrollbarProxy.scrollLeft;
+        syncingProxyScroll = false;
+      });
+    }
+    document.addEventListener("click", (event) => {
+      const allBranchesButton = event.target.closest("button[data-toggle-branches='all']");
+      if (allBranchesButton) {
+        const isOpen = allBranchesButton.dataset.active === "true";
+        setAllBranches(!isOpen);
+        return;
+      }
+      const allDetailsButton = event.target.closest("button[data-toggle-details='all']");
+      if (allDetailsButton) {
+        const isOpen = allDetailsButton.dataset.active === "true";
+        setAllNodeDetails(!isOpen);
+        return;
+      }
+      const button = event.target.closest("button[data-toggle-class]");
+      if (button) {
+        const active = document.body.classList.toggle(button.dataset.toggleClass);
+        setToggleButtonState(button, active);
+        return;
+      }
+      const link = event.target.closest("a[href^='#node-']");
+      if (link) {
+        event.preventDefault();
+        const target = document.querySelector(link.getAttribute("href"));
+        if (target) {
+          revealAndFocusNodeTarget(target, link.getAttribute("href"));
+        }
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (summary) {
+        const branchTarget = summary.dataset.branchTarget;
+        const shell = summary.closest(".node-shell");
+        if (!shell) {
+          return;
+        }
+        if (!branchTarget) {
+          if (summary.dataset.detailTarget) {
+            const isOpen = summary.dataset.detailExpanded === "true";
+            setDetailOpen(shell, !isOpen);
+          }
+          return;
+        }
+        const existingTimer = nodeSummaryClickTimers.get(summary);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+          nodeSummaryClickTimers.delete(summary);
+          event.preventDefault();
+          const isOpen = summary.dataset.detailExpanded === "true";
+          setDetailOpen(shell, !isOpen);
+          return;
+        }
+        const timerId = window.setTimeout(() => {
+          nodeSummaryClickTimers.delete(summary);
+          const isOpen = summary.getAttribute("aria-expanded") === "true";
+          setBranchOpen(summary, !isOpen);
+          if (isOpen) {
+            const panel = getNodeDetailPanel(shell);
+            if (panel && !panel.hasAttribute("hidden")) {
+              setDetailOpen(shell, false);
+            }
+          }
+        }, NODE_DETAIL_DOUBLE_CLICK_MS);
+        nodeSummaryClickTimers.set(summary, timerId);
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (!summary) {
+        return;
+      }
+      event.preventDefault();
+      const shell = summary.closest(".node-shell");
+      if (!shell) {
+        return;
+      }
+      if (summary.dataset.branchTarget) {
+        const isOpen = summary.getAttribute("aria-expanded") === "true";
+        setBranchOpen(summary, !isOpen);
+        if (isOpen) {
+          const panel = getNodeDetailPanel(shell);
+          if (panel && !panel.hasAttribute("hidden")) {
+            setDetailOpen(shell, false);
+          }
+        }
+        return;
+      }
+      if (summary.dataset.detailTarget) {
+        const isOpen = summary.dataset.detailExpanded === "true";
+        setDetailOpen(shell, !isOpen);
+      }
+    });
+    document.addEventListener("beforematch", (event) => {
+      const branch = event.target.closest(".node-branch");
+      if (branch && branch.id) {
+        const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${branch.id}"]`);
+        setBranchOpen(marker, true);
+      }
+      const panel = event.target.closest(".node-detail-panel");
+      if (panel) {
+        const shell = panel.closest(".node-shell");
+        if (shell) {
+          openParents(shell);
+          setDetailOpen(shell, true);
+        }
+      }
+    });
+    document.querySelectorAll("button[data-toggle-class]").forEach((button) => {
+      const active = document.body.classList.contains(button.dataset.toggleClass);
+      setToggleButtonState(button, active);
+    });
+    if (window.ResizeObserver && treeShell) {
+      const observer = new ResizeObserver(() => {
+        updateTreeScrollbarProxy();
+      });
+      observer.observe(treeShell);
+      if (treeShellInner) {
+        observer.observe(treeShellInner);
+      }
+    }
+    window.addEventListener("resize", updateTreeScrollbarProxy);
+    window.addEventListener("scroll", updateTreeScrollbarProxy, { passive: true });
+    window.addEventListener("pageshow", () => {
+      if (window.location.hash) {
+        updateTreeScrollbarProxy();
+        return;
+      }
+      resetTreeScrollToStart();
+      window.requestAnimationFrame(() => {
+        resetTreeScrollToStart();
+      });
+      window.setTimeout(() => {
+        resetTreeScrollToStart();
+      }, 0);
+    });
+    syncAllBranchesToggle();
+    document.querySelectorAll("button[data-toggle-details='all']").forEach((button) => {
+      const active = button.dataset.active === "true";
+      setToggleButtonState(button, active);
+    });
+    updateTreeScrollbarProxy();
+    if (window.location.hash) {
+      const target = document.querySelector(window.location.hash);
+      if (target) {
+        revealAndFocusNodeTarget(target, window.location.hash);
+      }
+    }
+  </script>
+</body>
+</html>

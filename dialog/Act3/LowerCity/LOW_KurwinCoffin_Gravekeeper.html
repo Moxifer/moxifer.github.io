@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LOW_KurwinCoffin_Gravekeeper</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #182330;
+      --muted: #586477;
+      --line: #c7d2df;
+      --npc: #b91c1c;
+      --player: #15803d;
+      --system: #2563eb;
+      --rule: #2f6f44;
+      --tag: #0f766e;
+      --check: #7c3aed;
+      --set: #ea580c;
+      --roll: #6d28d9;
+      --approval: #0f766e;
+      --jump: #155eef;
+      --context: #475467;
+      --surface: #f3f6fa;
+      --surface-active: #e6edf5;
+      --surface-hover: #edf3f9;
+      --detail-surface: #e3ebf4;
+      --detail-border: #b4c2d4;
+      --focus: #90a4bc;
+      --highlight: #d9e5f5;
+      --scrollbar-proxy-bg: rgba(255, 255, 255, 0.94);
+      --mono: Consolas, "SFMono-Regular", Menlo, monospace;
+      --sans: Georgia, "Palatino Linotype", serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #fff;
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.35;
+      overflow-x: hidden;
+    }
+    a { color: var(--jump); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: none;
+      padding: 0;
+      border-radius: 0;
+    }
+    .page {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0.55rem 0.9rem 1.8rem;
+      overflow-x: hidden;
+    }
+    .hero {
+      margin-bottom: 0.55rem;
+    }
+    .hero h1 {
+      margin: 0 0 0.2rem;
+      font-size: 1.4rem;
+      line-height: 1.15;
+    }
+    .source {
+      color: var(--muted);
+      font-size: 0.9rem;
+      word-break: break-all;
+      margin-bottom: 0.2rem;
+    }
+    .source-label {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.3rem;
+    }
+    .summary-line {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 0.35rem;
+    }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.45rem;
+      margin-bottom: 0.45rem;
+      padding: 0.35rem 0;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      overflow: visible;
+    }
+    .toolbar-scroll {
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: calc(100% - 7rem);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+    }
+    .controls {
+      display: inline-flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0.45rem;
+      white-space: nowrap;
+      font-size: 0.9rem;
+      min-width: max-content;
+      overflow: visible;
+    }
+    .controls button,
+    .controls summary,
+    .speaker-map > summary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 1.85rem;
+      padding: 0.12rem 0.5rem;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: var(--surface);
+      color: var(--jump);
+      font: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      list-style: none;
+      user-select: none;
+    }
+    .controls button.is-active,
+    .controls details[open] > summary,
+    .speaker-map[open] > summary {
+      background: var(--surface-active);
+      border-color: var(--focus);
+    }
+    .controls button:hover,
+    .controls summary:hover,
+    .speaker-map > summary:hover {
+      background: var(--surface-hover);
+      text-decoration: none;
+    }
+    .controls summary:focus,
+    .controls button:focus,
+    .speaker-map > summary:focus {
+      outline: 1px solid var(--focus);
+      outline-offset: 1px;
+    }
+    .speaker-map {
+      flex: 0 0 auto;
+      position: relative;
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .speaker-map summary,
+    .meta-block summary {
+      cursor: pointer;
+      color: var(--jump);
+      list-style: none;
+    }
+    .speaker-map summary::-webkit-details-marker,
+    .meta-block summary::-webkit-details-marker {
+      display: none;
+    }
+    .speaker-map[open] ul {
+      display: block;
+    }
+    .speaker-map ul {
+      display: none;
+      list-style: none;
+      margin: 0.3rem 0 0;
+      padding: 0.45rem 0.6rem;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 0.2rem);
+      min-width: 20rem;
+      max-width: min(34rem, calc(100vw - 2rem));
+      max-height: 24rem;
+      overflow: auto;
+      background: #fbfcfe;
+      border: 1px solid var(--line);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+      z-index: 30;
+    }
+    .speaker-map li + li {
+      margin-top: 0.1rem;
+    }
+    .speaker-index {
+      display: inline-block;
+      min-width: 2rem;
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 600;
+    }
+    .speaker-name {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.25rem;
+    }
+    .inline-meta, .line-meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .tree-shell {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: visible;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-shell-inner {
+      width: max-content;
+      min-width: 100%;
+    }
+    .tree-scrollbar-proxy {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 1.1rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      background: var(--scrollbar-proxy-bg);
+      border-top: 1px solid var(--line);
+      z-index: 40;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-scrollbar-proxy[hidden] {
+      display: none;
+    }
+    .tree-scrollbar-proxy-inner {
+      height: 1px;
+    }
+    .orphan-section {
+      width: auto;
+      min-width: 0;
+      margin-top: 1rem;
+      padding-top: 0.55rem;
+      border-top: 1px dotted var(--line);
+    }
+    .orphan-section h2 {
+      margin: 0 0 0.15rem;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+    .orphan-note {
+      margin: 0 0 0.35rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .root-list, .child-list {
+      list-style: none;
+      margin: 0;
+      padding-left: 0;
+      width: auto;
+      min-width: 0;
+    }
+    .child-list {
+      margin-left: 1.1rem;
+      padding-left: 0.85rem;
+      border-left: 1px dotted var(--line);
+    }
+    .node-item {
+      margin: 0.18rem 0;
+    }
+    details.node {
+      margin: 0;
+    }
+    details.node:target > summary .node-line {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    .node-leaf:target {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 0;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    summary::-webkit-details-marker {
+      display: none;
+    }
+    details.node > summary::before {
+      content: "▸";
+      display: inline-block;
+      width: 0.9rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      vertical-align: top;
+      padding-top: 0.12rem;
+    }
+    details.node[open] > summary::before {
+      content: "▾";
+    }
+    details.node.no-children > summary::before {
+      content: "•";
+    }
+    .node-line {
+      display: inline;
+      padding: 0.06rem 0.18rem;
+    }
+    .node-leaf {
+      display: inline-block;
+      padding: 0.06rem 0.18rem;
+      border-radius: 6px;
+    }
+    details.node > summary::before {
+      content: "+";
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    details.node[open] > summary::before {
+      content: "-";
+    }
+    details.node.no-children > summary::before {
+      content: ".";
+    }
+    .node-number {
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 700;
+    }
+    .speaker-label {
+      font-weight: 700;
+      margin-left: 0.2rem;
+    }
+    .speaker-label.npc { color: var(--npc); }
+    .speaker-label.player { color: var(--player); }
+    .speaker-label.system { color: var(--system); }
+    .dialog {
+      color: var(--ink);
+      margin-left: 0.2rem;
+    }
+    .node-kind {
+      color: var(--system);
+      margin-left: 0.2rem;
+    }
+    .ruletag {
+      color: var(--rule);
+      margin-left: 0.35rem;
+    }
+    .tags {
+      color: var(--tag);
+      margin-left: 0.35rem;
+    }
+    .checkflag {
+      color: var(--check);
+      margin-left: 0.35rem;
+    }
+    .setflag {
+      color: var(--set);
+      margin-left: 0.35rem;
+    }
+    .rolls {
+      color: var(--roll);
+      margin-left: 0.35rem;
+    }
+    .approval {
+      color: var(--approval);
+      margin-left: 0.35rem;
+    }
+    .nodelink {
+      color: var(--jump);
+      margin-left: 0.35rem;
+    }
+    .context {
+      color: var(--context);
+      margin-left: 0.3rem;
+      cursor: help;
+    }
+    .end {
+      color: #8b1e1e;
+      margin-left: 0.35rem;
+    }
+    .node-shell:target,
+    .node-leaf:target {
+      background: none;
+      border-radius: 0;
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-shell {
+      display: block;
+    }
+    .node-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.32rem;
+      width: max-content;
+      min-width: 100%;
+      transition: background-color 0.18s ease;
+    }
+    .node-shell.jump-highlight > .node-row {
+      background: var(--highlight);
+    }
+    .node-content {
+      min-width: 0;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker,
+    .tree-spacer {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 0.95rem;
+      height: 0.95rem;
+      margin-top: 0.08rem;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker {
+      border: none;
+      background: none;
+      color: var(--muted);
+      padding: 0;
+      font: inherit;
+      font-weight: 800;
+      font-size: 1.18rem;
+      line-height: 1;
+      user-select: none;
+    }
+    .tree-spacer {
+      border: none;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .node-branch[hidden]:not([hidden='until-found']) {
+      display: none;
+    }
+    .repeat {
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+    .node-summary {
+      display: block;
+      cursor: default;
+    }
+    .node-summary.is-interactive {
+      cursor: pointer;
+    }
+    .node-summary.is-interactive:focus-visible {
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-main-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.35rem;
+    }
+    .node-main {
+      display: block;
+      flex: 1 1 auto;
+      min-width: 0;
+      white-space: normal;
+      line-height: 1.28;
+      overflow-wrap: anywhere;
+    }
+    .node-leaf {
+      display: block;
+      border-radius: 0;
+    }
+    .node-number {
+      font-weight: 600;
+    }
+    .speaker-label {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind,
+    .nodelink {
+      overflow-wrap: anywhere;
+    }
+    .nodelink,
+    .end {
+      margin-left: 0;
+    }
+    .node-previews {
+      display: block;
+      margin: 0.12rem 0 0 1.1rem;
+      font-size: 0.88rem;
+      white-space: normal;
+      line-height: 1.28;
+    }
+    .preview-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.12rem 0.45rem;
+    }
+    .preview-token {
+      display: inline;
+      overflow-wrap: anywhere;
+    }
+    .preview-token.tag {
+      color: var(--tag);
+    }
+    .preview-token.rule {
+      color: var(--rule);
+    }
+    .preview-token.check {
+      color: var(--check);
+    }
+    .preview-token.set {
+      color: var(--set);
+    }
+    .preview-note {
+      display: block;
+      margin-top: 0.08rem;
+      color: var(--context);
+      overflow-wrap: anywhere;
+      font-weight: 700;
+    }
+    .preview-note-label {
+      color: var(--context);
+      font-weight: 700;
+    }
+    .preview-note-value {
+      color: #4f463f;
+      font-weight: 600;
+    }
+    .signal-line {
+      display: block;
+      margin: 0.14rem 0 0.2rem;
+    }
+    .signal-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem;
+    }
+    .signal-label {
+      font-weight: 700;
+    }
+    .signal-scope {
+      color: var(--muted);
+    }
+    .tag-line, .tag-line .signal-label { color: var(--tag); }
+    .rule-line, .rule-line .signal-label { color: var(--rule); }
+    .checkflag-line, .checkflag-line .signal-label { color: var(--check); }
+    .setflag-line, .setflag-line .signal-label { color: var(--set); }
+    .roll-line, .roll-line .signal-label { color: var(--roll); }
+    .approval-line, .approval-line .signal-label { color: var(--approval); }
+    .context-line, .context-line .signal-label { color: var(--context); }
+    .context-line .signal-heading {
+      font-weight: 700;
+    }
+    .context-line .signal-item {
+      color: #4f463f;
+    }
+    .signal-values {
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .signal-list {
+      list-style: none;
+      margin: 0.06rem 0 0 0.9rem;
+      padding: 0;
+    }
+    .signal-item {
+      margin: 0.1rem 0;
+      overflow-wrap: anywhere;
+    }
+    .signal-item::before {
+      content: "- ";
+      color: var(--muted);
+    }
+    .signal-body {
+      display: block;
+      margin: 0.06rem 0 0 0.9rem;
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .asset-name {
+      color: var(--ink);
+    }
+    .asset-id {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.92em;
+      overflow-wrap: anywhere;
+    }
+    .asset-state {
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .node-detail-panel {
+      margin: 0.08rem 0 0.18rem 1.1rem;
+      padding: 0.35rem 0.5rem;
+      border: 1px solid var(--detail-border);
+      background: var(--detail-surface);
+      border-radius: 0;
+      display: block;
+      gap: 0;
+      max-width: none;
+    }
+    .node-detail-panel[hidden]:not([hidden='until-found']) {
+      display: none;
+    }
+    .node-detail-panel[hidden='until-found'] {
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: none;
+    }
+    .section {
+      margin: 0.16rem 0;
+      padding: 0;
+      background: none;
+      border: none;
+    }
+    .section h3 {
+      margin: 0 0 0.22rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .node-detail-panel > .section + .section {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-block + .text-block {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-line {
+      font-size: 0.96rem;
+      margin-bottom: 0.15rem;
+    }
+    .text-line {
+      margin: 0.08rem 0;
+      font-size: inherit;
+      overflow-wrap: anywhere;
+    }
+    .badge-row, .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .badge, .meta-item {
+      display: block;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+    }
+    .meta-items {
+      margin: 0.12rem 0 0 0.85rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+      white-space: normal;
+    }
+    .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .meta-item {
+      display: block;
+      margin: 0.06rem 0;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+      overflow-wrap: anywhere;
+    }
+    .meta-item strong {
+      color: var(--ink);
+    }
+    .badge.flags { color: var(--check); }
+    .badge.tags { color: var(--tag); }
+    .flag-groups {
+      display: block;
+      gap: 0;
+    }
+    .flag-group-type {
+      display: inline-block;
+      color: var(--muted);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.15rem;
+    }
+    .rule-tree, .rule-tree ul {
+      margin: 0;
+      padding-left: 1rem;
+    }
+    .body-hide-flags .section-flags,
+    .body-hide-rules .section-rules,
+    .body-hide-details .section-metadata,
+    .body-hide-context .preview-note,
+    .body-hide-context .context-line,
+    .body-hide-context .node-line .context {
+      display: none;
+    }
+    .body-hide-flags .node-line .checkflag,
+    .body-hide-flags .node-line .setflag,
+    .body-hide-rules .node-line .ruletag {
+      display: none;
+    }
+    .body-hide-flags .checkflag-line,
+    .body-hide-flags .setflag-line {
+      display: none;
+    }
+    .body-hide-flags .preview-token.check,
+    .body-hide-flags .preview-token.set {
+      display: none;
+    }
+    .body-hide-context .context-line {
+      display: none;
+    }
+    .body-hide-numbers .node-number {
+      display: none;
+    }
+    .missing, .cycle {
+      padding: 0.2rem 0.35rem;
+      color: #8b1e1e;
+      background: rgba(139, 30, 30, 0.08);
+      border-radius: 6px;
+      display: inline-block;
+    }
+    .missing, .cycle {
+      padding: 0;
+      background: none;
+      border-radius: 0;
+      display: block;
+      overflow-wrap: anywhere;
+    }
+    @media (max-width: 920px) {
+      .page {
+        padding: 0.45rem 0.5rem 0.9rem;
+      }
+      .tree-shell {
+        padding: 0;
+      }
+    }
+  </style>
+</head>
+  <body class="body-hide-numbers">
+  <div class="page">
+    <header class="hero">
+      <h1>LOW_KurwinCoffin_Gravekeeper</h1>
+      <div class="source"><span class="source-label">Dialog Resource UUID:</span><strong><code>117abe07-0931-0971-10a0-ddb22e982319</code></strong></div><div class="source"><span class="source-label">Timeline Resource UUID:</span><strong><code>25de4142-74c1-eea3-5c3f-0e80c281c9e0</code></strong></div><div class="source"><span class="source-label">StartDialog UUID:</span><strong><code>c3ee3067-a0b3-51b9-9f52-061c7b16e7dd</code></strong></div><div class="source"><span class="source-label">Dialog:</span>Mods\GustavDev\Story\DialogsBinary\Act3\LowerCity\LOW_KurwinCoffin_Gravekeeper.lsf.lsx</div><div class="source"><span class="source-label">Timeline:</span>Public\GustavDev\Timeline\Generated\LOW_KurwinCoffin_Gravekeeper.lsf.lsx</div><div class="source"><span class="source-label">Scene:</span>Public\GustavDev\Timeline\Generated\LOW_KurwinCoffin_Gravekeeper_Scene.lsf.lsx</div>
+      <div class="summary-line">
+        category=Generic NPC Dialog | nodes=79 | roots=4
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-scroll">
+          <div class="controls">
+            <button type="button" data-toggle-branches="all" data-hide-label="Expand all" data-show-label="Collapse all" data-active="false">Expand all</button>
+            <button type="button" data-toggle-class="body-hide-flags" data-hide-label="Hide flags" data-show-label="Show flags">Hide flags</button>
+            <button type="button" data-toggle-details="all" data-hide-label="Show details" data-show-label="Hide details" data-active="false">Show details</button>
+            <button type="button" data-toggle-class="body-hide-context" data-hide-label="Hide notes" data-show-label="Show notes">Hide notes</button>
+            <button type="button" data-toggle-class="body-hide-numbers" data-hide-label="Hide node numbers" data-show-label="Show node numbers">Hide node numbers</button>
+          </div>
+        </div>
+        <details class="speaker-map">
+          <summary>Speakers</summary>
+          <ul><li><span class='speaker-index'>0</span><span class='speaker-name'>Speaker 0</span><span class='inline-meta'>list=865e5b54-e3d6-4fa3-80b4-d5f0b31873d5 | mapping=ce57b3a5-c13f-4b71-a9f8-dee7cd91afc0</span></li><li><span class='speaker-index'>1</span><span class='speaker-name'>Player</span><span class='inline-meta'>GROUP_Players | list=e0d1ff71-04a8-4340-ae64-9684d846eb83 | mapping=cdc25617-b515-4ad2-bb1f-d23fa93b4c98</span></li></ul>
+        </details>
+      </div>
+    </header>
+    <section class="tree-shell">
+      <div class="tree-shell-inner">
+        <ul class="root-list"><li class='node-item'><div class='node-shell' id='node-32'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-32' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>32.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>You steal from those resting in my garden and still expect an audience? Get out.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>LOW_KurwinCoffin_Event_GraveRobbed</span></span></span></span><div class='node-detail-panel' id='details-32' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set if the character was caught graverobbing'>LOW_KurwinCoffin_Event_GraveRobbed</span> <span class='asset-id'>{feb5edff-e52c-42fe-9176-25580af04f6d}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 71bd0cf4-482c-51c1-9199-8f009c8a808b</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h8f95b04ege010g4420g88ceg5a0d6be94836</span><span class='meta-item'><strong>Text UUID</strong>: 49a8d917-df08-4364-80e3-97ad56c91982</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 3</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 71bd0cf4-482c-51c1-9199-8f009c8a808b</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 8.37s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-65'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-65' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>65.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Leave me be. You are not welcome in this place.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>LOW_KurwinCoffin_Gravekeeper_State_AngryAtPlayer</span></span></span></span><div class='node-detail-panel' id='details-65' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player has angered the gravekeeper in LOW graveyard'>LOW_KurwinCoffin_Gravekeeper_State_AngryAtPlayer</span> <span class='asset-id'>{89a8c063-d7fa-03c2-ba7f-e905249d6bf9}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: cc2d8227-60a7-fabe-c53a-b6c4f7abe2c4</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h886777e4g5a4eg483eg9791g931d258811fd</span><span class='meta-item'><strong>Text UUID</strong>: d5162f4f-63ff-414a-8623-15c1ac0dd49a</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 0</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: cc2d8227-60a7-fabe-c53a-b6c4f7abe2c4</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.68s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-76'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-76' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-76' aria-expanded='true' tabindex='0' data-detail-target='details-76' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>76.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>I am sorry for your loss, but - oh, you&#x27;re back?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>LOW_KurwinCoffin_HasMet_Gravekeeper</span></span></span></span><div class='node-detail-panel' id='details-76' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player has met the Gravekeeper'>LOW_KurwinCoffin_HasMet_Gravekeeper</span> <span class='asset-id'>{5d43b260-15a5-4fd8-b31a-715e0ffba5c3}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: e94085d9-74df-f1a0-89f9-2a3a9d71981f</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hc7abe4e4gb537g4b71g97bcgf9ca6114e343</span><span class='meta-item'><strong>Text UUID</strong>: 74c3e714-634f-4bff-b577-c409516ef490</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 2</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: e94085d9-74df-f1a0-89f9-2a3a9d71981f</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6.5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-76'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-5'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-5' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-5' aria-expanded='false' tabindex='0' data-detail-target='details-5' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>5.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I took care of those grave-robbing kobolds for you.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!LOW_KurwinCoffin_Gravekeeper_State_ToldKoboldsDead</span><span class='preview-token check'>LOW_KurwinCoffin_Gravekeeper_State_MentionedKobolds</span><span class='preview-token check'>LOW_KurwinCoffin_State_KilledAllKobolds</span></span></span></span><div class='node-detail-panel' id='details-5' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='You told the gravekeeper that you killed the kobolds robbing her graves'>LOW_KurwinCoffin_Gravekeeper_State_ToldKoboldsDead</span> <span class='asset-id'>{b2fdef81-3259-5bf0-a3df-b60b48381172}</span> <span class='asset-state'>= False</span></li><li class='signal-item'><span class='asset-name' title='You told the LOW Gravekeeper than Kobolds were raiding her graves'>LOW_KurwinCoffin_Gravekeeper_State_MentionedKobolds</span> <span class='asset-id'>{022eb1fe-3db8-eaf2-d0a2-63f5cbf38cbb}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='If all the Kobolds are dead'>LOW_KurwinCoffin_State_KilledAllKobolds</span> <span class='asset-id'>{0e24e6b4-f1e7-4ae2-b2da-980634a41fba}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 13ef5318-4363-0f1f-0873-bcf23650717a</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h5ce08367gd765g426dg888bge324e7646ab7</span><span class='meta-item'><strong>Text UUID</strong>: c93043b0-5735-4730-90c0-20ea2c4b18a1</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-5' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-60'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-60' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-60' aria-expanded='false' tabindex='0' data-detail-target='details-60' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>60.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Yes, I saw the bodies.</span></span></span></span><div class='node-detail-panel' id='details-60' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: b8e38c43-28f5-febe-4a73-bffb4e781201</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hea4626d1gb21eg40a0ga6d6gf77b4334224a</span><span class='meta-item'><strong>Text UUID</strong>: 7614da28-37c0-46d8-b521-20835bf54553</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 11</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: b8e38c43-28f5-febe-4a73-bffb4e781201</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.55s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-60' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-40'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-40' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>40.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-41'>Node 41</a></span></span></span></span><div class='node-detail-panel' id='details-40' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 82871f69-2012-6c12-3c70-a857df7d77ae</span><span class='meta-item'><strong>Jump Target</strong>: Node 41 (8363fadc-5bac-3f61-272f-44ce285474bf)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-64'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-64' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>64.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-47'>Node 47</a></span></span></span></span><div class='node-detail-panel' id='details-64' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: cb8af88b-3813-d6e7-7e22-d6b2f2f330dc</span><span class='meta-item'><strong>Jump Target</strong>: Node 47 (9163b8f6-9b3c-1510-5f4b-b7759125a94e)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-61'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-61' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>61.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-11'>Node 11</a></span></span></span></span><div class='node-detail-panel' id='details-61' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: bbcb2212-cf28-9f31-3e4c-f2a5c2d4f489</span><span class='meta-item'><strong>Jump Target</strong>: Node 11 (3885fdc8-66f4-d2bc-1d5f-d870a1c82a04)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-3'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-3' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>3.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-23'>Node 23</a></span></span></span></span><div class='node-detail-panel' id='details-3' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 0cf578a6-5ffc-40cf-0d06-ce0f98c0ca8d</span><span class='meta-item'><strong>Jump Target</strong>: Node 23 (51db5ae7-2aeb-5fd5-f874-8da370111320)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-18'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-18' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-18' aria-expanded='false' tabindex='0' data-detail-target='details-18' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>18.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I hear there&#x27;s a serial killer out there.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>LOW_SerialKiller_State_MissionTriggered</span><span class='preview-token check'>!LOW_KurwinCoffin_GraveKeeper_state_MentionedKiller</span><span class='preview-token set'>LOW_KurwinCoffin_GraveKeeper_state_MentionedKiller</span></span></span></span><div class='node-detail-panel' id='details-18' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The mission begins, through discover the lair or with the pass of time'>LOW_SerialKiller_State_MissionTriggered</span> <span class='asset-id'>{003250e5-2cca-4612-9b74-a9802e8fec12}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type User | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The grave keeper in the LOW graveyard mentioned the serial killer, if you hadn&#x27;t heard about them before'>LOW_KurwinCoffin_GraveKeeper_state_MentionedKiller</span> <span class='asset-id'>{9cd4cf59-6d0e-660a-bf66-0e621649a968}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type User | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The grave keeper in the LOW graveyard mentioned the serial killer, if you hadn&#x27;t heard about them before'>LOW_KurwinCoffin_GraveKeeper_state_MentionedKiller</span> <span class='asset-id'>{9cd4cf59-6d0e-660a-bf66-0e621649a968}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 4610ac95-cd81-23a8-9803-ef63532b1c45</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h43a57800g8569g4005g87ebg8884722bde40</span><span class='meta-item'><strong>Text UUID</strong>: a2845294-6cd2-4f7a-a4a7-39ad8c4976f2</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-18' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-79'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-79' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>79.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-67'>Node 67</a></span></span></span></span><div class='node-detail-panel' id='details-79' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: f2830db0-028c-e95b-79fe-4fc1c55f1533</span><span class='meta-item'><strong>Jump Target</strong>: Node 67 (d5219aca-8888-9d94-cf76-27543c0ae2cf)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-43'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-43' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-43' aria-expanded='false' tabindex='0' data-detail-target='details-43' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>43.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>What&#x27;s got you so distracted?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!LOW_SerialKiller_State_MissionTriggered</span><span class='preview-token check'>!LOW_KurwinCoffin_GraveKeeper_state_MentionedKiller</span><span class='preview-token set'>LOW_KurwinCoffin_GraveKeeper_state_MentionedKiller</span></span></span></span><div class='node-detail-panel' id='details-43' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The mission begins, through discover the lair or with the pass of time'>LOW_SerialKiller_State_MissionTriggered</span> <span class='asset-id'>{003250e5-2cca-4612-9b74-a9802e8fec12}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type User | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The grave keeper in the LOW graveyard mentioned the serial killer, if you hadn&#x27;t heard about them before'>LOW_KurwinCoffin_GraveKeeper_state_MentionedKiller</span> <span class='asset-id'>{9cd4cf59-6d0e-660a-bf66-0e621649a968}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type User | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The grave keeper in the LOW graveyard mentioned the serial killer, if you hadn&#x27;t heard about them before'>LOW_KurwinCoffin_GraveKeeper_state_MentionedKiller</span> <span class='asset-id'>{9cd4cf59-6d0e-660a-bf66-0e621649a968}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 8ca50443-c267-b5c8-4fcc-0416c82011bf</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h202f2ee8gbdbfg4250gacf9g9905d3721de3</span><span class='meta-item'><strong>Text UUID</strong>: 2d3a3710-eb57-4cfd-bf66-b5c5dd53689b</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-43' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-52'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-52' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>52.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-37'>Node 37</a></span></span></span></span><div class='node-detail-panel' id='details-52' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: a56490bc-fa19-5236-50ca-dfb584d4934c</span><span class='meta-item'><strong>Jump Target</strong>: Node 37 (7b392f94-a78d-5d04-f7af-12890993465f)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-58'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-58' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-58' aria-expanded='false' tabindex='0' data-detail-target='details-58' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>58.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Yes, I just need to borrow a shovel.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!LOW_KurwinCoffin_Gravekeeper_State_AskedAboutShovel</span><span class='preview-token check'>!8ecf6929-1a19-7517-0ada-ac4bc4901f2a</span></span></span></span><div class='node-detail-panel' id='details-58' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player asked the Gravekeeper where to find a shovel in the Lower City Graveyard'>LOW_KurwinCoffin_Gravekeeper_State_AskedAboutShovel</span> <span class='asset-id'>{6363217b-4720-a1a4-3156-5a21a9776996}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Script</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>8ecf6929-1a19-7517-0ada-ac4bc4901f2a</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: b401efb6-b55e-860d-425d-c8a9bb9e6600</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h54ff1374g71bdg4a33ga247g7a33a6ce0d8c</span><span class='meta-item'><strong>Text UUID</strong>: 961a334f-0780-4b3a-99c2-9c7c1c83c61c</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Approval Rating</strong>: 47663cb4-3c1c-4f0f-b035-bc42225b47f7</span></div></section></div></div></div><div class='node-branch' id='branch-58' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-69'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-69' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>69.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-31'>Node 31</a></span></span></span></span><div class='node-detail-panel' id='details-69' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: d63cb350-dcda-01c2-9ff6-59cf3214bb5d</span><span class='meta-item'><strong>Jump Target</strong>: Node 31 (6f5c6926-c141-5ad7-64c6-b4505b2494c4)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-55'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-55' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>55.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-4'>Node 4</a></span></span></span></span><div class='node-detail-panel' id='details-55' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: af936e45-6d34-ac53-b74c-296b2c457ed1</span><span class='meta-item'><strong>Jump Target</strong>: Node 4 (10b011b5-b467-4a9d-784c-4e13797b9308)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-7'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-7' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>7.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-16'>Node 16</a></span></span></span></span><div class='node-detail-panel' id='details-7' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 264ce1a3-fec9-aebe-b5dc-ad27b0e6a67d</span><span class='meta-item'><strong>Jump Target</strong>: Node 16 (4385967f-d283-2fa2-6329-90591cb6e274)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-20'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-20' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-20' aria-expanded='true' tabindex='0' data-detail-target='details-20' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>20.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>I am sorry for your loss, but it will be a tenday before I can take your departed. Maybe more.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>LOW_KurwinCoffin_HasMet_Gravekeeper</span></span></span></span><div class='node-detail-panel' id='details-20' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player has met the Gravekeeper'>LOW_KurwinCoffin_HasMet_Gravekeeper</span> <span class='asset-id'>{5d43b260-15a5-4fd8-b31a-715e0ffba5c3}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 49cc93f3-c6bc-5251-224b-a7c9f27d3996</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: ha601d56dgbc76g4aceg8044gf51f928e65a2</span><span class='meta-item'><strong>Text UUID</strong>: 3ca9c4fe-9290-4dda-ba3a-893ba3c2247d</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 1</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 49cc93f3-c6bc-5251-224b-a7c9f27d3996</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 20.08s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 4</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: GroupID, GroupIndex</span></div></section></div></div></div><div class='node-branch' id='branch-20'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-77'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-77' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-77' aria-expanded='false' tabindex='0' data-detail-target='details-77' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>77.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>If you notice any odours before then, treat the body with jasmine, honeysuckle - whatever you can get.</span></span></span></span><div class='node-detail-panel' id='details-77' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: ed58b4d0-e88c-ac37-8931-05ea974aa90d</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: ha3d9f5d1g88e2g434cga94ega949c40969b6</span><span class='meta-item'><strong>Text UUID</strong>: 801505ef-fbef-4730-8333-e4091fe0421c</span><span class='meta-item'><strong>Group ID</strong>: 49cc93f3-c6bc-5251-224b-a7c9f27d3996</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-77' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-48'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-48' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-48' aria-expanded='false' tabindex='0' data-detail-target='details-48' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>48.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Pah, there usually isn&#x27;t much left once I&#x27;m done with a body.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!GLO_Orin_State_PermaDefeated</span><span class='preview-token check'>Dark Urge</span></span></span></span><div class='node-detail-panel' id='details-48' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Orin is perma defeated'>GLO_Orin_State_PermaDefeated</span> <span class='asset-id'>{c716e4d9-e6ed-445c-a710-ee4d91c67298}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Dark urge origin tag; ignores shapeshift.|'>Dark Urge</span> <span class='asset-id'>{cd611d7d-b67d-42b4-a75c-a0c6091ef8a2}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 93a194e6-f7a7-a4c3-e8fb-191f5814d499</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h7af3258ag5e7dg4515gbf07g3d93db5d8335</span><span class='meta-item'><strong>Text UUID</strong>: 77bf57e3-5f7e-4776-8799-2d22cf6ddc48</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Approval Rating</strong>: 48e2b4df-64a8-4d36-9a27-8b510beb5a36</span></div></section></div></div></div><div class='node-branch' id='branch-48' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-68'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-68' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-68' aria-expanded='false' tabindex='0' data-detail-target='details-68' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>68.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Think I&#x27;m not used to deviants like you in my graveyard? You aren&#x27;t special, you know.</span></span></span></span><div class='node-detail-panel' id='details-68' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: d619ad34-a003-2c2c-43be-c2eddde72260</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: haab8ad8agd65fg42ddgbcf9g3c7b5fb0555d</span><span class='meta-item'><strong>Text UUID</strong>: 087f2827-ae17-4c4c-8b05-35fb941edba2</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 14</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: d619ad34-a003-2c2c-43be-c2eddde72260</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 13.11s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Group ID</strong>: d619ad34-a003-2c2c-43be-c2eddde72260</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-68' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-74'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-74' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>74.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Don&#x27;t touch <i>anything</i>.</span></span></span></span><div class='node-detail-panel' id='details-74' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: e5ed60f3-4c17-e7bb-95b1-dee34a5caa4f</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h652139c5gd8fag4013g9e1bgb3abfde91cb7</span><span class='meta-item'><strong>Text UUID</strong>: 88056385-3f59-4192-89f5-07a74ff13b88</span><span class='meta-item'><strong>Group ID</strong>: d619ad34-a003-2c2c-43be-c2eddde72260</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-2'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-2' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-2' aria-expanded='false' tabindex='0' data-detail-target='details-2' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>2.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>My dear, precious sister perished recently! Is there <i>nothing </i>that can be done?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>GLO_Orin_State_PermaDefeated</span><span class='preview-token check'>Dark Urge</span></span></span></span><div class='node-detail-panel' id='details-2' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Orin is perma defeated'>GLO_Orin_State_PermaDefeated</span> <span class='asset-id'>{c716e4d9-e6ed-445c-a710-ee4d91c67298}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Dark urge origin tag; ignores shapeshift.|'>Dark Urge</span> <span class='asset-id'>{cd611d7d-b67d-42b4-a75c-a0c6091ef8a2}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 09c5811b-480f-afad-d3e6-6de651a91a3f</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h86132927gc895g45fega860g9acbccb889b2</span><span class='meta-item'><strong>Text UUID</strong>: acc7aa59-9402-4bba-b7d6-8b02f1052978</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-2' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-27'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-27' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-27' aria-expanded='false' tabindex='0' data-detail-target='details-27' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>27.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>I don&#x27;t have a plot left to sell you, yet alone the time to schedule a burial.</span></span></span></span><div class='node-detail-panel' id='details-27' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 5aa2f041-2419-4e8c-03be-8d651a1a2ad4</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h1dd0cb99gd665g4920g86b8gbda0f4774922</span><span class='meta-item'><strong>Text UUID</strong>: c3ce7964-960b-4147-b749-7440511084ae</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 10</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 5aa2f041-2419-4e8c-03be-8d651a1a2ad4</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 17.64s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Group ID</strong>: 5aa2f041-2419-4e8c-03be-8d651a1a2ad4</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-27' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-24'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-24' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>24.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>I hope you have other family to provide you some comfort as you mourn.</span></span></span></span><div class='node-detail-panel' id='details-24' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 530668ea-ef2a-cb70-aa81-cabce77399fd</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hf1fc0400g579cg4331gb737g8c33515576b9</span><span class='meta-item'><strong>Text UUID</strong>: 82e1cd8e-00c4-4078-9cb7-fc296b66efb6</span><span class='meta-item'><strong>Group ID</strong>: 5aa2f041-2419-4e8c-03be-8d651a1a2ad4</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-47'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-47' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-47' aria-expanded='false' tabindex='0' data-detail-target='details-47' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>47.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I&#x27;m looking for a grave. Name of M Kurwin?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>LOW_KurwinCoffin_Knows_ReadNineFingersNote</span></span></span></span><div class='node-detail-panel' id='details-47' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='If the player has read the note, they know to look for M.Kurwin&#x27;s grave in the graveyard'>LOW_KurwinCoffin_Knows_ReadNineFingersNote</span> <span class='asset-id'>{8b458528-dc75-4332-b817-5e887ec8bb93}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 9163b8f6-9b3c-1510-5f4b-b7759125a94e</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hb15135b7g7854g46c0g9c75gbf5577178140</span><span class='meta-item'><strong>Text UUID</strong>: d3bd5273-fab6-45fc-a359-1d31b8d08fb4</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-47' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-62'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-62' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-62' aria-expanded='false' tabindex='0' data-detail-target='details-62' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>62.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Kurwin? Oh, yes - he&#x27;s just outside, under the great willow with the drooping branches.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>c3ee3067-a0b3-51b9-9f52-061c7b16e7dd_mentionedkurwin</span></span></span></span><div class='node-detail-panel' id='details-62' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='gravekeeper mentioned kurwin'>c3ee3067-a0b3-51b9-9f52-061c7b16e7dd_mentionedkurwin</span> <span class='asset-id'>{2e05a83b-8a85-38c6-2aaa-27ed84d5ff4e}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: c086daed-50bf-4dea-4cce-0a26e9158d5e</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h8a36eee6g8452g4a4fg81f7gd11086d76c4e</span><span class='meta-item'><strong>Text UUID</strong>: 4693e077-cec5-4736-bc37-17e2dcd97aff</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 6</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: c086daed-50bf-4dea-4cce-0a26e9158d5e</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 16.35s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 4</span><span class='meta-item'><strong>Group ID</strong>: c086daed-50bf-4dea-4cce-0a26e9158d5e</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-62' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-57'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-57' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-57' aria-expanded='false' tabindex='0' data-detail-target='details-57' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>57.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>It&#x27;s good of you to come. He hasn&#x27;t had any visitors in a long time.</span></span></span></span><div class='node-detail-panel' id='details-57' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: b3795932-cb2b-5142-6257-772cb31aaf98</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hd2d31c8bg8a9dg4fc8gbc20g9064f5de4a59</span><span class='meta-item'><strong>Text UUID</strong>: 5d1ae850-fe67-497f-bd4f-30772388015c</span><span class='meta-item'><strong>Group ID</strong>: c086daed-50bf-4dea-4cce-0a26e9158d5e</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-57' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-21'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-21' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-21' aria-expanded='false' tabindex='0' data-detail-target='details-21' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>21.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Just want to pay my respects.</span></span></span></span><div class='node-detail-panel' id='details-21' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 4e9b257e-6b8e-12f9-e828-cb5e7525115d</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h06b5a462gfb09g4735ga883gf0d8d52c0b0b</span><span class='meta-item'><strong>Text UUID</strong>: 01ebc0ab-b461-49c4-9fdc-792e98d639c2</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-21' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-1'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-1' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>1.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>It&#x27;s important to remember those who have gone before us. I wish there were more like you.</span> <span class='end'>[End]</span></span></span></span><div class='node-detail-panel' id='details-1' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 01f3329d-ff68-a6cf-81ec-33a086c75f66</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h9ab0b7f1g6d06g4d4dgbde6g4b606cf4d470</span><span class='meta-item'><strong>Text UUID</strong>: c895c42a-6e30-4331-b248-374c7bd61753</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 17</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 01f3329d-ff68-a6cf-81ec-33a086c75f66</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 8.16s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-75'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-75' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-75' aria-expanded='false' tabindex='0' data-detail-target='details-75' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>75.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Great! Now, do you have a shovel I can borrow?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!LOW_KurwinCoffin_Gravekeeper_State_AskedAboutShovel</span><span class='preview-token check'>!8ecf6929-1a19-7517-0ada-ac4bc4901f2a</span></span></span></span><div class='node-detail-panel' id='details-75' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player asked the Gravekeeper where to find a shovel in the Lower City Graveyard'>LOW_KurwinCoffin_Gravekeeper_State_AskedAboutShovel</span> <span class='asset-id'>{6363217b-4720-a1a4-3156-5a21a9776996}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Script</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>8ecf6929-1a19-7517-0ada-ac4bc4901f2a</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: e81705b1-9316-629b-362d-62899a7054fd</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h42a20c2fg2454g4ea8g8724g2ed0c975a315</span><span class='meta-item'><strong>Text UUID</strong>: f08bfae3-c072-4036-b5cd-762609c30704</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Approval Rating</strong>: 47663cb4-3c1c-4f0f-b035-bc42225b47f7</span></div></section></div></div></div><div class='node-branch' id='branch-75' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-31'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-31' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-31' aria-expanded='false' tabindex='0' data-detail-target='details-31' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>31.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>A shovel? Tell me you&#x27;re joking.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>LOW_KurwinCoffin_Gravekeeper_State_AskedAboutShovel</span></span></span></span><div class='node-detail-panel' id='details-31' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player asked the Gravekeeper where to find a shovel in the Lower City Graveyard'>LOW_KurwinCoffin_Gravekeeper_State_AskedAboutShovel</span> <span class='asset-id'>{6363217b-4720-a1a4-3156-5a21a9776996}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 6f5c6926-c141-5ad7-64c6-b4505b2494c4</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h526f45c8g3f53g4040g9a86g1ef37378bf7e</span><span class='meta-item'><strong>Text UUID</strong>: 289dfb87-603e-4e07-8665-26579077ea41</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 9</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 6f5c6926-c141-5ad7-64c6-b4505b2494c4</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6.91s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-31' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-13'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-13' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-13' aria-expanded='false' tabindex='0' data-detail-target='details-13' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>13.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Charisma, Intimidation, SkillCheck) vs 96bc76f2-0b2e-4a79-854f-e4971a772c36 [0] target=0</span></span></span></span><div class='node-detail-panel' id='details-13' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 3f4a0231-488e-1f8e-fd73-89d23ffc983b</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h37326b0ag64d7g4b27g877cg77cd8ea4305c</span><span class='meta-item'><strong>Text UUID</strong>: 219f4a26-ffa0-4ac7-bb49-85fb2774b900</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Advantage</strong>: 0</span><span class='meta-item'><strong>Difficulty Class</strong>: 96bc76f2-0b2e-4a79-854f-e4971a772c36</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Intimidation</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-13' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-30'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-30' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-30' aria-expanded='false' tabindex='0' data-detail-target='details-30' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>30.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-30' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 67fabb07-c7c9-4c80-d7fb-078106377677</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-30' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-42'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-42' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>42.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>There - there&#x27;s one by the grand mausoleum. Down the steps, past the fountain.</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>LOW_KurwinCoffin_Gravekeeper_State_AngryAtPlayer</span></span></span></span><div class='node-detail-panel' id='details-42' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player has angered the gravekeeper in LOW graveyard'>LOW_KurwinCoffin_Gravekeeper_State_AngryAtPlayer</span> <span class='asset-id'>{89a8c063-d7fa-03c2-ba7f-e905249d6bf9}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 889ff95b-ab06-2f66-3216-1ec6f0151ae4</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hdda41c38g6f39g49e7g9e77g9205912f5986</span><span class='meta-item'><strong>Text UUID</strong>: 8da6c71c-a018-4530-ab84-cedd773b894a</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 18</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 889ff95b-ab06-2f66-3216-1ec6f0151ae4</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6.53s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-10'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-10' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive' data-branch-target='branch-10' aria-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>10.</span><span class='dialog'>Failure</span></span></span></span></div></div><div class='node-branch' id='branch-10' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-14'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-14' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-14' aria-expanded='false' tabindex='0' data-detail-target='details-14' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>14.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>You think you can scare me? You think there is anything I have not seen?</span></span></span></span><div class='node-detail-panel' id='details-14' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 41e6a341-8ac7-a5c4-c729-9abefdca934f</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hbc7eeabfge4c0g43f1gbe9dgcac502426356</span><span class='meta-item'><strong>Text UUID</strong>: a378ac9e-9343-4ff4-aa09-18e002c0d639</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 20</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 41e6a341-8ac7-a5c4-c729-9abefdca934f</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 16.21s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Group ID</strong>: 41e6a341-8ac7-a5c4-c729-9abefdca934f</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-14' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-35'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-35' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>35.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>This is a house of peace and respect - you are interested in neither. Get out.</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>LOW_KurwinCoffin_Gravekeeper_State_AngryAtPlayer</span></span></span></span><div class='node-detail-panel' id='details-35' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player has angered the gravekeeper in LOW graveyard'>LOW_KurwinCoffin_Gravekeeper_State_AngryAtPlayer</span> <span class='asset-id'>{89a8c063-d7fa-03c2-ba7f-e905249d6bf9}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 77424bec-b956-ea4d-e78a-8443189872ed</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h12b9db4bg5e3dg42d0gafdag178bc2cbdc26</span><span class='meta-item'><strong>Text UUID</strong>: e69da609-64fe-45fd-ad41-82687b15f292</span><span class='meta-item'><strong>End Node</strong>: True</span><span class='meta-item'><strong>Group ID</strong>: 41e6a341-8ac7-a5c4-c729-9abefdca934f</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-26'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-26' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-26' aria-expanded='false' tabindex='0' data-detail-target='details-26' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>26.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Charisma, Deception, SkillCheck) vs 96bc76f2-0b2e-4a79-854f-e4971a772c36 [0] target=0</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!LOW_KurwinCoffin_HasMet_KoboldLooter</span><span class='preview-token check'>!c3ee3067-a0b3-51b9-9f52-061c7b16e7dd_mentionedkurwin</span></span></span></span><div class='node-detail-panel' id='details-26' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Met the Kobold looter in the graveyard - and in this case, didn&#x27;t initiate combat'>LOW_KurwinCoffin_HasMet_KoboldLooter</span> <span class='asset-id'>{3521225a-b296-7258-acd5-bf01c1cd6d46}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='gravekeeper mentioned kurwin'>c3ee3067-a0b3-51b9-9f52-061c7b16e7dd_mentionedkurwin</span> <span class='asset-id'>{2e05a83b-8a85-38c6-2aaa-27ed84d5ff4e}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 5666904f-9b91-680f-06e5-e6f1afcacbf2</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hc23cc69eg7215g437bga710g051944eda833</span><span class='meta-item'><strong>Text UUID</strong>: 887fcbd7-1527-4763-b5b6-539cb513cf25</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Advantage</strong>: 0</span><span class='meta-item'><strong>Difficulty Class</strong>: 96bc76f2-0b2e-4a79-854f-e4971a772c36</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Deception</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-26' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-50'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-50' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-50' aria-expanded='false' tabindex='0' data-detail-target='details-50' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>50.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-50' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 9dfc3201-1329-4860-e399-7cdbfaca4a47</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-50' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-49'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-49' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-49' aria-expanded='false' tabindex='0' data-detail-target='details-49' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>49.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>That&#x27;s... very kind, actually. Thank you.</span></span></span></span><div class='node-detail-panel' id='details-49' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 9538e626-d2fa-b629-8017-4e1300044c0f</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h1d4136degeec1g4cf6g8acdg48846b711320</span><span class='meta-item'><strong>Text UUID</strong>: 15bb6a2d-ba4e-4748-be48-d00c0197778b</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 21</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 9538e626-d2fa-b629-8017-4e1300044c0f</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 15.11s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Group ID</strong>: 9538e626-d2fa-b629-8017-4e1300044c0f</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-49' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-6'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-6' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>6.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>If you go down all the steps, past the fountain, you&#x27;ll find the grand mausoleum. There should be one there. </span> <span class='end'>[End]</span></span></span></span><div class='node-detail-panel' id='details-6' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 25ba740f-2863-8f14-4a77-1a90e9876c0a</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h21a96049g9ca8g4fd4g9a5cgc305004533bb</span><span class='meta-item'><strong>Text UUID</strong>: bd1d7950-a452-4e0b-ab4d-b0ef1ba6f95d</span><span class='meta-item'><strong>End Node</strong>: True</span><span class='meta-item'><strong>Group ID</strong>: 9538e626-d2fa-b629-8017-4e1300044c0f</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-25'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-25' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive' data-branch-target='branch-25' aria-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>25.</span><span class='dialog'>Failure</span></span></span></span></div></div><div class='node-branch' id='branch-25' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-63'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-63' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-63' aria-expanded='false' tabindex='0' data-detail-target='details-63' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>63.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>First the kobolds, now you? </span></span></span></span><div class='node-detail-panel' id='details-63' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: c23c48f2-3cfe-a88e-7cd1-8961d0065fb1</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h95e47056g9233g43b5ga70cga526e7b220fd</span><span class='meta-item'><strong>Text UUID</strong>: 9cbf92da-4833-4f4d-ba37-896348a36f46</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 19</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: c23c48f2-3cfe-a88e-7cd1-8961d0065fb1</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 9.87s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Group ID</strong>: c23c48f2-3cfe-a88e-7cd1-8961d0065fb1</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-63' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-22'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-22' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>22.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>I have no time for this - get out before I call the Watch!</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>LOW_KurwinCoffin_Gravekeeper_State_AngryAtPlayer</span></span></span></span><div class='node-detail-panel' id='details-22' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player has angered the gravekeeper in LOW graveyard'>LOW_KurwinCoffin_Gravekeeper_State_AngryAtPlayer</span> <span class='asset-id'>{89a8c063-d7fa-03c2-ba7f-e905249d6bf9}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 4f86d600-53e2-b4e7-9788-d455b15eee0a</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hd0a6f7e6g98d5g4955g8639gc4c9d5bf7ef5</span><span class='meta-item'><strong>Text UUID</strong>: 651a899e-954a-4485-9d25-ded8697bd070</span><span class='meta-item'><strong>End Node</strong>: True</span><span class='meta-item'><strong>Group ID</strong>: c23c48f2-3cfe-a88e-7cd1-8961d0065fb1</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-54'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-54' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-54' aria-expanded='false' tabindex='0' data-detail-target='details-54' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>54.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Charisma, Deception, SkillCheck) vs 96bc76f2-0b2e-4a79-854f-e4971a772c36 [0] target=0</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!LOW_KurwinCoffin_HasMet_KoboldLooter</span><span class='preview-token check'>c3ee3067-a0b3-51b9-9f52-061c7b16e7dd_mentionedkurwin</span></span></span></span><div class='node-detail-panel' id='details-54' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Met the Kobold looter in the graveyard - and in this case, didn&#x27;t initiate combat'>LOW_KurwinCoffin_HasMet_KoboldLooter</span> <span class='asset-id'>{3521225a-b296-7258-acd5-bf01c1cd6d46}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='gravekeeper mentioned kurwin'>c3ee3067-a0b3-51b9-9f52-061c7b16e7dd_mentionedkurwin</span> <span class='asset-id'>{2e05a83b-8a85-38c6-2aaa-27ed84d5ff4e}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: ab2510b6-b69e-b941-7529-b6f19e429d1e</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h1c9f0e55g6d03g451agae2cgf5ff2633d13d</span><span class='meta-item'><strong>Text UUID</strong>: cf3102aa-17f4-4d71-90a0-3a179d460fca</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Advantage</strong>: 0</span><span class='meta-item'><strong>Difficulty Class</strong>: 96bc76f2-0b2e-4a79-854f-e4971a772c36</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Deception</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-54' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-50'>Node 50</a> <span class='dialog'>Success</span></div></li><li class='node-item'><div class='repeat'>See <a href='#node-25'>Node 25</a> <span class='dialog'>Failure</span></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-17'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-17' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-17' aria-expanded='false' tabindex='0' data-detail-target='details-17' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>17.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Charisma, Deception, SkillCheck) vs 77cee1c4-384a-4217-b670-67db3c7add57 [0] target=0</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>LOW_KurwinCoffin_HasMet_KoboldLooter</span></span></span></span><div class='node-detail-panel' id='details-17' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Met the Kobold looter in the graveyard - and in this case, didn&#x27;t initiate combat'>LOW_KurwinCoffin_HasMet_KoboldLooter</span> <span class='asset-id'>{3521225a-b296-7258-acd5-bf01c1cd6d46}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 44437e78-9d4f-3ba6-7edb-e60f3ce2959b</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h300c6847gd767g4dc5g9ddeg5d4d1e8331e7</span><span class='meta-item'><strong>Text UUID</strong>: 4e5bc8e9-fc61-4909-b959-9e5c33a55342</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Advantage</strong>: 0</span><span class='meta-item'><strong>Difficulty Class</strong>: 77cee1c4-384a-4217-b670-67db3c7add57</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Deception</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-17' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-50'>Node 50</a> <span class='dialog'>Success</span></div></li><li class='node-item'><div class='repeat'>See <a href='#node-25'>Node 25</a> <span class='dialog'>Failure</span></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-19'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-19' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-19' aria-expanded='false' tabindex='0' data-detail-target='details-19' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>19.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>...You&#x27;re busy. I&#x27;ll just go. </span></span></span></span><div class='node-detail-panel' id='details-19' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 4659d3c6-dd4d-7f1c-7143-cca2bafc6432</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h627299f4g2f65g4528gb8f8g0bf1026fd157</span><span class='meta-item'><strong>Text UUID</strong>: 67d904e1-d2a1-4390-b1ce-0f2ba8b73696</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-19' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-45'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-45' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>45.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'><i>Please. </i>Honestly...</span> <span class='end'>[End]</span></span></span></span><div class='node-detail-panel' id='details-45' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 8f8466bf-35a5-a285-bf33-cb3a48f9a605</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h86958af4gb9b7g4ad4gadc6g185da92b1770</span><span class='meta-item'><strong>Text UUID</strong>: b35b7db1-22fe-493a-8bc5-989c9bd1ada0</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 22</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 8f8466bf-35a5-a285-bf33-cb3a48f9a605</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.17s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-12'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-12' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>12.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'><i>Leave.</i></span></span></span></span><div class='node-detail-panel' id='details-12' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 3c0d8a8f-a08d-4880-d280-e5aafca82917</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h4962ac13gce99g4332g80a2g6cb893ac8dc6</span><span class='meta-item'><strong>Text UUID</strong>: 245ff0d2-0a1f-4ab2-88e6-bde4b781da8a</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-70'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-70' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-70' aria-expanded='false' tabindex='0' data-detail-target='details-70' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>70.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I hear there&#x27;s a serial killer out there. No wonder you&#x27;re busy.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>LOW_SerialKiller_State_MissionTriggered</span><span class='preview-token check'>!LOW_KurwinCoffin_GraveKeeper_state_MentionedKiller</span><span class='preview-token set'>LOW_KurwinCoffin_GraveKeeper_state_MentionedKiller</span></span></span></span><div class='node-detail-panel' id='details-70' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The mission begins, through discover the lair or with the pass of time'>LOW_SerialKiller_State_MissionTriggered</span> <span class='asset-id'>{003250e5-2cca-4612-9b74-a9802e8fec12}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type User | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The grave keeper in the LOW graveyard mentioned the serial killer, if you hadn&#x27;t heard about them before'>LOW_KurwinCoffin_GraveKeeper_state_MentionedKiller</span> <span class='asset-id'>{9cd4cf59-6d0e-660a-bf66-0e621649a968}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type User | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The grave keeper in the LOW graveyard mentioned the serial killer, if you hadn&#x27;t heard about them before'>LOW_KurwinCoffin_GraveKeeper_state_MentionedKiller</span> <span class='asset-id'>{9cd4cf59-6d0e-660a-bf66-0e621649a968}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: d79451e8-6f80-38f3-f961-9d34eee6bf13</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h1848140agfb1eg4d81g884dgc03dc29353c4</span><span class='meta-item'><strong>Text UUID</strong>: 86f7c2ef-c71c-4a8c-a9ea-2a1ff1d26b4a</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-70' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-67'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-67' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-67' aria-expanded='false' tabindex='0' data-detail-target='details-67' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>67.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Yes and no. The murders were terrible, but all causes of death are on the rise. </span></span></span></span><div class='node-detail-panel' id='details-67' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: d5219aca-8888-9d94-cf76-27543c0ae2cf</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hc6e64c43g4cedg499eg900egf8c9e83a6d55</span><span class='meta-item'><strong>Text UUID</strong>: 580d2f9a-5304-4234-bf82-44a779c5d21d</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 13</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: d5219aca-8888-9d94-cf76-27543c0ae2cf</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 25.74s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 4</span><span class='meta-item'><strong>Group ID</strong>: d5219aca-8888-9d94-cf76-27543c0ae2cf</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-67' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-8'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-8' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-8' aria-expanded='false' tabindex='0' data-detail-target='details-8' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>8.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>More killed in bar fights, more killed at home, more attacks on strangers.</span></span></span></span><div class='node-detail-panel' id='details-8' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 2b56aa6b-6b32-322d-b13d-09ea9b43c900</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hdf266d8agb156g45d6gae6ag56a10af9bf3b</span><span class='meta-item'><strong>Text UUID</strong>: 949bfd2c-671c-4de7-90e5-6a86a02b68fc</span><span class='meta-item'><strong>Group ID</strong>: d5219aca-8888-9d94-cf76-27543c0ae2cf</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-8' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-29'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-29' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-29' aria-expanded='false' tabindex='0' data-detail-target='details-29' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>29.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Fear is taking more lives than any cult. Everyone is on edge, watching each other, and ready to draw steel.</span></span></span></span><div class='node-detail-panel' id='details-29' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 6084eb2b-5a1e-0505-76e0-0f90fb397ec6</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: ha6a091a8g018bg47a9g887fga6193ecdd30e</span><span class='meta-item'><strong>Text UUID</strong>: 3bddc3e0-26b5-492b-96d0-6e475b422e3c</span><span class='meta-item'><strong>Group ID</strong>: d5219aca-8888-9d94-cf76-27543c0ae2cf</span><span class='meta-item'><strong>Group Index</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-29' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-36'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-36' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>36.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>I only hope the worst is behind us now that this killer has been dealt with.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>LOW_SerialKiller_State_DolorIsDead</span></span></span></span><div class='node-detail-panel' id='details-36' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Dolor is dead'>LOW_SerialKiller_State_DolorIsDead</span> <span class='asset-id'>{fa48e3fe-dc3c-b5c5-09f1-039a5b6974cf}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 78cc28ac-9a9d-b1e5-805b-ba28530eac8a</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h093a600cgf364g4dc2g85d1g07cb0f81eae1</span><span class='meta-item'><strong>Text UUID</strong>: d08ab715-5559-4b25-b857-ab23c31aaf4c</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 8</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 78cc28ac-9a9d-b1e5-805b-ba28530eac8a</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 8.5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Optional</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-34'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-34' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-34' aria-expanded='false' tabindex='0' data-detail-target='details-34' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>34.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>It sounds like you&#x27;re pretty busy.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!LOW_SerialKiller_State_MissionTriggered</span><span class='preview-token check'>!LOW_KurwinCoffin_GraveKeeper_state_MentionedKiller</span><span class='preview-token set'>LOW_KurwinCoffin_GraveKeeper_state_MentionedKiller</span></span></span></span><div class='node-detail-panel' id='details-34' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The mission begins, through discover the lair or with the pass of time'>LOW_SerialKiller_State_MissionTriggered</span> <span class='asset-id'>{003250e5-2cca-4612-9b74-a9802e8fec12}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type User | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The grave keeper in the LOW graveyard mentioned the serial killer, if you hadn&#x27;t heard about them before'>LOW_KurwinCoffin_GraveKeeper_state_MentionedKiller</span> <span class='asset-id'>{9cd4cf59-6d0e-660a-bf66-0e621649a968}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type User | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The grave keeper in the LOW graveyard mentioned the serial killer, if you hadn&#x27;t heard about them before'>LOW_KurwinCoffin_GraveKeeper_state_MentionedKiller</span> <span class='asset-id'>{9cd4cf59-6d0e-660a-bf66-0e621649a968}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 744d065f-bce4-c3e9-3486-16c7e3b125af</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: he3e5f1c9gb4e9g4b9dg8e55g5d6c2d71abed</span><span class='meta-item'><strong>Text UUID</strong>: 2c40a897-0e63-4e3a-ac70-857d0f6e6f34</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-34' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-37'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-37' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>37.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Well, there is a serial killer on the loose. Business is booming, unfortunately.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>LOW_KurwinCoffin_GraveKeeper_state_MentionedKiller</span></span></span></span><div class='node-detail-panel' id='details-37' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type User | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The grave keeper in the LOW graveyard mentioned the serial killer, if you hadn&#x27;t heard about them before'>LOW_KurwinCoffin_GraveKeeper_state_MentionedKiller</span> <span class='asset-id'>{9cd4cf59-6d0e-660a-bf66-0e621649a968}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 7b392f94-a78d-5d04-f7af-12890993465f</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h7f060175g5187g4b08g98cbg03a91b4c4bad</span><span class='meta-item'><strong>Text UUID</strong>: e0adb8c3-2991-423b-930c-229427b4548f</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 4</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 7b392f94-a78d-5d04-f7af-12890993465f</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 10.5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-51'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-51' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-51' aria-expanded='false' tabindex='0' data-detail-target='details-51' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>51.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Who&#x27;s this serial killer targeting?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>LOW_KurwinCoffin_GraveKeeper_state_MentionedKiller</span></span></span></span><div class='node-detail-panel' id='details-51' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type User | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The grave keeper in the LOW graveyard mentioned the serial killer, if you hadn&#x27;t heard about them before'>LOW_KurwinCoffin_GraveKeeper_state_MentionedKiller</span> <span class='asset-id'>{9cd4cf59-6d0e-660a-bf66-0e621649a968}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: a122b958-173e-80e2-4d50-90b688cc1029</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h5a13ad09g1454g4d10gb16dg9419baeb73d1</span><span class='meta-item'><strong>Text UUID</strong>: e94fbd90-989d-49ee-9389-9ff43691be2e</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-51' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-72'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-72' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-72' aria-expanded='false' tabindex='0' data-detail-target='details-72' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>72.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Can&#x27;t say. There are a hundred theories, but I see no pattern in who comes through my door.</span></span></span></span><div class='node-detail-panel' id='details-72' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: d8ba7736-3bac-e6a7-b9ea-9b8905bb195e</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hc153a5f7g5ffeg407dga582g2be78b2d6be9</span><span class='meta-item'><strong>Text UUID</strong>: aba97529-25f7-4660-bb8a-762225db62a3</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 12</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: d8ba7736-3bac-e6a7-b9ea-9b8905bb195e</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 20.28s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Group ID</strong>: d8ba7736-3bac-e6a7-b9ea-9b8905bb195e</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-72' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-9'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-9' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-9' aria-expanded='false' tabindex='0' data-detail-target='details-9' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>9.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Mind you, fear is taking more lives than any one killer. The whole city is on edge, ready to draw steel.</span></span></span></span><div class='node-detail-panel' id='details-9' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 31eaa6ba-d83d-5890-fd9a-765437a01dd4</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hcbabfb47gd950g46a1gb0b6gf7cc6a124cb9</span><span class='meta-item'><strong>Text UUID</strong>: 1aff7eae-aefc-4a20-890e-826c2e48747c</span><span class='meta-item'><strong>Group ID</strong>: d8ba7736-3bac-e6a7-b9ea-9b8905bb195e</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-9' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-36'>Node 36</a> <span class='repeat-speaker speaker-label npc'>(Speaker 0)</span> <span class='dialog'>I only hope the worst is behind us now that this killer has been dealt with.</span></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-23'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-23' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-23' aria-expanded='false' tabindex='0' data-detail-target='details-23' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>23.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Did you know there were kobolds looting your graves?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>LOW_KurwinCoffin_HasMet_KoboldLooter</span><span class='preview-token check'>!LOW_KurwinCoffin_Gravekeeper_State_MentionedKobolds</span><span class='preview-token check'>!LOW_KurwinCoffin_Quest_LeftKoboldsToLoot</span><span class='preview-token set'>LOW_KurwinCoffin_Gravekeeper_State_MentionedKobolds</span></span></span></span><div class='node-detail-panel' id='details-23' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Met the Kobold looter in the graveyard - and in this case, didn&#x27;t initiate combat'>LOW_KurwinCoffin_HasMet_KoboldLooter</span> <span class='asset-id'>{3521225a-b296-7258-acd5-bf01c1cd6d46}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='You told the LOW Gravekeeper than Kobolds were raiding her graves'>LOW_KurwinCoffin_Gravekeeper_State_MentionedKobolds</span> <span class='asset-id'>{022eb1fe-3db8-eaf2-d0a2-63f5cbf38cbb}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='You either fled combat with the Kobolds in the graveyard, or paid them and went far enough away'>LOW_KurwinCoffin_Quest_LeftKoboldsToLoot</span> <span class='asset-id'>{58178559-0553-67c3-b4ea-85e67c8a66df}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='You told the LOW Gravekeeper than Kobolds were raiding her graves'>LOW_KurwinCoffin_Gravekeeper_State_MentionedKobolds</span> <span class='asset-id'>{022eb1fe-3db8-eaf2-d0a2-63f5cbf38cbb}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 51db5ae7-2aeb-5fd5-f874-8da370111320</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h95580da9gcc35g4b1eg846bg04812ca2f535</span><span class='meta-item'><strong>Text UUID</strong>: 4f15ee48-15cb-4d0e-ab58-75ae3085b19c</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-23' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-46'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-46' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-46' aria-expanded='false' tabindex='0' data-detail-target='details-46' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>46.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>I saw. I saw their bodies, too. Your doing, I take it.</span></span></span></span><div class='node-detail-panel' id='details-46' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 915f97ac-1848-ed11-fc13-e180f5c3f788</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hcf88e43cg3177g40b4ga8dfga625615432f5</span><span class='meta-item'><strong>Text UUID</strong>: 00ae9ced-b418-45a2-a556-cb3016c3aebb</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 15</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 915f97ac-1848-ed11-fc13-e180f5c3f788</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6.24s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-46' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-41'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-41' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-41' aria-expanded='false' tabindex='0' data-detail-target='details-41' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>41.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>I&#x27;m grateful that the people in my garden can rest in peace, but I wish there&#x27;d been another way. There&#x27;s been so much death already.</span></span></span></span><div class='node-detail-panel' id='details-41' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 8363fadc-5bac-3f61-272f-44ce285474bf</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hfbadea66g0114g487cg8297g7b048d28823e</span><span class='meta-item'><strong>Text UUID</strong>: ed0ace26-cd2a-4a98-a9c1-3ceed5e298b6</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 7</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 8363fadc-5bac-3f61-272f-44ce285474bf</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 18.67s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Group ID</strong>: 8363fadc-5bac-3f61-272f-44ce285474bf</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-41' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-38'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-38' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>38.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>And now I have to look up kobold burial rituals.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>LOW_KurwinCoffin_Gravekeeper_State_ToldKoboldsDead</span></span></span></span><div class='node-detail-panel' id='details-38' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='You told the gravekeeper that you killed the kobolds robbing her graves'>LOW_KurwinCoffin_Gravekeeper_State_ToldKoboldsDead</span> <span class='asset-id'>{b2fdef81-3259-5bf0-a3df-b60b48381172}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 7bb4bf1f-34b4-e51e-b6e6-7b0edb557852</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hc3be5836g48ebg404cga004gcdbac1633e3b</span><span class='meta-item'><strong>Text UUID</strong>: 0824dadd-c56f-47c9-944b-2b8eb5217611</span><span class='meta-item'><strong>Group ID</strong>: 8363fadc-5bac-3f61-272f-44ce285474bf</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-11'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-11' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-11' aria-expanded='false' tabindex='0' data-detail-target='details-11' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>11.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Do you know there are kobolds looting your graves?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>LOW_KurwinCoffin_HasMet_KoboldLooter</span><span class='preview-token check'>!LOW_KurwinCoffin_Gravekeeper_State_MentionedKobolds</span><span class='preview-token check'>LOW_KurwinCoffin_Quest_LeftKoboldsToLoot</span><span class='preview-token set'>LOW_KurwinCoffin_Gravekeeper_State_MentionedKobolds</span></span></span></span><div class='node-detail-panel' id='details-11' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Met the Kobold looter in the graveyard - and in this case, didn&#x27;t initiate combat'>LOW_KurwinCoffin_HasMet_KoboldLooter</span> <span class='asset-id'>{3521225a-b296-7258-acd5-bf01c1cd6d46}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='You told the LOW Gravekeeper than Kobolds were raiding her graves'>LOW_KurwinCoffin_Gravekeeper_State_MentionedKobolds</span> <span class='asset-id'>{022eb1fe-3db8-eaf2-d0a2-63f5cbf38cbb}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='You either fled combat with the Kobolds in the graveyard, or paid them and went far enough away'>LOW_KurwinCoffin_Quest_LeftKoboldsToLoot</span> <span class='asset-id'>{58178559-0553-67c3-b4ea-85e67c8a66df}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='You told the LOW Gravekeeper than Kobolds were raiding her graves'>LOW_KurwinCoffin_Gravekeeper_State_MentionedKobolds</span> <span class='asset-id'>{022eb1fe-3db8-eaf2-d0a2-63f5cbf38cbb}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 3885fdc8-66f4-d2bc-1d5f-d870a1c82a04</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hff62e0c1gb597g4878g8706gbf97ef885409</span><span class='meta-item'><strong>Text UUID</strong>: 56fda204-54a1-4fde-8cf2-302e166681ef</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-11' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-73'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-73' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-73' aria-expanded='false' tabindex='0' data-detail-target='details-73' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>73.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>It is hard to miss, but what can I do? The Watch is too busy to help and I will not fight these thieves.</span></span></span></span><div class='node-detail-panel' id='details-73' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: e1894da0-3c98-1216-89a7-cf5dc5933087</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h07fe2932g95a7g49a8gae19gdf9d7f9062fe</span><span class='meta-item'><strong>Text UUID</strong>: 4552a176-069f-4ded-a3a4-cad37c0701f0</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 5</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: e1894da0-3c98-1216-89a7-cf5dc5933087</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 21.02s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Group ID</strong>: e1894da0-3c98-1216-89a7-cf5dc5933087</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-73' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-44'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-44' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>44.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Let them have their baubles if they must. That the bones are left to rest is what matters to me.</span></span></span></span><div class='node-detail-panel' id='details-44' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 8ed52084-3206-83d0-83a0-b3caa5dd0c3e</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h211c6b69gef74g49ceg92e8gf845bc2118a3</span><span class='meta-item'><strong>Text UUID</strong>: 0775a59c-da53-4d5c-9e57-0d29cf94da5d</span><span class='meta-item'><strong>Group ID</strong>: e1894da0-3c98-1216-89a7-cf5dc5933087</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-15'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-15' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-15' aria-expanded='false' tabindex='0' data-detail-target='details-15' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>15.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I need to borrow a shovel, actually.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!LOW_KurwinCoffin_Gravekeeper_State_AskedAboutShovel</span><span class='preview-token check'>!8ecf6929-1a19-7517-0ada-ac4bc4901f2a</span></span></span></span><div class='node-detail-panel' id='details-15' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player asked the Gravekeeper where to find a shovel in the Lower City Graveyard'>LOW_KurwinCoffin_Gravekeeper_State_AskedAboutShovel</span> <span class='asset-id'>{6363217b-4720-a1a4-3156-5a21a9776996}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Script</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>8ecf6929-1a19-7517-0ada-ac4bc4901f2a</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 42f8fece-06e8-bd10-c860-a59a584461ed</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h6578d299g628dg454bg860cg2019b98bef66</span><span class='meta-item'><strong>Text UUID</strong>: daf0f652-891e-4e2e-92c0-c6ca23cbc303</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-15' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-59'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-59' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-59' aria-expanded='false' tabindex='0' data-detail-target='details-59' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>59.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='nodelink'>Alias to <a href='#node-28'>Node 28</a>, <a href='#node-39'>Node 39</a>, <a href='#node-53'>Node 53</a>, <a href='#node-33'>Node 33</a>, <a href='#node-71'>Node 71</a></span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>LOW_KurwinCoffin_Gravekeeper_State_AskedAboutShovel</span></span></span></span><div class='node-detail-panel' id='details-59' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player asked the Gravekeeper where to find a shovel in the Lower City Graveyard'>LOW_KurwinCoffin_Gravekeeper_State_AskedAboutShovel</span> <span class='asset-id'>{6363217b-4720-a1a4-3156-5a21a9776996}</span> <span class='asset-state'>= True</span></li></ul></div></section></div></div></div><div class='node-branch' id='branch-59' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-28'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-28' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>28.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-13'>Node 13</a></span></span></span></span><div class='node-detail-panel' id='details-28' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 5c04d70d-f59a-0977-9f80-deef20d25851</span><span class='meta-item'><strong>Jump Target</strong>: Node 13 (3f4a0231-488e-1f8e-fd73-89d23ffc983b)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-39'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-39' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>39.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-17'>Node 17</a></span></span></span></span><div class='node-detail-panel' id='details-39' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 7ea42d30-7617-acb2-262e-645c309a810a</span><span class='meta-item'><strong>Jump Target</strong>: Node 17 (44437e78-9d4f-3ba6-7edb-e60f3ce2959b)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-53'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-53' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>53.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-54'>Node 54</a></span></span></span></span><div class='node-detail-panel' id='details-53' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: a60e0da6-c3c2-4405-877a-8d948bfe12c3</span><span class='meta-item'><strong>Jump Target</strong>: Node 54 (ab2510b6-b69e-b941-7529-b6f19e429d1e)</span><span class='meta-item'><strong>Jump Target Point</strong>: 2</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-33'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-33' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>33.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-26'>Node 26</a></span></span></span></span><div class='node-detail-panel' id='details-33' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 71c0890b-adb0-d9c8-9ac5-87f81966541f</span><span class='meta-item'><strong>Jump Target</strong>: Node 26 (5666904f-9b91-680f-06e5-e6f1afcacbf2)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-71'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-71' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>71.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-19'>Node 19</a></span></span></span></span><div class='node-detail-panel' id='details-71' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: d85e74a9-b61d-a45e-d1df-e20a547f1819</span><span class='meta-item'><strong>Jump Target</strong>: Node 19 (4659d3c6-dd4d-7f1c-7143-cca2bafc6432)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-4'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-4' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-4' aria-expanded='false' tabindex='0' data-detail-target='details-4' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>4.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>There&#x27;s some strange things happening in this graveyard.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>LOW_KurwinCoffin_State_SawStrangeHappenings</span></span></span></span><div class='node-detail-panel' id='details-4' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='If you saw at least one strange thing happening around the graveyard'>LOW_KurwinCoffin_State_SawStrangeHappenings</span> <span class='asset-id'>{3d926bc9-a089-47a9-85ee-949347f7129c}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 10b011b5-b467-4a9d-784c-4e13797b9308</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h95f3b3eag15f4g4f18ga4a4g20ec7c82b82b</span><span class='meta-item'><strong>Text UUID</strong>: 61a51fcb-bdcd-4cd5-b1a8-61b841ed983a</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-4' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-56'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-56' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-56' aria-expanded='false' tabindex='0' data-detail-target='details-56' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>56.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>I deal with the dead, but the Mortarch tends to them, and the living who mourn them.</span></span></span></span><div class='node-detail-panel' id='details-56' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: b3315bfb-1476-3663-9244-574e25ab3948</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h21064f98gb928g4a24g9cfbg343095699c8d</span><span class='meta-item'><strong>Text UUID</strong>: b09424eb-c05c-46b1-9181-197a6557f1cc</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 16</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: b3315bfb-1476-3663-9244-574e25ab3948</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 15.53s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Group ID</strong>: b3315bfb-1476-3663-9244-574e25ab3948</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-56' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-66'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-66' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>66.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>If you have any concerns about &#x27;strange&#x27; goings on, kindly speak to her - she patrols the graveyard. Good day.</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>!LOW_KurwinCoffin_State_SawStrangeHappenings</span></span></span></span><div class='node-detail-panel' id='details-66' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='If you saw at least one strange thing happening around the graveyard'>LOW_KurwinCoffin_State_SawStrangeHappenings</span> <span class='asset-id'>{3d926bc9-a089-47a9-85ee-949347f7129c}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: ced0ac4d-556c-ed0b-22aa-c2c709903385</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h8bd3f5b8gf218g4a59gbbb0g599469bb3640</span><span class='meta-item'><strong>Text UUID</strong>: 16e21691-bf77-4a03-a5d6-3277516591cf</span><span class='meta-item'><strong>End Node</strong>: True</span><span class='meta-item'><strong>Group ID</strong>: b3315bfb-1476-3663-9244-574e25ab3948</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-16'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-16' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-16' aria-expanded='false' tabindex='0' data-detail-target='details-16' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>16.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'><i>Leave.</i></span></span></span></span><div class='node-detail-panel' id='details-16' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 4385967f-d283-2fa2-6329-90591cb6e274</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h1129a466geae7g45a1g970ag23a439a9e9de</span><span class='meta-item'><strong>Text UUID</strong>: 4e532f7e-5718-4fc3-8224-33c35caaf379</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-16' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-78'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-78' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>78.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Kelemvor&#x27;s blessings.</span> <span class='end'>[End]</span></span></span></span><div class='node-detail-panel' id='details-78' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: f04c36b9-1d37-b709-7883-23e640358784</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h68e1b94ag3fa5g4ca2gb3dagb40ea423e03a</span><span class='meta-item'><strong>Text UUID</strong>: 435ebe37-10ce-4897-a90e-4af0857f67c2</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 23</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: f04c36b9-1d37-b709-7883-23e640358784</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.95s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul>
+        
+      </div>
+    </section>
+  </div>
+  <div class="tree-scrollbar-proxy" hidden>
+    <div class="tree-scrollbar-proxy-inner"></div>
+  </div>
+  <script>
+    function getNodeDetailPanel(shell) {
+      if (!shell) {
+        return null;
+      }
+      const content = shell.querySelector(":scope > .node-row > .node-content");
+      if (!content) {
+        return null;
+      }
+      return Array.from(content.children).find((child) => child.classList && child.classList.contains("node-detail-panel")) || null;
+    }
+    function getNodeDetailToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-detail-target]");
+    }
+    function getNodeBranchToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-branch-target]");
+    }
+    function getNodeBranchMarker(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .tree-toggle-marker[data-branch-target]");
+    }
+    const jumpHighlightTimers = new WeakMap();
+    const nodeSummaryClickTimers = new WeakMap();
+    const NODE_DETAIL_DOUBLE_CLICK_MS = 160;
+    const treeShell = document.querySelector(".tree-shell");
+    const treeShellInner = treeShell ? treeShell.querySelector(".tree-shell-inner") : null;
+    const treeScrollbarProxy = document.querySelector(".tree-scrollbar-proxy");
+    const treeScrollbarProxyInner = treeScrollbarProxy
+      ? treeScrollbarProxy.querySelector(".tree-scrollbar-proxy-inner")
+      : null;
+    let syncingTreeScroll = false;
+    let syncingProxyScroll = false;
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+    function setToggleButtonState(button, active) {
+      if (!button) {
+        return;
+      }
+      button.classList.toggle("is-active", active);
+      const hideLabel = button.dataset.hideLabel;
+      const showLabel = button.dataset.showLabel;
+      if (hideLabel && showLabel) {
+        button.textContent = active ? showLabel : hideLabel;
+      }
+    }
+    function syncAllDetailsToggle() {
+      const button = document.querySelector("button[data-toggle-details='all']");
+      if (!button) {
+        return;
+      }
+      const panels = Array.from(document.querySelectorAll(".node-detail-panel"));
+      const allOpen = panels.length > 0 && panels.every((panel) => !panel.hasAttribute("hidden"));
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function syncAllBranchesToggle() {
+      const button = document.querySelector("button[data-toggle-branches='all']");
+      if (!button) {
+        return;
+      }
+      const branchMarkers = Array.from(document.querySelectorAll(".tree-toggle-marker[data-branch-target]"));
+      const allOpen = branchMarkers.length > 0 && branchMarkers.every((marker) => marker.dataset.branchExpanded === "true");
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function updateTreeScrollbarProxy() {
+      if (!treeShell || !treeShellInner || !treeScrollbarProxy || !treeScrollbarProxyInner) {
+        return;
+      }
+      const contentWidth = treeShellInner.scrollWidth;
+      const viewportWidth = treeShell.clientWidth;
+      const needsProxy = contentWidth > viewportWidth + 1;
+      if (!needsProxy) {
+        treeScrollbarProxy.hidden = true;
+        return;
+      }
+      const rect = treeShell.getBoundingClientRect();
+      treeScrollbarProxy.hidden = false;
+      treeScrollbarProxy.style.left = `${Math.max(0, rect.left)}px`;
+      treeScrollbarProxy.style.width = `${Math.max(0, rect.width)}px`;
+      treeScrollbarProxyInner.style.width = `${contentWidth}px`;
+      if (!syncingTreeScroll && Math.abs(treeScrollbarProxy.scrollLeft - treeShell.scrollLeft) > 1) {
+        syncingProxyScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingProxyScroll = false;
+      }
+    }
+    function resetTreeScrollToStart() {
+      document.querySelectorAll(".tree-shell").forEach((shell) => {
+        shell.scrollLeft = 0;
+      });
+      if (treeScrollbarProxy) {
+        treeScrollbarProxy.scrollLeft = 0;
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setBranchOpen(control, openState, syncState = true) {
+      if (!control) {
+        return;
+      }
+      const targetId = control.dataset.branchTarget;
+      const target = targetId ? document.getElementById(targetId) : null;
+      if (!target) {
+        return;
+      }
+      const shell = control.closest(".node-shell");
+      const marker = shell ? getNodeBranchMarker(shell) : null;
+      const summary = shell ? getNodeBranchToggle(shell) : null;
+      if (openState) {
+        target.removeAttribute("hidden");
+      } else {
+        target.setAttribute("hidden", "until-found");
+      }
+      if (marker) {
+        marker.dataset.branchExpanded = openState ? "true" : "false";
+        marker.textContent = openState ? "-" : "+";
+      }
+      if (summary) {
+        summary.setAttribute("aria-expanded", openState ? "true" : "false");
+      }
+      if (syncState) {
+        syncAllBranchesToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setDetailOpen(shell, openState, syncState = true) {
+      const panel = getNodeDetailPanel(shell);
+      const toggle = getNodeDetailToggle(shell);
+      if (!panel) {
+        return;
+      }
+      if (openState) {
+        panel.removeAttribute("hidden");
+      } else {
+        panel.setAttribute("hidden", "until-found");
+      }
+      if (toggle) {
+        toggle.dataset.detailExpanded = openState ? "true" : "false";
+      }
+      if (syncState) {
+        syncAllDetailsToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setAllBranches(openState) {
+      document.querySelectorAll(".tree-toggle-marker[data-branch-target]").forEach((marker) => { setBranchOpen(marker, openState, false); });
+      syncAllBranchesToggle();
+    }
+    function setAllNodeDetails(openState) {
+      document.querySelectorAll(".node-shell").forEach((shell) => {
+        if (getNodeDetailPanel(shell)) {
+          setDetailOpen(shell, openState, false);
+        }
+      });
+      syncAllDetailsToggle();
+    }
+    function openParents(target) {
+      let current = target;
+      while (current) {
+        if (current.classList && current.classList.contains("node-branch")) {
+          const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${current.id}"]`);
+          setBranchOpen(marker, true);
+        }
+        current = current.parentElement;
+      }
+    }
+    function highlightJumpTarget(target) {
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      if (!shell) {
+        return;
+      }
+      const existingTimer = jumpHighlightTimers.get(shell);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+      shell.classList.add("jump-highlight");
+      const timeoutId = window.setTimeout(() => {
+        shell.classList.remove("jump-highlight");
+        jumpHighlightTimers.delete(shell);
+      }, 5000);
+      jumpHighlightTimers.set(shell, timeoutId);
+    }
+    function revealAndFocusNodeTarget(target, href = "") {
+      if (!target) {
+        return;
+      }
+      openParents(target);
+      if (href) {
+        history.replaceState(null, "", href);
+      }
+      requestAnimationFrame(() => {
+        target.scrollIntoView({ block: "center" });
+        highlightJumpTarget(target);
+        updateTreeScrollbarProxy();
+      });
+    }
+    if (treeShell && treeScrollbarProxy) {
+      treeShell.addEventListener("scroll", () => {
+        if (syncingProxyScroll) {
+          return;
+        }
+        syncingTreeScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingTreeScroll = false;
+      });
+      treeScrollbarProxy.addEventListener("scroll", () => {
+        if (syncingTreeScroll) {
+          return;
+        }
+        syncingProxyScroll = true;
+        treeShell.scrollLeft = treeScrollbarProxy.scrollLeft;
+        syncingProxyScroll = false;
+      });
+    }
+    document.addEventListener("click", (event) => {
+      const allBranchesButton = event.target.closest("button[data-toggle-branches='all']");
+      if (allBranchesButton) {
+        const isOpen = allBranchesButton.dataset.active === "true";
+        setAllBranches(!isOpen);
+        return;
+      }
+      const allDetailsButton = event.target.closest("button[data-toggle-details='all']");
+      if (allDetailsButton) {
+        const isOpen = allDetailsButton.dataset.active === "true";
+        setAllNodeDetails(!isOpen);
+        return;
+      }
+      const button = event.target.closest("button[data-toggle-class]");
+      if (button) {
+        const active = document.body.classList.toggle(button.dataset.toggleClass);
+        setToggleButtonState(button, active);
+        return;
+      }
+      const link = event.target.closest("a[href^='#node-']");
+      if (link) {
+        event.preventDefault();
+        const target = document.querySelector(link.getAttribute("href"));
+        if (target) {
+          revealAndFocusNodeTarget(target, link.getAttribute("href"));
+        }
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (summary) {
+        const branchTarget = summary.dataset.branchTarget;
+        const shell = summary.closest(".node-shell");
+        if (!shell) {
+          return;
+        }
+        if (!branchTarget) {
+          if (summary.dataset.detailTarget) {
+            const isOpen = summary.dataset.detailExpanded === "true";
+            setDetailOpen(shell, !isOpen);
+          }
+          return;
+        }
+        const existingTimer = nodeSummaryClickTimers.get(summary);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+          nodeSummaryClickTimers.delete(summary);
+          event.preventDefault();
+          const isOpen = summary.dataset.detailExpanded === "true";
+          setDetailOpen(shell, !isOpen);
+          return;
+        }
+        const timerId = window.setTimeout(() => {
+          nodeSummaryClickTimers.delete(summary);
+          const isOpen = summary.getAttribute("aria-expanded") === "true";
+          setBranchOpen(summary, !isOpen);
+          if (isOpen) {
+            const panel = getNodeDetailPanel(shell);
+            if (panel && !panel.hasAttribute("hidden")) {
+              setDetailOpen(shell, false);
+            }
+          }
+        }, NODE_DETAIL_DOUBLE_CLICK_MS);
+        nodeSummaryClickTimers.set(summary, timerId);
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (!summary) {
+        return;
+      }
+      event.preventDefault();
+      const shell = summary.closest(".node-shell");
+      if (!shell) {
+        return;
+      }
+      if (summary.dataset.branchTarget) {
+        const isOpen = summary.getAttribute("aria-expanded") === "true";
+        setBranchOpen(summary, !isOpen);
+        if (isOpen) {
+          const panel = getNodeDetailPanel(shell);
+          if (panel && !panel.hasAttribute("hidden")) {
+            setDetailOpen(shell, false);
+          }
+        }
+        return;
+      }
+      if (summary.dataset.detailTarget) {
+        const isOpen = summary.dataset.detailExpanded === "true";
+        setDetailOpen(shell, !isOpen);
+      }
+    });
+    document.addEventListener("beforematch", (event) => {
+      const branch = event.target.closest(".node-branch");
+      if (branch && branch.id) {
+        const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${branch.id}"]`);
+        setBranchOpen(marker, true);
+      }
+      const panel = event.target.closest(".node-detail-panel");
+      if (panel) {
+        const shell = panel.closest(".node-shell");
+        if (shell) {
+          openParents(shell);
+          setDetailOpen(shell, true);
+        }
+      }
+    });
+    document.querySelectorAll("button[data-toggle-class]").forEach((button) => {
+      const active = document.body.classList.contains(button.dataset.toggleClass);
+      setToggleButtonState(button, active);
+    });
+    if (window.ResizeObserver && treeShell) {
+      const observer = new ResizeObserver(() => {
+        updateTreeScrollbarProxy();
+      });
+      observer.observe(treeShell);
+      if (treeShellInner) {
+        observer.observe(treeShellInner);
+      }
+    }
+    window.addEventListener("resize", updateTreeScrollbarProxy);
+    window.addEventListener("scroll", updateTreeScrollbarProxy, { passive: true });
+    window.addEventListener("pageshow", () => {
+      if (window.location.hash) {
+        updateTreeScrollbarProxy();
+        return;
+      }
+      resetTreeScrollToStart();
+      window.requestAnimationFrame(() => {
+        resetTreeScrollToStart();
+      });
+      window.setTimeout(() => {
+        resetTreeScrollToStart();
+      }, 0);
+    });
+    syncAllBranchesToggle();
+    document.querySelectorAll("button[data-toggle-details='all']").forEach((button) => {
+      const active = button.dataset.active === "true";
+      setToggleButtonState(button, active);
+    });
+    updateTreeScrollbarProxy();
+    if (window.location.hash) {
+      const target = document.querySelector(window.location.hash);
+      if (target) {
+        revealAndFocusNodeTarget(target, window.location.hash);
+      }
+    }
+  </script>
+</body>
+</html>

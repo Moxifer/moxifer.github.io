@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WYR_WyrmRock_Quartermaster</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #182330;
+      --muted: #586477;
+      --line: #c7d2df;
+      --npc: #b91c1c;
+      --player: #15803d;
+      --system: #2563eb;
+      --rule: #2f6f44;
+      --tag: #0f766e;
+      --check: #7c3aed;
+      --set: #ea580c;
+      --roll: #6d28d9;
+      --approval: #0f766e;
+      --jump: #155eef;
+      --context: #475467;
+      --surface: #f3f6fa;
+      --surface-active: #e6edf5;
+      --surface-hover: #edf3f9;
+      --detail-surface: #e3ebf4;
+      --detail-border: #b4c2d4;
+      --focus: #90a4bc;
+      --highlight: #d9e5f5;
+      --scrollbar-proxy-bg: rgba(255, 255, 255, 0.94);
+      --mono: Consolas, "SFMono-Regular", Menlo, monospace;
+      --sans: Georgia, "Palatino Linotype", serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #fff;
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.35;
+      overflow-x: hidden;
+    }
+    a { color: var(--jump); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: none;
+      padding: 0;
+      border-radius: 0;
+    }
+    .page {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0.55rem 0.9rem 1.8rem;
+      overflow-x: hidden;
+    }
+    .hero {
+      margin-bottom: 0.55rem;
+    }
+    .hero h1 {
+      margin: 0 0 0.2rem;
+      font-size: 1.4rem;
+      line-height: 1.15;
+    }
+    .source {
+      color: var(--muted);
+      font-size: 0.9rem;
+      word-break: break-all;
+      margin-bottom: 0.2rem;
+    }
+    .source-label {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.3rem;
+    }
+    .summary-line {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 0.35rem;
+    }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.45rem;
+      margin-bottom: 0.45rem;
+      padding: 0.35rem 0;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      overflow: visible;
+    }
+    .toolbar-scroll {
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: calc(100% - 7rem);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+    }
+    .controls {
+      display: inline-flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0.45rem;
+      white-space: nowrap;
+      font-size: 0.9rem;
+      min-width: max-content;
+      overflow: visible;
+    }
+    .controls button,
+    .controls summary,
+    .speaker-map > summary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 1.85rem;
+      padding: 0.12rem 0.5rem;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: var(--surface);
+      color: var(--jump);
+      font: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      list-style: none;
+      user-select: none;
+    }
+    .controls button.is-active,
+    .controls details[open] > summary,
+    .speaker-map[open] > summary {
+      background: var(--surface-active);
+      border-color: var(--focus);
+    }
+    .controls button:hover,
+    .controls summary:hover,
+    .speaker-map > summary:hover {
+      background: var(--surface-hover);
+      text-decoration: none;
+    }
+    .controls summary:focus,
+    .controls button:focus,
+    .speaker-map > summary:focus {
+      outline: 1px solid var(--focus);
+      outline-offset: 1px;
+    }
+    .speaker-map {
+      flex: 0 0 auto;
+      position: relative;
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .speaker-map summary,
+    .meta-block summary {
+      cursor: pointer;
+      color: var(--jump);
+      list-style: none;
+    }
+    .speaker-map summary::-webkit-details-marker,
+    .meta-block summary::-webkit-details-marker {
+      display: none;
+    }
+    .speaker-map[open] ul {
+      display: block;
+    }
+    .speaker-map ul {
+      display: none;
+      list-style: none;
+      margin: 0.3rem 0 0;
+      padding: 0.45rem 0.6rem;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 0.2rem);
+      min-width: 20rem;
+      max-width: min(34rem, calc(100vw - 2rem));
+      max-height: 24rem;
+      overflow: auto;
+      background: #fbfcfe;
+      border: 1px solid var(--line);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+      z-index: 30;
+    }
+    .speaker-map li + li {
+      margin-top: 0.1rem;
+    }
+    .speaker-index {
+      display: inline-block;
+      min-width: 2rem;
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 600;
+    }
+    .speaker-name {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.25rem;
+    }
+    .inline-meta, .line-meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .tree-shell {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: visible;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-shell-inner {
+      width: max-content;
+      min-width: 100%;
+    }
+    .tree-scrollbar-proxy {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 1.1rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      background: var(--scrollbar-proxy-bg);
+      border-top: 1px solid var(--line);
+      z-index: 40;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-scrollbar-proxy[hidden] {
+      display: none;
+    }
+    .tree-scrollbar-proxy-inner {
+      height: 1px;
+    }
+    .orphan-section {
+      width: auto;
+      min-width: 0;
+      margin-top: 1rem;
+      padding-top: 0.55rem;
+      border-top: 1px dotted var(--line);
+    }
+    .orphan-section h2 {
+      margin: 0 0 0.15rem;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+    .orphan-note {
+      margin: 0 0 0.35rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .root-list, .child-list {
+      list-style: none;
+      margin: 0;
+      padding-left: 0;
+      width: auto;
+      min-width: 0;
+    }
+    .child-list {
+      margin-left: 1.1rem;
+      padding-left: 0.85rem;
+      border-left: 1px dotted var(--line);
+    }
+    .node-item {
+      margin: 0.18rem 0;
+    }
+    details.node {
+      margin: 0;
+    }
+    details.node:target > summary .node-line {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    .node-leaf:target {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 0;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    summary::-webkit-details-marker {
+      display: none;
+    }
+    details.node > summary::before {
+      content: "▸";
+      display: inline-block;
+      width: 0.9rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      vertical-align: top;
+      padding-top: 0.12rem;
+    }
+    details.node[open] > summary::before {
+      content: "▾";
+    }
+    details.node.no-children > summary::before {
+      content: "•";
+    }
+    .node-line {
+      display: inline;
+      padding: 0.06rem 0.18rem;
+    }
+    .node-leaf {
+      display: inline-block;
+      padding: 0.06rem 0.18rem;
+      border-radius: 6px;
+    }
+    details.node > summary::before {
+      content: "+";
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    details.node[open] > summary::before {
+      content: "-";
+    }
+    details.node.no-children > summary::before {
+      content: ".";
+    }
+    .node-number {
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 700;
+    }
+    .speaker-label {
+      font-weight: 700;
+      margin-left: 0.2rem;
+    }
+    .speaker-label.npc { color: var(--npc); }
+    .speaker-label.player { color: var(--player); }
+    .speaker-label.system { color: var(--system); }
+    .dialog {
+      color: var(--ink);
+      margin-left: 0.2rem;
+    }
+    .node-kind {
+      color: var(--system);
+      margin-left: 0.2rem;
+    }
+    .ruletag {
+      color: var(--rule);
+      margin-left: 0.35rem;
+    }
+    .tags {
+      color: var(--tag);
+      margin-left: 0.35rem;
+    }
+    .checkflag {
+      color: var(--check);
+      margin-left: 0.35rem;
+    }
+    .setflag {
+      color: var(--set);
+      margin-left: 0.35rem;
+    }
+    .rolls {
+      color: var(--roll);
+      margin-left: 0.35rem;
+    }
+    .approval {
+      color: var(--approval);
+      margin-left: 0.35rem;
+    }
+    .nodelink {
+      color: var(--jump);
+      margin-left: 0.35rem;
+    }
+    .context {
+      color: var(--context);
+      margin-left: 0.3rem;
+      cursor: help;
+    }
+    .end {
+      color: #8b1e1e;
+      margin-left: 0.35rem;
+    }
+    .node-shell:target,
+    .node-leaf:target {
+      background: none;
+      border-radius: 0;
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-shell {
+      display: block;
+    }
+    .node-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.32rem;
+      width: max-content;
+      min-width: 100%;
+      transition: background-color 0.18s ease;
+    }
+    .node-shell.jump-highlight > .node-row {
+      background: var(--highlight);
+    }
+    .node-content {
+      min-width: 0;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker,
+    .tree-spacer {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 0.95rem;
+      height: 0.95rem;
+      margin-top: 0.08rem;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker {
+      border: none;
+      background: none;
+      color: var(--muted);
+      padding: 0;
+      font: inherit;
+      font-weight: 800;
+      font-size: 1.18rem;
+      line-height: 1;
+      user-select: none;
+    }
+    .tree-spacer {
+      border: none;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .node-branch[hidden]:not([hidden='until-found']) {
+      display: none;
+    }
+    .repeat {
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+    .node-summary {
+      display: block;
+      cursor: default;
+    }
+    .node-summary.is-interactive {
+      cursor: pointer;
+    }
+    .node-summary.is-interactive:focus-visible {
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-main-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.35rem;
+    }
+    .node-main {
+      display: block;
+      flex: 1 1 auto;
+      min-width: 0;
+      white-space: normal;
+      line-height: 1.28;
+      overflow-wrap: anywhere;
+    }
+    .node-leaf {
+      display: block;
+      border-radius: 0;
+    }
+    .node-number {
+      font-weight: 600;
+    }
+    .speaker-label {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind,
+    .nodelink {
+      overflow-wrap: anywhere;
+    }
+    .nodelink,
+    .end {
+      margin-left: 0;
+    }
+    .node-previews {
+      display: block;
+      margin: 0.12rem 0 0 1.1rem;
+      font-size: 0.88rem;
+      white-space: normal;
+      line-height: 1.28;
+    }
+    .preview-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.12rem 0.45rem;
+    }
+    .preview-token {
+      display: inline;
+      overflow-wrap: anywhere;
+    }
+    .preview-token.tag {
+      color: var(--tag);
+    }
+    .preview-token.rule {
+      color: var(--rule);
+    }
+    .preview-token.check {
+      color: var(--check);
+    }
+    .preview-token.set {
+      color: var(--set);
+    }
+    .preview-note {
+      display: block;
+      margin-top: 0.08rem;
+      color: var(--context);
+      overflow-wrap: anywhere;
+      font-weight: 700;
+    }
+    .preview-note-label {
+      color: var(--context);
+      font-weight: 700;
+    }
+    .preview-note-value {
+      color: #4f463f;
+      font-weight: 600;
+    }
+    .signal-line {
+      display: block;
+      margin: 0.14rem 0 0.2rem;
+    }
+    .signal-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem;
+    }
+    .signal-label {
+      font-weight: 700;
+    }
+    .signal-scope {
+      color: var(--muted);
+    }
+    .tag-line, .tag-line .signal-label { color: var(--tag); }
+    .rule-line, .rule-line .signal-label { color: var(--rule); }
+    .checkflag-line, .checkflag-line .signal-label { color: var(--check); }
+    .setflag-line, .setflag-line .signal-label { color: var(--set); }
+    .roll-line, .roll-line .signal-label { color: var(--roll); }
+    .approval-line, .approval-line .signal-label { color: var(--approval); }
+    .context-line, .context-line .signal-label { color: var(--context); }
+    .context-line .signal-heading {
+      font-weight: 700;
+    }
+    .context-line .signal-item {
+      color: #4f463f;
+    }
+    .signal-values {
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .signal-list {
+      list-style: none;
+      margin: 0.06rem 0 0 0.9rem;
+      padding: 0;
+    }
+    .signal-item {
+      margin: 0.1rem 0;
+      overflow-wrap: anywhere;
+    }
+    .signal-item::before {
+      content: "- ";
+      color: var(--muted);
+    }
+    .signal-body {
+      display: block;
+      margin: 0.06rem 0 0 0.9rem;
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .asset-name {
+      color: var(--ink);
+    }
+    .asset-id {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.92em;
+      overflow-wrap: anywhere;
+    }
+    .asset-state {
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .node-detail-panel {
+      margin: 0.08rem 0 0.18rem 1.1rem;
+      padding: 0.35rem 0.5rem;
+      border: 1px solid var(--detail-border);
+      background: var(--detail-surface);
+      border-radius: 0;
+      display: block;
+      gap: 0;
+      max-width: none;
+    }
+    .node-detail-panel[hidden]:not([hidden='until-found']) {
+      display: none;
+    }
+    .node-detail-panel[hidden='until-found'] {
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: none;
+    }
+    .section {
+      margin: 0.16rem 0;
+      padding: 0;
+      background: none;
+      border: none;
+    }
+    .section h3 {
+      margin: 0 0 0.22rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .node-detail-panel > .section + .section {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-block + .text-block {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-line {
+      font-size: 0.96rem;
+      margin-bottom: 0.15rem;
+    }
+    .text-line {
+      margin: 0.08rem 0;
+      font-size: inherit;
+      overflow-wrap: anywhere;
+    }
+    .badge-row, .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .badge, .meta-item {
+      display: block;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+    }
+    .meta-items {
+      margin: 0.12rem 0 0 0.85rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+      white-space: normal;
+    }
+    .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .meta-item {
+      display: block;
+      margin: 0.06rem 0;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+      overflow-wrap: anywhere;
+    }
+    .meta-item strong {
+      color: var(--ink);
+    }
+    .badge.flags { color: var(--check); }
+    .badge.tags { color: var(--tag); }
+    .flag-groups {
+      display: block;
+      gap: 0;
+    }
+    .flag-group-type {
+      display: inline-block;
+      color: var(--muted);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.15rem;
+    }
+    .rule-tree, .rule-tree ul {
+      margin: 0;
+      padding-left: 1rem;
+    }
+    .body-hide-flags .section-flags,
+    .body-hide-rules .section-rules,
+    .body-hide-details .section-metadata,
+    .body-hide-context .preview-note,
+    .body-hide-context .context-line,
+    .body-hide-context .node-line .context {
+      display: none;
+    }
+    .body-hide-flags .node-line .checkflag,
+    .body-hide-flags .node-line .setflag,
+    .body-hide-rules .node-line .ruletag {
+      display: none;
+    }
+    .body-hide-flags .checkflag-line,
+    .body-hide-flags .setflag-line {
+      display: none;
+    }
+    .body-hide-flags .preview-token.check,
+    .body-hide-flags .preview-token.set {
+      display: none;
+    }
+    .body-hide-context .context-line {
+      display: none;
+    }
+    .body-hide-numbers .node-number {
+      display: none;
+    }
+    .missing, .cycle {
+      padding: 0.2rem 0.35rem;
+      color: #8b1e1e;
+      background: rgba(139, 30, 30, 0.08);
+      border-radius: 6px;
+      display: inline-block;
+    }
+    .missing, .cycle {
+      padding: 0;
+      background: none;
+      border-radius: 0;
+      display: block;
+      overflow-wrap: anywhere;
+    }
+    @media (max-width: 920px) {
+      .page {
+        padding: 0.45rem 0.5rem 0.9rem;
+      }
+      .tree-shell {
+        padding: 0;
+      }
+    }
+  </style>
+</head>
+  <body class="body-hide-numbers">
+  <div class="page">
+    <header class="hero">
+      <h1>WYR_WyrmRock_Quartermaster</h1>
+      <div class="source"><span class="source-label">Dialog Resource UUID:</span><strong><code>7e22c89c-72fc-e2f5-ba50-8435f57be76d</code></strong></div><div class="source"><span class="source-label">Timeline Resource UUID:</span><strong><code>947697b6-5988-5d9b-e179-9e2ebd7bd982</code></strong></div><div class="source"><span class="source-label">StartDialog UUID:</span><strong><code>8c63c514-006a-de53-b6d3-c07e2f8ee131</code></strong></div><div class="source"><span class="source-label">Dialog:</span>Mods\GustavDev\Story\DialogsBinary\Act3\Wyrm\WYR_WyrmRock_Quartermaster.lsf.lsx</div><div class="source"><span class="source-label">Timeline:</span>Public\GustavDev\Timeline\Generated\WYR_WyrmRock_Quartermaster.lsf.lsx</div><div class="source"><span class="source-label">Scene:</span>Public\GustavDev\Timeline\Generated\WYR_WyrmRock_Quartermaster_Scene.lsf.lsx</div>
+      <div class="summary-line">
+        category=Generic NPC Dialog | nodes=78 | roots=5
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-scroll">
+          <div class="controls">
+            <button type="button" data-toggle-branches="all" data-hide-label="Expand all" data-show-label="Collapse all" data-active="false">Expand all</button>
+            <button type="button" data-toggle-class="body-hide-flags" data-hide-label="Hide flags" data-show-label="Show flags">Hide flags</button>
+            <button type="button" data-toggle-details="all" data-hide-label="Show details" data-show-label="Hide details" data-active="false">Show details</button>
+            <button type="button" data-toggle-class="body-hide-context" data-hide-label="Hide notes" data-show-label="Show notes">Hide notes</button>
+            <button type="button" data-toggle-class="body-hide-numbers" data-hide-label="Hide node numbers" data-show-label="Show node numbers">Hide node numbers</button>
+          </div>
+        </div>
+        <details class="speaker-map">
+          <summary>Speakers</summary>
+          <ul><li><span class='speaker-index'>0</span><span class='speaker-name'>Speaker 0</span><span class='inline-meta'>list=831fbc36-b0df-4248-9c39-50906b715d25 | mapping=09071a53-feaf-46ed-a41d-5d367ebce515</span></li><li><span class='speaker-index'>1</span><span class='speaker-name'>Player</span><span class='inline-meta'>GROUP_Players | list=e0d1ff71-04a8-4340-ae64-9684d846eb83 | mapping=4345de58-521c-4b2c-a055-3865caa7a340</span></li></ul>
+        </details>
+      </div>
+    </header>
+    <section class="tree-shell">
+      <div class="tree-shell-inner">
+        <ul class="root-list"><li class='node-item'><div class='node-shell' id='node-29'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-29' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-29' aria-expanded='true' tabindex='0' data-detail-target='details-29' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>29.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>What is it this time?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>WYR_WyrmRock_HasMet_Quartermaster</span><span class='preview-token check'>WYR_WyrmRock_Quartermaster_State_AgreedToTrade</span></span></span></span><div class='node-detail-panel' id='details-29' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>WYR_WyrmRock_HasMet_Quartermaster</span> <span class='asset-id'>{42e0229c-55e2-4af3-a8b9-a677a6e50949}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player convinced Flaming Fist Quartermaster to trade with them'>WYR_WyrmRock_Quartermaster_State_AgreedToTrade</span> <span class='asset-id'>{162266ba-66af-4383-a4e7-f58d46604b5c}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 5d43baf8-ab98-9569-0038-f06c41a36d8d</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hef576683gb615g4b58ga1fcgd429c79d16ba</span><span class='meta-item'><strong>Text UUID</strong>: c19650fd-a6d4-460a-a231-18808358614f</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 2</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 5d43baf8-ab98-9569-0038-f06c41a36d8d</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Location Changes</strong>: Counter (d0ab7b1e-a862-449a-bde5-72443a0f9b4b) @ 16.31s</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-29'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-75'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-75' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-75' aria-expanded='false' tabindex='0' data-detail-target='details-75' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>75.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'><i>Trade.</i></span></span></span></span><div class='node-detail-panel' id='details-75' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: eb69a182-a056-127d-8ee7-1d2b2ccc050c</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h25eb0716g5879g48b2ga3b5g61da90e466e0</span><span class='meta-item'><strong>Text UUID</strong>: f05147b7-8e16-46c2-a877-0d95afe687b3</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-75' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-28'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-28' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>28.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Trade | mode 1</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>WYR_WyrmRock_Quartermaster_State_AgreedToTrade</span></span></span></span><div class='node-detail-panel' id='details-28' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player convinced Flaming Fist Quartermaster to trade with them'>WYR_WyrmRock_Quartermaster_State_AgreedToTrade</span> <span class='asset-id'>{162266ba-66af-4383-a4e7-f58d46604b5c}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Trade</span><span class='meta-item'><strong>UUID</strong>: 5769a24c-3417-c466-0820-59905e5f3fa4</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Trade Mode</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-40'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-40' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>40.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-15'>Node 15</a></span></span></span></span><div class='node-detail-panel' id='details-40' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 8964aede-54ed-3f41-a394-33243537ab11</span><span class='meta-item'><strong>Jump Target</strong>: Node 15 (28e116e8-9cc2-4329-2851-1be40bab5143)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-27'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-27' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-27' aria-expanded='true' tabindex='0' data-detail-target='details-27' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>27.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>This is the armoury, not a bloody open house. Fists only. Now clear off.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!WYR_WyrmRock_HasMet_Quartermaster</span><span class='preview-token check'>!Githyanki</span><span class='preview-token set'>WYR_WyrmRock_HasMet_Quartermaster</span></span></span></span><div class='node-detail-panel' id='details-27' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>WYR_WyrmRock_HasMet_Quartermaster</span> <span class='asset-id'>{42e0229c-55e2-4af3-a8b9-a677a6e50949}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Character looks like a githyanki'>Githyanki</span> <span class='asset-id'>{677ffa76-2562-4217-873e-2253d4720ba4}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>WYR_WyrmRock_HasMet_Quartermaster</span> <span class='asset-id'>{42e0229c-55e2-4af3-a8b9-a677a6e50949}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 54828d33-4a56-d3b8-598d-315e89b48ed9</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hc0225fc2g70e9g49a4g803fge1008777f40c</span><span class='meta-item'><strong>Text UUID</strong>: 534916a7-7a2f-44fe-a381-adae7102f8a0</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 4</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 54828d33-4a56-d3b8-598d-315e89b48ed9</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 9s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Location Changes</strong>: Counter (d0ab7b1e-a862-449a-bde5-72443a0f9b4b) @ 22.06s</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-27'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-4'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-4' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-4' aria-expanded='false' tabindex='0' data-detail-target='details-4' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>4.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I&#x27;d like to trade with you.</span></span></span></span><div class='node-detail-panel' id='details-4' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 09cf76b7-ffe9-d261-28bd-d80fab1ce9ff</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h0eca5043ge0fag4b3cgba33gd74b75fad68a</span><span class='meta-item'><strong>Text UUID</strong>: 7ace5be5-7792-46cd-9baf-ab28af92e2ad</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-4' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-6'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-6' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-6' aria-expanded='false' tabindex='0' data-detail-target='details-6' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>6.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Trade? Do I look like a shopkeeper?</span></span></span></span><div class='node-detail-panel' id='details-6' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 0aafe0d3-d6b3-cf58-2945-d8ffefaeb7ea</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hdbd90b6ege096g4e43g9aa3gd88423390450</span><span class='meta-item'><strong>Text UUID</strong>: e6ff6059-7562-4136-befb-c3db0ddcae4e</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 15</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 0aafe0d3-d6b3-cf58-2945-d8ffefaeb7ea</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 11.4s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Group ID</strong>: 0aafe0d3-d6b3-cf58-2945-d8ffefaeb7ea</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-6' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-5'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-5' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-5' aria-expanded='false' tabindex='0' data-detail-target='details-5' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>5.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>This equipment isn&#x27;t for sale. It belongs to the Flaming Fist. </span></span></span></span><div class='node-detail-panel' id='details-5' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 0a063c3e-d021-a789-2524-c6922b305564</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: ha96a489cgce19g49a4g82f8ge4870e317175</span><span class='meta-item'><strong>Text UUID</strong>: a7ebf352-d931-4fdd-9fb0-37cc38ac6fc4</span><span class='meta-item'><strong>Group ID</strong>: 0aafe0d3-d6b3-cf58-2945-d8ffefaeb7ea</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-5' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-2'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-2' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-2' aria-expanded='false' tabindex='0' data-detail-target='details-2' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>2.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Steel Watchers make me uneasy. A good weapon in my palm would put my mind at rest.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>8c63c514-006a-de53-b6d3-c07e2f8ee131_MindHasBeenRead</span></span></span></span><div class='node-detail-panel' id='details-2' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='MindHasBeenReaddescription'>8c63c514-006a-de53-b6d3-c07e2f8ee131_MindHasBeenRead</span> <span class='asset-id'>{5a84a4a6-0065-0cb2-5401-fb1f575b57e3}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 043871c7-03a6-4127-8db5-fdb15b79333a</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hfba28db2g0477g4c9bgb63bg9c7f91fc6949</span><span class='meta-item'><strong>Text UUID</strong>: 1ab6f78b-f4f1-467d-a0c9-e56b4c5c2b33</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Approval Rating</strong>: 77a73ade-d447-448c-a3d7-0a6df563d9f0</span></div></section></div></div></div><div class='node-branch' id='branch-2' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-24'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-24' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-24' aria-expanded='false' tabindex='0' data-detail-target='details-24' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>24.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Huh. Wouldn&#x27;t think anything round here would bother the likes of you. But you&#x27;re not wrong.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>Githyanki</span></span></span></span><div class='node-detail-panel' id='details-24' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Character looks like a githyanki'>Githyanki</span> <span class='asset-id'>{677ffa76-2562-4217-873e-2253d4720ba4}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 4c1a2490-1fe8-7322-59e2-0634b59fef9b</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hec9db957g6681g4dadg83cbgb9bf9667b737</span><span class='meta-item'><strong>Text UUID</strong>: ccda747a-ca9c-4988-ad8f-934380c7131a</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 8</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 4c1a2490-1fe8-7322-59e2-0634b59fef9b</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 7.5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-24' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-10'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-10' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-10' aria-expanded='false' tabindex='0' data-detail-target='details-10' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>10.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Strong folk wielding strong blades. That&#x27;s what keeps folk safe. Not those glorified golems.</span></span></span></span><div class='node-detail-panel' id='details-10' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 174ea9a9-1cb1-50d1-0b8e-300aef9dcdde</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: he5273596g71a6g45e5g818ag605b1b83223e</span><span class='meta-item'><strong>Text UUID</strong>: b561aec4-0974-4bd9-b31a-eef56ba882a6</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 13</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 174ea9a9-1cb1-50d1-0b8e-300aef9dcdde</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 16.26s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Group ID</strong>: 174ea9a9-1cb1-50d1-0b8e-300aef9dcdde</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-10' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-9'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-9' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-9' aria-expanded='false' tabindex='0' data-detail-target='details-9' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>9.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>I don&#x27;t have anything fancy, but you&#x27;re welcome to take a look.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>WYR_WyrmRock_Quartermaster_State_AgreedToTrade</span></span></span></span><div class='node-detail-panel' id='details-9' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player convinced Flaming Fist Quartermaster to trade with them'>WYR_WyrmRock_Quartermaster_State_AgreedToTrade</span> <span class='asset-id'>{162266ba-66af-4383-a4e7-f58d46604b5c}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 111b6352-824d-f03a-c47a-a9efb58880cc</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hf932fbaeg0f25g4f8dgad0ag19a89ac35163</span><span class='meta-item'><strong>Text UUID</strong>: 6a34c16d-f16f-4144-aa7c-4dee5cc38c51</span><span class='meta-item'><strong>Group ID</strong>: 174ea9a9-1cb1-50d1-0b8e-300aef9dcdde</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-9' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-68'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-68' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-68' aria-expanded='false' tabindex='0' data-detail-target='details-68' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>68.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Trade | mode 1</span></span></span></span><div class='node-detail-panel' id='details-68' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Trade</span><span class='meta-item'><strong>UUID</strong>: d23c3d4c-d753-d947-6270-8a7f4d8a3ae2</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Trade Mode</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-68' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-78'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-78' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>78.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Stay sharp, stranger. In these times, all we can trust are the blades in our hands.</span> <span class='end'>[End]</span></span></span></span><div class='node-detail-panel' id='details-78' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: fefcf996-590a-1a5f-0cc6-ec29b8c3574d</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h13490464gf363g424dg8b0ag31a05e020111</span><span class='meta-item'><strong>Text UUID</strong>: 214ca912-a8ba-4621-97e6-c27a9f1e4362</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 29</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: fefcf996-590a-1a5f-0cc6-ec29b8c3574d</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 8s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-49'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-49' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-49' aria-expanded='false' tabindex='0' data-detail-target='details-49' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>49.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Finally, someone who sees sense. </span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!Githyanki</span></span></span></span><div class='node-detail-panel' id='details-49' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Character looks like a githyanki'>Githyanki</span> <span class='asset-id'>{677ffa76-2562-4217-873e-2253d4720ba4}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: ad41b7e3-53ad-4d48-b61b-e032b9fb70b7</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h535ed9bagfa86g4274g897agf4bac466cdf1</span><span class='meta-item'><strong>Text UUID</strong>: 0df5dc51-f689-4b1d-81a8-af96fc05b4e4</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 9</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: ad41b7e3-53ad-4d48-b61b-e032b9fb70b7</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-49' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-10'>Node 10</a> <span class='repeat-speaker speaker-label npc'>(Speaker 0)</span> <span class='dialog'>Strong folk wielding strong blades. That&#x27;s what keeps folk safe. Not those glorified golems.</span></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-33'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-33' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-33' aria-expanded='false' tabindex='0' data-detail-target='details-33' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>33.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Charisma, Deception, SkillCheck) vs 5028066b-6ea0-4a6a-9e3e-53bee62559a7 [0] target=0</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!WYR_WyrmRock_State_TriedToConvinceQuartermaster</span><span class='preview-token check'>!WYR_WyrmRock_Quartermaster_State_AgreedToTrade</span><span class='preview-token set'>WYR_WyrmRock_State_TriedToConvinceQuartermaster</span></span></span></span><div class='node-detail-panel' id='details-33' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player tried to convince the Flaming Qurtermaster to trade with them.'>WYR_WyrmRock_State_TriedToConvinceQuartermaster</span> <span class='asset-id'>{6c0291ae-7de7-4b88-8a45-21e9a8e526a0}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player convinced Flaming Fist Quartermaster to trade with them'>WYR_WyrmRock_Quartermaster_State_AgreedToTrade</span> <span class='asset-id'>{162266ba-66af-4383-a4e7-f58d46604b5c}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player tried to convince the Flaming Qurtermaster to trade with them.'>WYR_WyrmRock_State_TriedToConvinceQuartermaster</span> <span class='asset-id'>{6c0291ae-7de7-4b88-8a45-21e9a8e526a0}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 6ccf4212-3789-7362-39f6-b45c4d2440ac</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: he6830828g8648g43dfg8a43g58d0bfca6a53</span><span class='meta-item'><strong>Text UUID</strong>: 3244562e-5605-4d8d-bf0e-af6eabf44043</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Advantage</strong>: 0</span><span class='meta-item'><strong>Difficulty Class</strong>: 5028066b-6ea0-4a6a-9e3e-53bee62559a7</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Deception</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-33' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-19'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-19' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-19' aria-expanded='false' tabindex='0' data-detail-target='details-19' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>19.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-19' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 3dba9b58-13be-f82a-df3c-c33794ad75bf</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-19' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-48'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-48' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-48' aria-expanded='false' tabindex='0' data-detail-target='details-48' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>48.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>&#x27;Course I bloody wasn&#x27;t. Too busy ordering more of these mechanical monstrosities to tell me.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>WYR_WyrmRock_Quartermaster_State_AgreedToTrade</span></span></span></span><div class='node-detail-panel' id='details-48' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player convinced Flaming Fist Quartermaster to trade with them'>WYR_WyrmRock_Quartermaster_State_AgreedToTrade</span> <span class='asset-id'>{162266ba-66af-4383-a4e7-f58d46604b5c}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: a5083e85-0148-1e8c-09ba-94fd9e22d9ff</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h9fae837cge4d5g48d5gb6afge0ff94a69cf6</span><span class='meta-item'><strong>Text UUID</strong>: c1f4f5eb-d797-4a0e-8c52-9387a4ac2e68</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 10</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: a5083e85-0148-1e8c-09ba-94fd9e22d9ff</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 12.1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Group ID</strong>: a5083e85-0148-1e8c-09ba-94fd9e22d9ff</span><span class='meta-item'><strong>Group Index</strong>: 0</span><span class='meta-item'><strong>Unmapped Attributes</strong>: ApprovalRatingID</span></div></section></div></div></div><div class='node-branch' id='branch-48' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-23'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-23' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-23' aria-expanded='false' tabindex='0' data-detail-target='details-23' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>23.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>I suppose you can take a look. But make it quick. </span></span></span></span><div class='node-detail-panel' id='details-23' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 4ae85b30-7742-bdfd-18a2-801c0e01873a</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: ha805d88ag4879g4354g8541gac14aa1e6cf4</span><span class='meta-item'><strong>Text UUID</strong>: aee3ae89-b618-462d-9b41-980d57436286</span><span class='meta-item'><strong>Group ID</strong>: a5083e85-0148-1e8c-09ba-94fd9e22d9ff</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-23' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-42'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-42' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-42' aria-expanded='false' tabindex='0' data-detail-target='details-42' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>42.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Trade | mode 1</span></span></span></span><div class='node-detail-panel' id='details-42' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Trade</span><span class='meta-item'><strong>UUID</strong>: 91a740eb-5bbe-6955-6669-78061280f35d</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Trade Mode</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-42' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-78'>Node 78</a> <span class='repeat-speaker speaker-label npc'>(Speaker 0)</span> <span class='dialog'>Stay sharp, stranger. In these times, all we can trust are the blades in our hands.</span></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-62'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-62' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive' data-branch-target='branch-62' aria-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>62.</span><span class='dialog'>Failure</span></span></span></span></div></div><div class='node-branch' id='branch-62' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-69'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-69' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-69' aria-expanded='false' tabindex='0' data-detail-target='details-69' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>69.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>No, I wasn&#x27;t. And if he thinks he can sell off my armoury without telling me... <i>narg mragreshem</i>.</span></span></span></span><div class='node-detail-panel' id='details-69' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: d2acdf57-288c-f076-3107-647fad85902f</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hd3698353g374eg4352gb11ag403db7c28253</span><span class='meta-item'><strong>Text UUID</strong>: e34f872f-4c12-4443-93f3-7266be4dde95</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 24</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: d2acdf57-288c-f076-3107-647fad85902f</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 19s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Group ID</strong>: d2acdf57-288c-f076-3107-647fad85902f</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-69' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-16'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-16' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>16.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>You want to spend your gold, find a merchant in the city. My weapons are not for sale!</span> <span class='end'>[End]</span></span></span></span><div class='node-detail-panel' id='details-16' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 332cf9ae-d2fb-6668-1541-9bb2c634bec1</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h819cb4dcgee61g41b1gbfddg757bed8ce07b</span><span class='meta-item'><strong>Text UUID</strong>: edc74ba8-af31-4cfa-ab50-af9ca78fb005</span><span class='meta-item'><strong>End Node</strong>: True</span><span class='meta-item'><strong>Group ID</strong>: d2acdf57-288c-f076-3107-647fad85902f</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-66'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-66' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-66' aria-expanded='false' tabindex='0' data-detail-target='details-66' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>66.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Charisma, Intimidation, SkillCheck) vs 96bc76f2-0b2e-4a79-854f-e4971a772c36 [0] target=0</span></span></span></span><div class='node-detail-panel' id='details-66' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: d0c7081d-fffa-d905-99a8-4749794dbd9a</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h63a4a17fg6b6ag49f8gbd0cg8e4f370e5741</span><span class='meta-item'><strong>Text UUID</strong>: 3f7a3e49-cf13-4b33-bde0-4ed529ac4fb5</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Advantage</strong>: 0</span><span class='meta-item'><strong>Difficulty Class</strong>: 96bc76f2-0b2e-4a79-854f-e4971a772c36</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Intimidation</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-66' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-57'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-57' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-57' aria-expanded='false' tabindex='0' data-detail-target='details-57' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>57.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-57' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: bf2b55ed-f5f9-4d3c-5025-e324db138653</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-57' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-7'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-7' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-7' aria-expanded='false' tabindex='0' data-detail-target='details-7' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>7.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Fine. Keep your boots on.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>WYR_WyrmRock_Quartermaster_State_AgreedToTrade</span></span></span></span><div class='node-detail-panel' id='details-7' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player convinced Flaming Fist Quartermaster to trade with them'>WYR_WyrmRock_Quartermaster_State_AgreedToTrade</span> <span class='asset-id'>{162266ba-66af-4383-a4e7-f58d46604b5c}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 0fc73d85-ad42-0a94-a9c8-a53eab9ba208</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h65a88814gcfe3g4b6eg8ff4g6bd04d9b2b32</span><span class='meta-item'><strong>Text UUID</strong>: 43ad918a-2e39-41a5-876b-63edd29693a1</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 14</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 0fc73d85-ad42-0a94-a9c8-a53eab9ba208</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.2s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Unmapped Attributes</strong>: ApprovalRatingID</span></div></section></div></div></div><div class='node-branch' id='branch-7' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-53'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-53' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-53' aria-expanded='false' tabindex='0' data-detail-target='details-53' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>53.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Trade | mode 1</span></span></span></span><div class='node-detail-panel' id='details-53' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Trade</span><span class='meta-item'><strong>UUID</strong>: b865be21-bc1c-f329-f036-3bf103ebda40</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Trade Mode</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-53' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-14'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-14' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>14.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Fat lot of use that hunk of junk was. Keeping me &#x27;safe&#x27;, were you? Useless.</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!GLO_Foundry_State_ControlCentreDestroyed</span></span></span></span><div class='node-detail-panel' id='details-14' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player has destroyed the Control Centre rendering Steel Watchers inert.'>GLO_Foundry_State_ControlCentreDestroyed</span> <span class='asset-id'>{456906c5-40a6-429e-8e1c-7120a2ef631b}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 270b8b70-2224-a6d4-5915-4eb8ae171b0d</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h36633a53g722dg4774gb6b6g537ba3e9de31</span><span class='meta-item'><strong>Text UUID</strong>: 807d5c77-8ae8-4621-8a92-5d8454cb483b</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 25</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 270b8b70-2224-a6d4-5915-4eb8ae171b0d</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 8.01s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-65'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-65' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>65.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Hrm. Guess anyone can saunter in and make threats now that the Watchers are disabled.</span> <span class='end'>[End]</span></span></span></span><div class='node-detail-panel' id='details-65' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: d0000704-cb65-f3bd-d0a4-617df16a49bb</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h3fb72628g4be4g447bg907bgcc0805d8d556</span><span class='meta-item'><strong>Text UUID</strong>: f1062a03-2866-4e22-8112-26a2ec1294c0</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 18</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: d0000704-cb65-f3bd-d0a4-617df16a49bb</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5.94s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-18'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-18' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive' data-branch-target='branch-18' aria-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>18.</span><span class='dialog'>Failure</span></span></span></span></div></div><div class='node-branch' id='branch-18' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-13'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-13' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>13.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Wake up, you useless hunk of junk, I&#x27;m being attacked!</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Shouting to the steel watcher</span></span><span class='preview-inline'><span class='preview-token check'>!GLO_Foundry_State_ControlCentreDestroyed</span><span class='preview-token set'>FactionHostileToPlayerGroupAfterDialog</span></span></span></span><div class='node-detail-panel' id='details-13' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player has destroyed the Control Centre rendering Steel Watchers inert.'>GLO_Foundry_State_ControlCentreDestroyed</span> <span class='asset-id'>{456906c5-40a6-429e-8e1c-7120a2ef631b}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='FactionHostileToPlayerGroupAfterDialogdescription'>FactionHostileToPlayerGroupAfterDialog</span> <span class='asset-id'>{d73ce44b-1b9a-2e02-f29a-d8e9e68c7edc}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 263b5f71-9e1b-fdb4-fd70-91c83bff221d</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hbc434c9dgb124g4629gb1abg327975ee88b1</span><span class='meta-item'><strong>Text UUID</strong>: 16b32954-ef66-4f34-bc09-f358dc0962a0</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 26</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 263b5f71-9e1b-fdb4-fd70-91c83bff221d</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.24s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-8'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-8' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>8.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Dammit - someone help me!</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>FactionHostileToPlayerGroupAfterDialog</span></span></span></span><div class='node-detail-panel' id='details-8' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='FactionHostileToPlayerGroupAfterDialogdescription'>FactionHostileToPlayerGroupAfterDialog</span> <span class='asset-id'>{d73ce44b-1b9a-2e02-f29a-d8e9e68c7edc}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 10800c90-f594-cf3d-ccb1-4e03b9b6f2b2</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hceab97bag1502g4286g9aaeg01ab033aff2c</span><span class='meta-item'><strong>Text UUID</strong>: 15af57a6-77a9-4f9e-93ad-6f14772bcc77</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 27</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 10800c90-f594-cf3d-ccb1-4e03b9b6f2b2</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-32'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-32' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-32' aria-expanded='false' tabindex='0' data-detail-target='details-32' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>32.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Charisma, Persuasion, SkillCheck) vs 77cee1c4-384a-4217-b670-67db3c7add57 [0] target=0</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!WYR_WyrmRock_State_TriedToConvinceQuartermaster</span><span class='preview-token check'>!WYR_WyrmRock_Quartermaster_State_AgreedToTrade</span><span class='preview-token set'>WYR_WyrmRock_State_TriedToConvinceQuartermaster</span></span></span></span><div class='node-detail-panel' id='details-32' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player tried to convince the Flaming Qurtermaster to trade with them.'>WYR_WyrmRock_State_TriedToConvinceQuartermaster</span> <span class='asset-id'>{6c0291ae-7de7-4b88-8a45-21e9a8e526a0}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player convinced Flaming Fist Quartermaster to trade with them'>WYR_WyrmRock_Quartermaster_State_AgreedToTrade</span> <span class='asset-id'>{162266ba-66af-4383-a4e7-f58d46604b5c}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player tried to convince the Flaming Qurtermaster to trade with them.'>WYR_WyrmRock_State_TriedToConvinceQuartermaster</span> <span class='asset-id'>{6c0291ae-7de7-4b88-8a45-21e9a8e526a0}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 6affe72b-9f59-4cae-b98b-35035ae2ae28</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h6a87f9b0ga0d8g464ag92d9g8b89fe7d3ad3</span><span class='meta-item'><strong>Text UUID</strong>: 4bcc61b6-b21f-4f6d-9433-52eb0fbce5a2</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Advantage</strong>: 0</span><span class='meta-item'><strong>Difficulty Class</strong>: 77cee1c4-384a-4217-b670-67db3c7add57</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Persuasion</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-32' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-46'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-46' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-46' aria-expanded='false' tabindex='0' data-detail-target='details-46' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>46.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-46' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: a0d95aff-f038-55db-96d8-74ca079f36e4</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-46' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-43'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-43' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-43' aria-expanded='false' tabindex='0' data-detail-target='details-43' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>43.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>A trading licence? Right, right. Yes, I could provide you with one of those, for the, uh, official fee. ([GEN_CheckMagicPocketGold_6057ad05-9492-4630-9f0a-be548b134c54])</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>WYR_WyrmRock_Quartermaster_State_AgreedToAcceptBribe</span></span></span></span><div class='node-detail-panel' id='details-43' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player convinced Flaming Fist Quartermaster to accept a bribe'>WYR_WyrmRock_Quartermaster_State_AgreedToAcceptBribe</span> <span class='asset-id'>{54ea12c1-f3f8-4989-abf8-7bf1f5df685f}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 97bc03c3-29cc-0484-484e-2a7c5be12a9f</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h22fe00a3gfbe7g4151g9cbagefb5ffbd629e</span><span class='meta-item'><strong>Text UUID</strong>: ef3defc8-4c51-428f-98f3-3eb902464b83</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 6</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 97bc03c3-29cc-0484-484e-2a7c5be12a9f</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 15.5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-43' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-55'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-55' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-55' aria-expanded='false' tabindex='0' data-detail-target='details-55' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>55.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Here&#x27;s the gold.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>e678bd59-74f4-4a7b-8776-aca807d9ef22</span><span class='preview-token set'>WYR_WyrmRock_Quartermaster_State_AgreedToTrade</span><span class='preview-token set'>GEN_TransferNPCPayment</span></span></span></span><div class='node-detail-panel' id='details-55' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Script</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>e678bd59-74f4-4a7b-8776-aca807d9ef22</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player convinced Flaming Fist Quartermaster to trade with them'>WYR_WyrmRock_Quartermaster_State_AgreedToTrade</span> <span class='asset-id'>{162266ba-66af-4383-a4e7-f58d46604b5c}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GEN_TransferNPCPaymentdescription'>GEN_TransferNPCPayment</span> <span class='asset-id'>{41179aa7-bc85-02b5-1399-71a651d9dc85}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: be86741e-47f6-c71a-e853-ea201aba1d61</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h0d6a4818g8be2g4402ga026gb16205b2570b</span><span class='meta-item'><strong>Text UUID</strong>: 0568ec32-ed9b-4992-a3e2-394c3f68eb24</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-55' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-63'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-63' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-63' aria-expanded='false' tabindex='0' data-detail-target='details-63' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>63.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Much appreciated. Take a look around.</span></span></span></span><div class='node-detail-panel' id='details-63' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: c964835b-3b9a-7564-0392-d85fe9aa261a</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: ha7b24627g6e24g480fgb594g38f36afd08ee</span><span class='meta-item'><strong>Text UUID</strong>: 71a86906-e09e-4abb-bb89-af593036179d</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 11</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: c964835b-3b9a-7564-0392-d85fe9aa261a</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Unmapped Attributes</strong>: ApprovalRatingID</span></div></section></div></div></div><div class='node-branch' id='branch-63' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-30'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-30' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-30' aria-expanded='false' tabindex='0' data-detail-target='details-30' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>30.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Trade | mode 1</span></span></span></span><div class='node-detail-panel' id='details-30' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Trade</span><span class='meta-item'><strong>UUID</strong>: 5f8e9ea6-ccbe-5103-2924-9a72160d0326</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Trade Mode</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-30' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-20'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-20' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>20.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Pleasure doing business with you. Now bugger off.</span> <span class='end'>[End]</span></span></span></span><div class='node-detail-panel' id='details-20' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 42512509-e52b-04aa-74f4-d8d4daee47ea</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hcdcee03dgdf6cg4ba9gaedbg1a300b6ed68f</span><span class='meta-item'><strong>Text UUID</strong>: 1648f0b6-143a-458d-8383-4e9ea58d0009</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 23</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 42512509-e52b-04aa-74f4-d8d4daee47ea</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.57s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-22'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-22' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-22' aria-expanded='false' tabindex='0' data-detail-target='details-22' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>22.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I&#x27;ll keep that in mind.</span></span></span></span><div class='node-detail-panel' id='details-22' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 49778940-3a6c-3e7a-c3a2-6159bf4cea3b</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h46e8b1feg93deg4f32g9b99g6d76186e9b61</span><span class='meta-item'><strong>Text UUID</strong>: f661bb65-d1f5-469c-bd3f-3299e0f1df44</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-22' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-1'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-1' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>1.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Good. Clear off, then. I&#x27;m busy.</span> <span class='end'>[End]</span></span></span></span><div class='node-detail-panel' id='details-1' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 039f2a87-85e3-b991-afac-382fc96ed7eb</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h66f64f4dg2fd3g40bagbc25g7ce9ee183892</span><span class='meta-item'><strong>Text UUID</strong>: 6db3b01c-0b34-4122-9047-504098b2ebe0</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 21</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 039f2a87-85e3-b991-afac-382fc96ed7eb</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-71'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-71' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>71.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'><i>Leave.</i></span></span></span></span><div class='node-detail-panel' id='details-71' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: dc7e3432-97a7-5afe-418d-493abb28b881</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h28fac0dag8aa1g4f69g96ecge771b6db91d5</span><span class='meta-item'><strong>Text UUID</strong>: b941afc9-1a85-48a0-b7fa-956d1a0a8113</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-70'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-70' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive' data-branch-target='branch-70' aria-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>70.</span><span class='dialog'>Failure</span></span></span></span></div></div><div class='node-branch' id='branch-70' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-77'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-77' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-77' aria-expanded='false' tabindex='0' data-detail-target='details-77' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>77.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Shhh. Quiet! That rust heap might be listening...</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>flinching, scared</span></span><span class='preview-inline'><span class='preview-token check'>!GLO_Foundry_State_ControlCentreDestroyed</span></span></span></span><div class='node-detail-panel' id='details-77' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player has destroyed the Control Centre rendering Steel Watchers inert.'>GLO_Foundry_State_ControlCentreDestroyed</span> <span class='asset-id'>{456906c5-40a6-429e-8e1c-7120a2ef631b}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: fe177f1f-d944-9a88-ce1b-ae6dbb55ac0a</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hae398c65gbdb9g458dgb295ge69fb5828008</span><span class='meta-item'><strong>Text UUID</strong>: 149f8098-cd94-4029-9375-456e9778f92e</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 7</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: fe177f1f-d944-9a88-ce1b-ae6dbb55ac0a</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-77' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-74'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-74' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>74.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>I&#x27;m not interested. Now get out. I&#x27;ve got work to do.</span> <span class='end'>[End]</span></span></span></span><div class='node-detail-panel' id='details-74' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: e6ac9813-da99-9073-32fb-26c21faf1c5d</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: he6dacfb0g394dg4a44gac0ag16fe91e761da</span><span class='meta-item'><strong>Text UUID</strong>: c41c91d6-564a-471f-8241-6563e62142c9</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 19</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: e6ac9813-da99-9073-32fb-26c21faf1c5d</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.77s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-47'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-47' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-47' aria-expanded='false' tabindex='0' data-detail-target='details-47' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>47.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Shhh. Quiet! Someone might be listening...</span></span></span></span><div class='node-detail-panel' id='details-47' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: a1350c7a-ab2c-c07f-268a-03759e3f0d62</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h58f33f74g747dg40b6gbdc9gf5d26f08e710</span><span class='meta-item'><strong>Text UUID</strong>: 83d378ce-ff3a-43e0-8f62-5285cc1d7de4</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 5</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: a1350c7a-ab2c-c07f-268a-03759e3f0d62</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6.51s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-47' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-74'>Node 74</a> <span class='repeat-speaker speaker-label npc'>(Speaker 0)</span> <span class='dialog'>I&#x27;m not interested. Now get out. I&#x27;ve got work to do.</span></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-21'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-21' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-21' aria-expanded='false' tabindex='0' data-detail-target='details-21' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>21.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Intelligence, RawAbility) vs 00000000-0000-0000-0000-000000000000 [0] target=0</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!8c63c514-006a-de53-b6d3-c07e2f8ee131_MindHasBeenRead</span><span class='preview-token check'>44f9fbf3-735d-8eaf-94dc-6c1d1cf5382d</span></span></span></span><div class='node-detail-panel' id='details-21' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='MindHasBeenReaddescription'>8c63c514-006a-de53-b6d3-c07e2f8ee131_MindHasBeenRead</span> <span class='asset-id'>{5a84a4a6-0065-0cb2-5401-fb1f575b57e3}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Script</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>44f9fbf3-735d-8eaf-94dc-6c1d1cf5382d</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 49371f7f-d2a9-4084-b00d-a36d372bd124</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h8bb0fbb9g9640g4ba9g8c5aga9ad0f584dc5</span><span class='meta-item'><strong>Text UUID</strong>: aca461ec-27ec-49dd-a62c-71377e27202f</span><span class='meta-item'><strong>Ability</strong>: Intelligence</span><span class='meta-item'><strong>Advantage</strong>: 0</span><span class='meta-item'><strong>Difficulty Class</strong>: 00000000-0000-0000-0000-000000000000</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0</span><span class='meta-item'><strong>Roll Type</strong>: RawAbility</span><span class='meta-item'><strong>Skill</strong>: </span><span class='meta-item'><strong>Transition Mode</strong>: 2</span><span class='meta-item'><strong>Unmapped Attributes</strong>: DetectThoughts</span></div></section></div></div></div><div class='node-branch' id='branch-21' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-59'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-59' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-59' aria-expanded='false' tabindex='0' data-detail-target='details-59' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>59.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-59' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: c45e199b-d2ce-4b1c-9761-18e0b09b635f</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-59' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-12'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-12' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-12' aria-expanded='false' tabindex='0' data-detail-target='details-12' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>12.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'><i>Can&#x27;t believe they put that mindless metal </i>mragreshem<i> in my armoury.</i></span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token tag'>Detect Thoughts</span><span class='preview-token set'>8c63c514-006a-de53-b6d3-c07e2f8ee131_MindHasBeenRead</span></span></span></span><div class='node-detail-panel' id='details-12' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Player has acces to Detect Thoughts (Either spell prepared and free spellslot or scroll available) | Also used in as Interal Speech indicator'>Detect Thoughts</span> <span class='asset-id'>{7e0395f8-aa53-4549-9af3-e2d203d678ee}</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='MindHasBeenReaddescription'>8c63c514-006a-de53-b6d3-c07e2f8ee131_MindHasBeenRead</span> <span class='asset-id'>{5a84a4a6-0065-0cb2-5401-fb1f575b57e3}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 23bcf636-ce8f-4e70-b8b5-65c43f5e5a97</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h6f546529gff01g4068gab10g1be9d35ac3f3</span><span class='meta-item'><strong>Text UUID</strong>: 705d04e8-9d12-4a90-843e-059a69f5ee48</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 12</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 23bcf636-ce8f-4e70-b8b5-65c43f5e5a97</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5.49s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-12' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-61'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-61' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>61.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'><i>&#x27;Steel Watchers&#x27;. Stupid thing&#x27;ll probably decapitate me for cleaning the bloody mace rack.</i></span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token tag'>Detect Thoughts</span><span class='preview-token check'>!GLO_Foundry_State_ControlCentreDestroyed</span></span></span></span><div class='node-detail-panel' id='details-61' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Player has acces to Detect Thoughts (Either spell prepared and free spellslot or scroll available) | Also used in as Interal Speech indicator'>Detect Thoughts</span> <span class='asset-id'>{7e0395f8-aa53-4549-9af3-e2d203d678ee}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player has destroyed the Control Centre rendering Steel Watchers inert.'>GLO_Foundry_State_ControlCentreDestroyed</span> <span class='asset-id'>{456906c5-40a6-429e-8e1c-7120a2ef631b}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: c6630e8a-80c3-c9bf-c9ef-cc2f228d05f8</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hab50b2adg1e97g420cg8f51g63a5236d3486</span><span class='meta-item'><strong>Text UUID</strong>: 05084732-4a6f-4054-8784-d98fbd96a445</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 16</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: c6630e8a-80c3-c9bf-c9ef-cc2f228d05f8</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 10.5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-36'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-36' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>36.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'><i>Won&#x27;t be long before those Watchers are hulking around here again, nosin&#x27; in on my affairs. </i><br></span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token tag'>Detect Thoughts</span></span></span></span><div class='node-detail-panel' id='details-36' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Player has acces to Detect Thoughts (Either spell prepared and free spellslot or scroll available) | Also used in as Interal Speech indicator'>Detect Thoughts</span> <span class='asset-id'>{7e0395f8-aa53-4549-9af3-e2d203d678ee}</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 7a8998f4-a019-cfd9-6ef2-c8dbd5abd094</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h8e92aa84g8abeg4a8cgb754gb942f0096074</span><span class='meta-item'><strong>Text UUID</strong>: 9cf11a9d-276b-4fc1-ba0b-7218e9efb372</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 17</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 7a8998f4-a019-cfd9-6ef2-c8dbd5abd094</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6.99s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-44'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-44' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive' data-branch-target='branch-44' aria-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>44.</span><span class='dialog'>Failure</span></span></span></span></div></div><div class='node-branch' id='branch-44' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-50'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-50' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>50.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Wake up, you brainless gimcrack! I&#x27;m being attacked!</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Shouting to the steel watcher</span></span><span class='preview-inline'><span class='preview-token check'>!GLO_Foundry_State_ControlCentreDestroyed</span><span class='preview-token set'>TemporaryHostilityAfterDialog</span></span></span></span><div class='node-detail-panel' id='details-50' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player has destroyed the Control Centre rendering Steel Watchers inert.'>GLO_Foundry_State_ControlCentreDestroyed</span> <span class='asset-id'>{456906c5-40a6-429e-8e1c-7120a2ef631b}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='TemporaryHostilityAfterDialogdescription'>TemporaryHostilityAfterDialog</span> <span class='asset-id'>{ca0cbe39-d121-069e-b408-c02954b32cf7}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: aebdd0ae-df7d-4d53-bddf-85d6690ea1ee</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: heaf080e7g0d53g497bg8596g54f5559acd54</span><span class='meta-item'><strong>Text UUID</strong>: 1cee942d-66e1-4cde-89d0-3baaa2373a4c</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 28</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: aebdd0ae-df7d-4d53-bddf-85d6690ea1ee</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-41'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-41' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>41.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Dammit, someone help me - this fool&#x27;s messing in my mind!</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>TemporaryHostilityAfterDialog</span></span></span></span><div class='node-detail-panel' id='details-41' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='TemporaryHostilityAfterDialogdescription'>TemporaryHostilityAfterDialog</span> <span class='asset-id'>{ca0cbe39-d121-069e-b408-c02954b32cf7}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 8b6e8e6a-ab2e-d2c5-cbd2-d2d3c5103104</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h2d7b1f94ge0e1g4b0dgbb38g4d0ac1201087</span><span class='meta-item'><strong>Text UUID</strong>: fd9ed36d-78e3-4bf9-ab6a-822a2547ddde</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 22</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 8b6e8e6a-ab2e-d2c5-cbd2-d2d3c5103104</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5.92s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-64'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-64' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-64' aria-expanded='false' tabindex='0' data-detail-target='details-64' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>64.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Charisma, Persuasion, SkillCheck) vs 77cee1c4-384a-4217-b670-67db3c7add57 [1] target=0</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!WYR_WyrmRock_State_TriedToConvinceQuartermaster</span><span class='preview-token check'>!WYR_WyrmRock_Quartermaster_State_AgreedToTrade</span><span class='preview-token check'>Ranger</span><span class='preview-token set'>WYR_WyrmRock_State_TriedToConvinceQuartermaster</span></span></span></span><div class='node-detail-panel' id='details-64' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player tried to convince the Flaming Qurtermaster to trade with them.'>WYR_WyrmRock_State_TriedToConvinceQuartermaster</span> <span class='asset-id'>{6c0291ae-7de7-4b88-8a45-21e9a8e526a0}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player convinced Flaming Fist Quartermaster to trade with them'>WYR_WyrmRock_Quartermaster_State_AgreedToTrade</span> <span class='asset-id'>{162266ba-66af-4383-a4e7-f58d46604b5c}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='A warrior who uses martial prowess and nature magic to combat threats on the edges of civilization.'>Ranger</span> <span class='asset-id'>{37a733c1-a862-4157-b92a-9cff46232c6a}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player tried to convince the Flaming Qurtermaster to trade with them.'>WYR_WyrmRock_State_TriedToConvinceQuartermaster</span> <span class='asset-id'>{6c0291ae-7de7-4b88-8a45-21e9a8e526a0}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: c9f5135f-bd4f-bc48-7a40-58fdccec1c78</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hb38cd4ccg03c0g46f2gb51dga446e198adec</span><span class='meta-item'><strong>Text UUID</strong>: 1b5cdd40-167e-4361-9961-1927bcce5a8a</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Advantage</strong>: 1</span><span class='meta-item'><strong>Difficulty Class</strong>: 77cee1c4-384a-4217-b670-67db3c7add57</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Persuasion</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-64' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-25'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-25' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-25' aria-expanded='false' tabindex='0' data-detail-target='details-25' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>25.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-25' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 4e64177f-8afb-70f9-07d6-f87110727ce4</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-25' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-35'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-35' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>35.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-7'>Node 7</a></span></span></span></span><div class='node-detail-panel' id='details-35' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 7688567b-7f37-4a56-d45c-34eb47ceaa01</span><span class='meta-item'><strong>Jump Target</strong>: Node 7 (0fc73d85-ad42-0a94-a9c8-a53eab9ba208)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-54'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-54' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive' data-branch-target='branch-54' aria-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>54.</span><span class='dialog'>Failure</span></span></span></span></div></div><div class='node-branch' id='branch-54' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-31'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-31' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>31.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-74'>Node 74</a></span></span></span></span><div class='node-detail-panel' id='details-31' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 6658ab45-9142-f71d-8c95-ad95cdf8f129</span><span class='meta-item'><strong>Jump Target</strong>: Node 74 (e6ac9813-da99-9073-32fb-26c21faf1c5d)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-67'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-67' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>67.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'><i>Attack.</i></span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>FactionHostileToPlayerGroupAfterDialog</span></span></span></span><div class='node-detail-panel' id='details-67' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='FactionHostileToPlayerGroupAfterDialogdescription'>FactionHostileToPlayerGroupAfterDialog</span> <span class='asset-id'>{d73ce44b-1b9a-2e02-f29a-d8e9e68c7edc}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: d0d44f44-3a36-010a-214a-dca957d0dba6</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h94e1d85dgcde5g4943g947fg3e541aa798a7</span><span class='meta-item'><strong>Text UUID</strong>: 39a10fbf-4df8-423b-a064-5de04a86fb51</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Approval Rating</strong>: b7d1f8d4-0125-4d1c-a89d-0b6a917c13a2</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-15'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-15' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>15.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'><i>Leave.</i></span></span></span></span><div class='node-detail-panel' id='details-15' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 28e116e8-9cc2-4329-2851-1be40bab5143</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hf744a3c1ga50ag4748g9acbg3def1321f6ca</span><span class='meta-item'><strong>Text UUID</strong>: ac979c61-82f6-44ed-bdab-5a7bc802dcec</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-38'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-38' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>38.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-67'>Node 67</a></span></span></span></span><div class='node-detail-panel' id='details-38' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 7e41cdc3-8042-5bd9-2100-1d946f982aba</span><span class='meta-item'><strong>Jump Target</strong>: Node 67 (d0d44f44-3a36-010a-214a-dca957d0dba6)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-51'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-51' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>51.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-15'>Node 15</a></span></span></span></span><div class='node-detail-panel' id='details-51' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: afb98ff9-543a-e9a4-a51e-65dd3c53e7f4</span><span class='meta-item'><strong>Jump Target</strong>: Node 15 (28e116e8-9cc2-4329-2851-1be40bab5143)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-37'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-37' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-37' aria-expanded='true' tabindex='0' data-detail-target='details-37' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>37.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>A gith in my armoury? I don&#x27;t think so. Clear off.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!WYR_WyrmRock_HasMet_Quartermaster</span><span class='preview-token check'>Githyanki</span><span class='preview-token set'>WYR_WyrmRock_HasMet_Quartermaster</span></span></span></span><div class='node-detail-panel' id='details-37' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>WYR_WyrmRock_HasMet_Quartermaster</span> <span class='asset-id'>{42e0229c-55e2-4af3-a8b9-a677a6e50949}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Character looks like a githyanki'>Githyanki</span> <span class='asset-id'>{677ffa76-2562-4217-873e-2253d4720ba4}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>WYR_WyrmRock_HasMet_Quartermaster</span> <span class='asset-id'>{42e0229c-55e2-4af3-a8b9-a677a6e50949}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 7dc052e2-10e4-3121-b504-9eefd3ae60c8</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h0f5fef09gb65fg4940gb760ga8944d5ff346</span><span class='meta-item'><strong>Text UUID</strong>: 1d1432c0-b055-4cda-98f1-56b59d22ac68</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 1</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 7dc052e2-10e4-3121-b504-9eefd3ae60c8</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6.3s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Location Changes</strong>: Counter (d0ab7b1e-a862-449a-bde5-72443a0f9b4b) @ 10.01s</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-37'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-17'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-17' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-17' aria-expanded='false' tabindex='0' data-detail-target='details-17' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>17.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Show me what you have to trade, <i>istik</i>.</span></span></span></span><div class='node-detail-panel' id='details-17' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 39055152-b560-f41b-0561-481547ff67c7</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h18d276c7g2f45g4407gb41eg251f6ae321e1</span><span class='meta-item'><strong>Text UUID</strong>: 1da8f5af-606d-4a08-b172-8cd04c627c2f</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-17' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-39'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-39' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>39.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-6'>Node 6</a></span></span></span></span><div class='node-detail-panel' id='details-39' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 862e5040-b5e6-267e-fa6e-d3a6da457c03</span><span class='meta-item'><strong>Jump Target</strong>: Node 6 (0aafe0d3-d6b3-cf58-2945-d8ffefaeb7ea)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-60'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-60' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>60.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-67'>Node 67</a></span></span></span></span><div class='node-detail-panel' id='details-60' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: c598a538-723c-beb5-ae32-9fef3d634f1f</span><span class='meta-item'><strong>Jump Target</strong>: Node 67 (d0d44f44-3a36-010a-214a-dca957d0dba6)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-76'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-76' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>76.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-15'>Node 15</a></span></span></span></span><div class='node-detail-panel' id='details-76' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: f6872467-262a-c567-df26-cc972806089f</span><span class='meta-item'><strong>Jump Target</strong>: Node 15 (28e116e8-9cc2-4329-2851-1be40bab5143)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-73'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-73' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-73' aria-expanded='true' tabindex='0' data-detail-target='details-73' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>73.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Back again, I see.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>WYR_WyrmRock_HasMet_Quartermaster</span><span class='preview-token check'>WYR_WyrmRock_Quartermaster_State_AgreedToAcceptBribe</span></span></span></span><div class='node-detail-panel' id='details-73' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>WYR_WyrmRock_HasMet_Quartermaster</span> <span class='asset-id'>{42e0229c-55e2-4af3-a8b9-a677a6e50949}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player convinced Flaming Fist Quartermaster to accept a bribe'>WYR_WyrmRock_Quartermaster_State_AgreedToAcceptBribe</span> <span class='asset-id'>{54ea12c1-f3f8-4989-abf8-7bf1f5df685f}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: e24375de-c3b8-c110-834c-9024123080f5</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h47e370f4gdd5ag40a1gaa0egd6b0dfc790b0</span><span class='meta-item'><strong>Text UUID</strong>: 4b8c3bfe-29b5-4926-929d-ba9b1b1bb2ae</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 3</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: e24375de-c3b8-c110-834c-9024123080f5</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 2.75s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Location Changes</strong>: Counter (d0ab7b1e-a862-449a-bde5-72443a0f9b4b) @ 19.31s</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-73'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-34'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-34' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-34' aria-expanded='false' tabindex='0' data-detail-target='details-34' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>34.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Just checking if that trading licence is still available?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>WYR_WyrmRock_Quartermaster_State_AgreedToAcceptBribe</span><span class='preview-token check'>!e678bd59-74f4-4a7b-8776-aca807d9ef22</span></span></span></span><div class='node-detail-panel' id='details-34' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player convinced Flaming Fist Quartermaster to accept a bribe'>WYR_WyrmRock_Quartermaster_State_AgreedToAcceptBribe</span> <span class='asset-id'>{54ea12c1-f3f8-4989-abf8-7bf1f5df685f}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Script</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>e678bd59-74f4-4a7b-8776-aca807d9ef22</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 724d49ad-949b-cd6f-3689-186a549a3c4c</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hb1933bb6g4df0g4f0dg8703gbc34a961a9c5</span><span class='meta-item'><strong>Text UUID</strong>: 6e10eb55-baf9-4ee7-be4b-c709794ae776</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-34' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-58'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-58' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>58.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>It is, but the er... fee isn&#x27;t negotiable. Come back when you have the coin.</span> <span class='end'>[End]</span></span></span></span><div class='node-detail-panel' id='details-58' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: c2d7f0b1-85a4-9d92-e637-9f6ae7e73d9e</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h4397a040ge230g43e4gbd25gcdfed7e20e2c</span><span class='meta-item'><strong>Text UUID</strong>: be4a22be-b54a-43ff-a569-2e4f11bb8eb9</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 20</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: c2d7f0b1-85a4-9d92-e637-9f6ae7e73d9e</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 10.83s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-26'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-26' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-26' aria-expanded='false' tabindex='0' data-detail-target='details-26' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>26.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I&#x27;d like to buy the trading licence we discussed. ([GEN_CheckMagicPocketGold_6057ad05-9492-4630-9f0a-be548b134c54])</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>WYR_WyrmRock_Quartermaster_State_AgreedToAcceptBribe</span><span class='preview-token check'>e678bd59-74f4-4a7b-8776-aca807d9ef22</span><span class='preview-token set'>WYR_WyrmRock_Quartermaster_State_AgreedToTrade</span><span class='preview-token set'>GEN_TransferNPCPayment</span></span></span></span><div class='node-detail-panel' id='details-26' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player convinced Flaming Fist Quartermaster to accept a bribe'>WYR_WyrmRock_Quartermaster_State_AgreedToAcceptBribe</span> <span class='asset-id'>{54ea12c1-f3f8-4989-abf8-7bf1f5df685f}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Script</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>e678bd59-74f4-4a7b-8776-aca807d9ef22</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player convinced Flaming Fist Quartermaster to trade with them'>WYR_WyrmRock_Quartermaster_State_AgreedToTrade</span> <span class='asset-id'>{162266ba-66af-4383-a4e7-f58d46604b5c}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GEN_TransferNPCPaymentdescription'>GEN_TransferNPCPayment</span> <span class='asset-id'>{41179aa7-bc85-02b5-1399-71a651d9dc85}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 5112e523-3bee-0e14-9334-b7f68f0f185b</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h90a562b7gdfe3g4f71g9f7dg0c754b9f1453</span><span class='meta-item'><strong>Text UUID</strong>: d2552649-d94b-41ae-a955-b5358a4cc54f</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-26' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-3'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-3' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>3.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-63'>Node 63</a></span></span></span></span><div class='node-detail-panel' id='details-3' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 067b0f49-9b0a-5bcb-ad46-8f442387b16e</span><span class='meta-item'><strong>Jump Target</strong>: Node 63 (c964835b-3b9a-7564-0392-d85fe9aa261a)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-45'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-45' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>45.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-67'>Node 67</a></span></span></span></span><div class='node-detail-panel' id='details-45' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: a0181d4e-5faa-64dd-18c5-5610541fc63a</span><span class='meta-item'><strong>Jump Target</strong>: Node 67 (d0d44f44-3a36-010a-214a-dca957d0dba6)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-56'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-56' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>56.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-15'>Node 15</a></span></span></span></span><div class='node-detail-panel' id='details-56' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: be884dc2-5ff8-3039-a7db-9c89de31f3ac</span><span class='meta-item'><strong>Jump Target</strong>: Node 15 (28e116e8-9cc2-4329-2851-1be40bab5143)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-52'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-52' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-52' aria-expanded='true' tabindex='0' data-detail-target='details-52' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>52.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Oi. I told you already - Flaming Fists only in here. Leave. Now.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>WYR_WyrmRock_HasMet_Quartermaster</span><span class='preview-token check'>!WYR_WyrmRock_Quartermaster_State_AgreedToAcceptBribe</span></span></span></span><div class='node-detail-panel' id='details-52' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>WYR_WyrmRock_HasMet_Quartermaster</span> <span class='asset-id'>{42e0229c-55e2-4af3-a8b9-a677a6e50949}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player convinced Flaming Fist Quartermaster to accept a bribe'>WYR_WyrmRock_Quartermaster_State_AgreedToAcceptBribe</span> <span class='asset-id'>{54ea12c1-f3f8-4989-abf8-7bf1f5df685f}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: b22c3d3d-0b16-b7b9-04b0-ccd7f2ade1f3</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h40c78c72gad9bg4b91g85a0g497b6735e729</span><span class='meta-item'><strong>Text UUID</strong>: 47024c79-2bcd-496a-bb5a-7a02b0d321a3</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 0</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: b22c3d3d-0b16-b7b9-04b0-ccd7f2ade1f3</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 10.01s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-52'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-72'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-72' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>72.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-67'>Node 67</a></span></span></span></span><div class='node-detail-panel' id='details-72' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: deccec77-248c-abad-0ed2-fa12a13e7b69</span><span class='meta-item'><strong>Jump Target</strong>: Node 67 (d0d44f44-3a36-010a-214a-dca957d0dba6)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-11'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-11' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>11.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-15'>Node 15</a></span></span></span></span><div class='node-detail-panel' id='details-11' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 1964f69b-b25d-0c0b-e853-e9ee71746587</span><span class='meta-item'><strong>Jump Target</strong>: Node 15 (28e116e8-9cc2-4329-2851-1be40bab5143)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul>
+        
+      </div>
+    </section>
+  </div>
+  <div class="tree-scrollbar-proxy" hidden>
+    <div class="tree-scrollbar-proxy-inner"></div>
+  </div>
+  <script>
+    function getNodeDetailPanel(shell) {
+      if (!shell) {
+        return null;
+      }
+      const content = shell.querySelector(":scope > .node-row > .node-content");
+      if (!content) {
+        return null;
+      }
+      return Array.from(content.children).find((child) => child.classList && child.classList.contains("node-detail-panel")) || null;
+    }
+    function getNodeDetailToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-detail-target]");
+    }
+    function getNodeBranchToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-branch-target]");
+    }
+    function getNodeBranchMarker(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .tree-toggle-marker[data-branch-target]");
+    }
+    const jumpHighlightTimers = new WeakMap();
+    const nodeSummaryClickTimers = new WeakMap();
+    const NODE_DETAIL_DOUBLE_CLICK_MS = 160;
+    const treeShell = document.querySelector(".tree-shell");
+    const treeShellInner = treeShell ? treeShell.querySelector(".tree-shell-inner") : null;
+    const treeScrollbarProxy = document.querySelector(".tree-scrollbar-proxy");
+    const treeScrollbarProxyInner = treeScrollbarProxy
+      ? treeScrollbarProxy.querySelector(".tree-scrollbar-proxy-inner")
+      : null;
+    let syncingTreeScroll = false;
+    let syncingProxyScroll = false;
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+    function setToggleButtonState(button, active) {
+      if (!button) {
+        return;
+      }
+      button.classList.toggle("is-active", active);
+      const hideLabel = button.dataset.hideLabel;
+      const showLabel = button.dataset.showLabel;
+      if (hideLabel && showLabel) {
+        button.textContent = active ? showLabel : hideLabel;
+      }
+    }
+    function syncAllDetailsToggle() {
+      const button = document.querySelector("button[data-toggle-details='all']");
+      if (!button) {
+        return;
+      }
+      const panels = Array.from(document.querySelectorAll(".node-detail-panel"));
+      const allOpen = panels.length > 0 && panels.every((panel) => !panel.hasAttribute("hidden"));
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function syncAllBranchesToggle() {
+      const button = document.querySelector("button[data-toggle-branches='all']");
+      if (!button) {
+        return;
+      }
+      const branchMarkers = Array.from(document.querySelectorAll(".tree-toggle-marker[data-branch-target]"));
+      const allOpen = branchMarkers.length > 0 && branchMarkers.every((marker) => marker.dataset.branchExpanded === "true");
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function updateTreeScrollbarProxy() {
+      if (!treeShell || !treeShellInner || !treeScrollbarProxy || !treeScrollbarProxyInner) {
+        return;
+      }
+      const contentWidth = treeShellInner.scrollWidth;
+      const viewportWidth = treeShell.clientWidth;
+      const needsProxy = contentWidth > viewportWidth + 1;
+      if (!needsProxy) {
+        treeScrollbarProxy.hidden = true;
+        return;
+      }
+      const rect = treeShell.getBoundingClientRect();
+      treeScrollbarProxy.hidden = false;
+      treeScrollbarProxy.style.left = `${Math.max(0, rect.left)}px`;
+      treeScrollbarProxy.style.width = `${Math.max(0, rect.width)}px`;
+      treeScrollbarProxyInner.style.width = `${contentWidth}px`;
+      if (!syncingTreeScroll && Math.abs(treeScrollbarProxy.scrollLeft - treeShell.scrollLeft) > 1) {
+        syncingProxyScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingProxyScroll = false;
+      }
+    }
+    function resetTreeScrollToStart() {
+      document.querySelectorAll(".tree-shell").forEach((shell) => {
+        shell.scrollLeft = 0;
+      });
+      if (treeScrollbarProxy) {
+        treeScrollbarProxy.scrollLeft = 0;
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setBranchOpen(control, openState, syncState = true) {
+      if (!control) {
+        return;
+      }
+      const targetId = control.dataset.branchTarget;
+      const target = targetId ? document.getElementById(targetId) : null;
+      if (!target) {
+        return;
+      }
+      const shell = control.closest(".node-shell");
+      const marker = shell ? getNodeBranchMarker(shell) : null;
+      const summary = shell ? getNodeBranchToggle(shell) : null;
+      if (openState) {
+        target.removeAttribute("hidden");
+      } else {
+        target.setAttribute("hidden", "until-found");
+      }
+      if (marker) {
+        marker.dataset.branchExpanded = openState ? "true" : "false";
+        marker.textContent = openState ? "-" : "+";
+      }
+      if (summary) {
+        summary.setAttribute("aria-expanded", openState ? "true" : "false");
+      }
+      if (syncState) {
+        syncAllBranchesToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setDetailOpen(shell, openState, syncState = true) {
+      const panel = getNodeDetailPanel(shell);
+      const toggle = getNodeDetailToggle(shell);
+      if (!panel) {
+        return;
+      }
+      if (openState) {
+        panel.removeAttribute("hidden");
+      } else {
+        panel.setAttribute("hidden", "until-found");
+      }
+      if (toggle) {
+        toggle.dataset.detailExpanded = openState ? "true" : "false";
+      }
+      if (syncState) {
+        syncAllDetailsToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setAllBranches(openState) {
+      document.querySelectorAll(".tree-toggle-marker[data-branch-target]").forEach((marker) => { setBranchOpen(marker, openState, false); });
+      syncAllBranchesToggle();
+    }
+    function setAllNodeDetails(openState) {
+      document.querySelectorAll(".node-shell").forEach((shell) => {
+        if (getNodeDetailPanel(shell)) {
+          setDetailOpen(shell, openState, false);
+        }
+      });
+      syncAllDetailsToggle();
+    }
+    function openParents(target) {
+      let current = target;
+      while (current) {
+        if (current.classList && current.classList.contains("node-branch")) {
+          const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${current.id}"]`);
+          setBranchOpen(marker, true);
+        }
+        current = current.parentElement;
+      }
+    }
+    function highlightJumpTarget(target) {
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      if (!shell) {
+        return;
+      }
+      const existingTimer = jumpHighlightTimers.get(shell);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+      shell.classList.add("jump-highlight");
+      const timeoutId = window.setTimeout(() => {
+        shell.classList.remove("jump-highlight");
+        jumpHighlightTimers.delete(shell);
+      }, 5000);
+      jumpHighlightTimers.set(shell, timeoutId);
+    }
+    function revealAndFocusNodeTarget(target, href = "") {
+      if (!target) {
+        return;
+      }
+      openParents(target);
+      if (href) {
+        history.replaceState(null, "", href);
+      }
+      requestAnimationFrame(() => {
+        target.scrollIntoView({ block: "center" });
+        highlightJumpTarget(target);
+        updateTreeScrollbarProxy();
+      });
+    }
+    if (treeShell && treeScrollbarProxy) {
+      treeShell.addEventListener("scroll", () => {
+        if (syncingProxyScroll) {
+          return;
+        }
+        syncingTreeScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingTreeScroll = false;
+      });
+      treeScrollbarProxy.addEventListener("scroll", () => {
+        if (syncingTreeScroll) {
+          return;
+        }
+        syncingProxyScroll = true;
+        treeShell.scrollLeft = treeScrollbarProxy.scrollLeft;
+        syncingProxyScroll = false;
+      });
+    }
+    document.addEventListener("click", (event) => {
+      const allBranchesButton = event.target.closest("button[data-toggle-branches='all']");
+      if (allBranchesButton) {
+        const isOpen = allBranchesButton.dataset.active === "true";
+        setAllBranches(!isOpen);
+        return;
+      }
+      const allDetailsButton = event.target.closest("button[data-toggle-details='all']");
+      if (allDetailsButton) {
+        const isOpen = allDetailsButton.dataset.active === "true";
+        setAllNodeDetails(!isOpen);
+        return;
+      }
+      const button = event.target.closest("button[data-toggle-class]");
+      if (button) {
+        const active = document.body.classList.toggle(button.dataset.toggleClass);
+        setToggleButtonState(button, active);
+        return;
+      }
+      const link = event.target.closest("a[href^='#node-']");
+      if (link) {
+        event.preventDefault();
+        const target = document.querySelector(link.getAttribute("href"));
+        if (target) {
+          revealAndFocusNodeTarget(target, link.getAttribute("href"));
+        }
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (summary) {
+        const branchTarget = summary.dataset.branchTarget;
+        const shell = summary.closest(".node-shell");
+        if (!shell) {
+          return;
+        }
+        if (!branchTarget) {
+          if (summary.dataset.detailTarget) {
+            const isOpen = summary.dataset.detailExpanded === "true";
+            setDetailOpen(shell, !isOpen);
+          }
+          return;
+        }
+        const existingTimer = nodeSummaryClickTimers.get(summary);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+          nodeSummaryClickTimers.delete(summary);
+          event.preventDefault();
+          const isOpen = summary.dataset.detailExpanded === "true";
+          setDetailOpen(shell, !isOpen);
+          return;
+        }
+        const timerId = window.setTimeout(() => {
+          nodeSummaryClickTimers.delete(summary);
+          const isOpen = summary.getAttribute("aria-expanded") === "true";
+          setBranchOpen(summary, !isOpen);
+          if (isOpen) {
+            const panel = getNodeDetailPanel(shell);
+            if (panel && !panel.hasAttribute("hidden")) {
+              setDetailOpen(shell, false);
+            }
+          }
+        }, NODE_DETAIL_DOUBLE_CLICK_MS);
+        nodeSummaryClickTimers.set(summary, timerId);
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (!summary) {
+        return;
+      }
+      event.preventDefault();
+      const shell = summary.closest(".node-shell");
+      if (!shell) {
+        return;
+      }
+      if (summary.dataset.branchTarget) {
+        const isOpen = summary.getAttribute("aria-expanded") === "true";
+        setBranchOpen(summary, !isOpen);
+        if (isOpen) {
+          const panel = getNodeDetailPanel(shell);
+          if (panel && !panel.hasAttribute("hidden")) {
+            setDetailOpen(shell, false);
+          }
+        }
+        return;
+      }
+      if (summary.dataset.detailTarget) {
+        const isOpen = summary.dataset.detailExpanded === "true";
+        setDetailOpen(shell, !isOpen);
+      }
+    });
+    document.addEventListener("beforematch", (event) => {
+      const branch = event.target.closest(".node-branch");
+      if (branch && branch.id) {
+        const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${branch.id}"]`);
+        setBranchOpen(marker, true);
+      }
+      const panel = event.target.closest(".node-detail-panel");
+      if (panel) {
+        const shell = panel.closest(".node-shell");
+        if (shell) {
+          openParents(shell);
+          setDetailOpen(shell, true);
+        }
+      }
+    });
+    document.querySelectorAll("button[data-toggle-class]").forEach((button) => {
+      const active = document.body.classList.contains(button.dataset.toggleClass);
+      setToggleButtonState(button, active);
+    });
+    if (window.ResizeObserver && treeShell) {
+      const observer = new ResizeObserver(() => {
+        updateTreeScrollbarProxy();
+      });
+      observer.observe(treeShell);
+      if (treeShellInner) {
+        observer.observe(treeShellInner);
+      }
+    }
+    window.addEventListener("resize", updateTreeScrollbarProxy);
+    window.addEventListener("scroll", updateTreeScrollbarProxy, { passive: true });
+    window.addEventListener("pageshow", () => {
+      if (window.location.hash) {
+        updateTreeScrollbarProxy();
+        return;
+      }
+      resetTreeScrollToStart();
+      window.requestAnimationFrame(() => {
+        resetTreeScrollToStart();
+      });
+      window.setTimeout(() => {
+        resetTreeScrollToStart();
+      }, 0);
+    });
+    syncAllBranchesToggle();
+    document.querySelectorAll("button[data-toggle-details='all']").forEach((button) => {
+      const active = button.dataset.active === "true";
+      setToggleButtonState(button, active);
+    });
+    updateTreeScrollbarProxy();
+    if (window.location.hash) {
+      const target = document.querySelector(window.location.hash);
+      if (target) {
+        revealAndFocusNodeTarget(target, window.location.hash);
+      }
+    }
+  </script>
+</body>
+</html>

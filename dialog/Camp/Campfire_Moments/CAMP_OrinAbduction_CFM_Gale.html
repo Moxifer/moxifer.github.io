@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CAMP_OrinAbduction_CFM_Gale</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #182330;
+      --muted: #586477;
+      --line: #c7d2df;
+      --npc: #b91c1c;
+      --player: #15803d;
+      --system: #2563eb;
+      --rule: #2f6f44;
+      --tag: #0f766e;
+      --check: #7c3aed;
+      --set: #ea580c;
+      --roll: #6d28d9;
+      --approval: #0f766e;
+      --jump: #155eef;
+      --context: #475467;
+      --surface: #f3f6fa;
+      --surface-active: #e6edf5;
+      --surface-hover: #edf3f9;
+      --detail-surface: #e3ebf4;
+      --detail-border: #b4c2d4;
+      --focus: #90a4bc;
+      --highlight: #d9e5f5;
+      --scrollbar-proxy-bg: rgba(255, 255, 255, 0.94);
+      --mono: Consolas, "SFMono-Regular", Menlo, monospace;
+      --sans: Georgia, "Palatino Linotype", serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #fff;
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.35;
+      overflow-x: hidden;
+    }
+    a { color: var(--jump); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: none;
+      padding: 0;
+      border-radius: 0;
+    }
+    .page {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0.55rem 0.9rem 1.8rem;
+      overflow-x: hidden;
+    }
+    .hero {
+      margin-bottom: 0.55rem;
+    }
+    .hero h1 {
+      margin: 0 0 0.2rem;
+      font-size: 1.4rem;
+      line-height: 1.15;
+    }
+    .source {
+      color: var(--muted);
+      font-size: 0.9rem;
+      word-break: break-all;
+      margin-bottom: 0.2rem;
+    }
+    .source-label {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.3rem;
+    }
+    .summary-line {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 0.35rem;
+    }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.45rem;
+      margin-bottom: 0.45rem;
+      padding: 0.35rem 0;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      overflow: visible;
+    }
+    .toolbar-scroll {
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: calc(100% - 7rem);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+    }
+    .controls {
+      display: inline-flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0.45rem;
+      white-space: nowrap;
+      font-size: 0.9rem;
+      min-width: max-content;
+      overflow: visible;
+    }
+    .controls button,
+    .controls summary,
+    .speaker-map > summary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 1.85rem;
+      padding: 0.12rem 0.5rem;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: var(--surface);
+      color: var(--jump);
+      font: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      list-style: none;
+      user-select: none;
+    }
+    .controls button.is-active,
+    .controls details[open] > summary,
+    .speaker-map[open] > summary {
+      background: var(--surface-active);
+      border-color: var(--focus);
+    }
+    .controls button:hover,
+    .controls summary:hover,
+    .speaker-map > summary:hover {
+      background: var(--surface-hover);
+      text-decoration: none;
+    }
+    .controls summary:focus,
+    .controls button:focus,
+    .speaker-map > summary:focus {
+      outline: 1px solid var(--focus);
+      outline-offset: 1px;
+    }
+    .speaker-map {
+      flex: 0 0 auto;
+      position: relative;
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .speaker-map summary,
+    .meta-block summary {
+      cursor: pointer;
+      color: var(--jump);
+      list-style: none;
+    }
+    .speaker-map summary::-webkit-details-marker,
+    .meta-block summary::-webkit-details-marker {
+      display: none;
+    }
+    .speaker-map[open] ul {
+      display: block;
+    }
+    .speaker-map ul {
+      display: none;
+      list-style: none;
+      margin: 0.3rem 0 0;
+      padding: 0.45rem 0.6rem;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 0.2rem);
+      min-width: 20rem;
+      max-width: min(34rem, calc(100vw - 2rem));
+      max-height: 24rem;
+      overflow: auto;
+      background: #fbfcfe;
+      border: 1px solid var(--line);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+      z-index: 30;
+    }
+    .speaker-map li + li {
+      margin-top: 0.1rem;
+    }
+    .speaker-index {
+      display: inline-block;
+      min-width: 2rem;
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 600;
+    }
+    .speaker-name {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.25rem;
+    }
+    .inline-meta, .line-meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .tree-shell {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: visible;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-shell-inner {
+      width: max-content;
+      min-width: 100%;
+    }
+    .tree-scrollbar-proxy {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 1.1rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      background: var(--scrollbar-proxy-bg);
+      border-top: 1px solid var(--line);
+      z-index: 40;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-scrollbar-proxy[hidden] {
+      display: none;
+    }
+    .tree-scrollbar-proxy-inner {
+      height: 1px;
+    }
+    .orphan-section {
+      width: auto;
+      min-width: 0;
+      margin-top: 1rem;
+      padding-top: 0.55rem;
+      border-top: 1px dotted var(--line);
+    }
+    .orphan-section h2 {
+      margin: 0 0 0.15rem;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+    .orphan-note {
+      margin: 0 0 0.35rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .root-list, .child-list {
+      list-style: none;
+      margin: 0;
+      padding-left: 0;
+      width: auto;
+      min-width: 0;
+    }
+    .child-list {
+      margin-left: 1.1rem;
+      padding-left: 0.85rem;
+      border-left: 1px dotted var(--line);
+    }
+    .node-item {
+      margin: 0.18rem 0;
+    }
+    details.node {
+      margin: 0;
+    }
+    details.node:target > summary .node-line {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    .node-leaf:target {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 0;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    summary::-webkit-details-marker {
+      display: none;
+    }
+    details.node > summary::before {
+      content: "▸";
+      display: inline-block;
+      width: 0.9rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      vertical-align: top;
+      padding-top: 0.12rem;
+    }
+    details.node[open] > summary::before {
+      content: "▾";
+    }
+    details.node.no-children > summary::before {
+      content: "•";
+    }
+    .node-line {
+      display: inline;
+      padding: 0.06rem 0.18rem;
+    }
+    .node-leaf {
+      display: inline-block;
+      padding: 0.06rem 0.18rem;
+      border-radius: 6px;
+    }
+    details.node > summary::before {
+      content: "+";
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    details.node[open] > summary::before {
+      content: "-";
+    }
+    details.node.no-children > summary::before {
+      content: ".";
+    }
+    .node-number {
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 700;
+    }
+    .speaker-label {
+      font-weight: 700;
+      margin-left: 0.2rem;
+    }
+    .speaker-label.npc { color: var(--npc); }
+    .speaker-label.player { color: var(--player); }
+    .speaker-label.system { color: var(--system); }
+    .dialog {
+      color: var(--ink);
+      margin-left: 0.2rem;
+    }
+    .node-kind {
+      color: var(--system);
+      margin-left: 0.2rem;
+    }
+    .ruletag {
+      color: var(--rule);
+      margin-left: 0.35rem;
+    }
+    .tags {
+      color: var(--tag);
+      margin-left: 0.35rem;
+    }
+    .checkflag {
+      color: var(--check);
+      margin-left: 0.35rem;
+    }
+    .setflag {
+      color: var(--set);
+      margin-left: 0.35rem;
+    }
+    .rolls {
+      color: var(--roll);
+      margin-left: 0.35rem;
+    }
+    .approval {
+      color: var(--approval);
+      margin-left: 0.35rem;
+    }
+    .nodelink {
+      color: var(--jump);
+      margin-left: 0.35rem;
+    }
+    .context {
+      color: var(--context);
+      margin-left: 0.3rem;
+      cursor: help;
+    }
+    .end {
+      color: #8b1e1e;
+      margin-left: 0.35rem;
+    }
+    .node-shell:target,
+    .node-leaf:target {
+      background: none;
+      border-radius: 0;
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-shell {
+      display: block;
+    }
+    .node-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.32rem;
+      width: max-content;
+      min-width: 100%;
+      transition: background-color 0.18s ease;
+    }
+    .node-shell.jump-highlight > .node-row {
+      background: var(--highlight);
+    }
+    .node-content {
+      min-width: 0;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker,
+    .tree-spacer {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 0.95rem;
+      height: 0.95rem;
+      margin-top: 0.08rem;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker {
+      border: none;
+      background: none;
+      color: var(--muted);
+      padding: 0;
+      font: inherit;
+      font-weight: 800;
+      font-size: 1.18rem;
+      line-height: 1;
+      user-select: none;
+    }
+    .tree-spacer {
+      border: none;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .node-branch[hidden]:not([hidden='until-found']) {
+      display: none;
+    }
+    .repeat {
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+    .node-summary {
+      display: block;
+      cursor: default;
+    }
+    .node-summary.is-interactive {
+      cursor: pointer;
+    }
+    .node-summary.is-interactive:focus-visible {
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-main-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.35rem;
+    }
+    .node-main {
+      display: block;
+      flex: 1 1 auto;
+      min-width: 0;
+      white-space: normal;
+      line-height: 1.28;
+      overflow-wrap: anywhere;
+    }
+    .node-leaf {
+      display: block;
+      border-radius: 0;
+    }
+    .node-number {
+      font-weight: 600;
+    }
+    .speaker-label {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind,
+    .nodelink {
+      overflow-wrap: anywhere;
+    }
+    .nodelink,
+    .end {
+      margin-left: 0;
+    }
+    .node-previews {
+      display: block;
+      margin: 0.12rem 0 0 1.1rem;
+      font-size: 0.88rem;
+      white-space: normal;
+      line-height: 1.28;
+    }
+    .preview-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.12rem 0.45rem;
+    }
+    .preview-token {
+      display: inline;
+      overflow-wrap: anywhere;
+    }
+    .preview-token.tag {
+      color: var(--tag);
+    }
+    .preview-token.rule {
+      color: var(--rule);
+    }
+    .preview-token.check {
+      color: var(--check);
+    }
+    .preview-token.set {
+      color: var(--set);
+    }
+    .preview-note {
+      display: block;
+      margin-top: 0.08rem;
+      color: var(--context);
+      overflow-wrap: anywhere;
+      font-weight: 700;
+    }
+    .preview-note-label {
+      color: var(--context);
+      font-weight: 700;
+    }
+    .preview-note-value {
+      color: #4f463f;
+      font-weight: 600;
+    }
+    .signal-line {
+      display: block;
+      margin: 0.14rem 0 0.2rem;
+    }
+    .signal-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem;
+    }
+    .signal-label {
+      font-weight: 700;
+    }
+    .signal-scope {
+      color: var(--muted);
+    }
+    .tag-line, .tag-line .signal-label { color: var(--tag); }
+    .rule-line, .rule-line .signal-label { color: var(--rule); }
+    .checkflag-line, .checkflag-line .signal-label { color: var(--check); }
+    .setflag-line, .setflag-line .signal-label { color: var(--set); }
+    .roll-line, .roll-line .signal-label { color: var(--roll); }
+    .approval-line, .approval-line .signal-label { color: var(--approval); }
+    .context-line, .context-line .signal-label { color: var(--context); }
+    .context-line .signal-heading {
+      font-weight: 700;
+    }
+    .context-line .signal-item {
+      color: #4f463f;
+    }
+    .signal-values {
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .signal-list {
+      list-style: none;
+      margin: 0.06rem 0 0 0.9rem;
+      padding: 0;
+    }
+    .signal-item {
+      margin: 0.1rem 0;
+      overflow-wrap: anywhere;
+    }
+    .signal-item::before {
+      content: "- ";
+      color: var(--muted);
+    }
+    .signal-body {
+      display: block;
+      margin: 0.06rem 0 0 0.9rem;
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .asset-name {
+      color: var(--ink);
+    }
+    .asset-id {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.92em;
+      overflow-wrap: anywhere;
+    }
+    .asset-state {
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .node-detail-panel {
+      margin: 0.08rem 0 0.18rem 1.1rem;
+      padding: 0.35rem 0.5rem;
+      border: 1px solid var(--detail-border);
+      background: var(--detail-surface);
+      border-radius: 0;
+      display: block;
+      gap: 0;
+      max-width: none;
+    }
+    .node-detail-panel[hidden]:not([hidden='until-found']) {
+      display: none;
+    }
+    .node-detail-panel[hidden='until-found'] {
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: none;
+    }
+    .section {
+      margin: 0.16rem 0;
+      padding: 0;
+      background: none;
+      border: none;
+    }
+    .section h3 {
+      margin: 0 0 0.22rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .node-detail-panel > .section + .section {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-block + .text-block {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-line {
+      font-size: 0.96rem;
+      margin-bottom: 0.15rem;
+    }
+    .text-line {
+      margin: 0.08rem 0;
+      font-size: inherit;
+      overflow-wrap: anywhere;
+    }
+    .badge-row, .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .badge, .meta-item {
+      display: block;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+    }
+    .meta-items {
+      margin: 0.12rem 0 0 0.85rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+      white-space: normal;
+    }
+    .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .meta-item {
+      display: block;
+      margin: 0.06rem 0;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+      overflow-wrap: anywhere;
+    }
+    .meta-item strong {
+      color: var(--ink);
+    }
+    .badge.flags { color: var(--check); }
+    .badge.tags { color: var(--tag); }
+    .flag-groups {
+      display: block;
+      gap: 0;
+    }
+    .flag-group-type {
+      display: inline-block;
+      color: var(--muted);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.15rem;
+    }
+    .rule-tree, .rule-tree ul {
+      margin: 0;
+      padding-left: 1rem;
+    }
+    .body-hide-flags .section-flags,
+    .body-hide-rules .section-rules,
+    .body-hide-details .section-metadata,
+    .body-hide-context .preview-note,
+    .body-hide-context .context-line,
+    .body-hide-context .node-line .context {
+      display: none;
+    }
+    .body-hide-flags .node-line .checkflag,
+    .body-hide-flags .node-line .setflag,
+    .body-hide-rules .node-line .ruletag {
+      display: none;
+    }
+    .body-hide-flags .checkflag-line,
+    .body-hide-flags .setflag-line {
+      display: none;
+    }
+    .body-hide-flags .preview-token.check,
+    .body-hide-flags .preview-token.set {
+      display: none;
+    }
+    .body-hide-context .context-line {
+      display: none;
+    }
+    .body-hide-numbers .node-number {
+      display: none;
+    }
+    .missing, .cycle {
+      padding: 0.2rem 0.35rem;
+      color: #8b1e1e;
+      background: rgba(139, 30, 30, 0.08);
+      border-radius: 6px;
+      display: inline-block;
+    }
+    .missing, .cycle {
+      padding: 0;
+      background: none;
+      border-radius: 0;
+      display: block;
+      overflow-wrap: anywhere;
+    }
+    @media (max-width: 920px) {
+      .page {
+        padding: 0.45rem 0.5rem 0.9rem;
+      }
+      .tree-shell {
+        padding: 0;
+      }
+    }
+  </style>
+</head>
+  <body class="body-hide-numbers">
+  <div class="page">
+    <header class="hero">
+      <h1>CAMP_OrinAbduction_CFM_Gale</h1>
+      <div class="source"><span class="source-label">Dialog Resource UUID:</span><strong><code>9b6d59ec-165e-5bf1-7219-0ef7b02e3c63</code></strong></div><div class="source"><span class="source-label">Timeline Resource UUID:</span><strong><code>a086add7-93a1-988b-2d81-3fae7dd5c159</code></strong></div><div class="source"><span class="source-label">StartDialog UUID:</span><strong><code>7b2619da-9c20-2925-5470-98866535c700</code></strong></div><div class="source"><span class="source-label">Dialog:</span>Mods\GustavDev\Story\DialogsBinary\Camp\Campfire_Moments\CAMP_OrinAbduction_CFM_Gale.lsf.lsx</div><div class="source"><span class="source-label">Timeline:</span>Public\GustavDev\Timeline\Generated\CAMP_OrinAbduction_CFM_Gale.lsf.lsx</div><div class="source"><span class="source-label">Scene:</span>Public\GustavDev\Timeline\Generated\CAMP_OrinAbduction_CFM_Gale_Scene.lsf.lsx</div>
+      <div class="summary-line">
+        category=Generic NPC Dialog | nodes=67 | roots=1
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-scroll">
+          <div class="controls">
+            <button type="button" data-toggle-branches="all" data-hide-label="Expand all" data-show-label="Collapse all" data-active="false">Expand all</button>
+            <button type="button" data-toggle-class="body-hide-flags" data-hide-label="Hide flags" data-show-label="Show flags">Hide flags</button>
+            <button type="button" data-toggle-details="all" data-hide-label="Show details" data-show-label="Hide details" data-active="false">Show details</button>
+            <button type="button" data-toggle-class="body-hide-context" data-hide-label="Hide notes" data-show-label="Show notes">Hide notes</button>
+            <button type="button" data-toggle-class="body-hide-numbers" data-hide-label="Hide node numbers" data-show-label="Show node numbers">Hide node numbers</button>
+          </div>
+        </div>
+        <details class="speaker-map">
+          <summary>Speakers</summary>
+          <ul><li><span class='speaker-index'>0</span><span class='speaker-name'>Gale</span><span class='inline-meta'>GROUP_Act3_WYR_OrinsImpersonation_Gale | list=a6e5e20f-3a3d-95e7-6907-03fe5e98c8c5 | mapping=a7a34f24-8123-4c89-9233-20c6c3acd244</span></li><li><span class='speaker-index'>1</span><span class='speaker-name'>Orin</span><span class='inline-meta'>GROUP_Act3_WYR_OrinsImpersonation_Orin | list=982b6ecc-c31a-b7fd-eb19-7f3c25bdb1fe | mapping=036f6f52-fad0-4fd0-8a21-478649d1c4af</span></li><li><span class='speaker-index'>2</span><span class='speaker-name'>Player</span><span class='inline-meta'>GROUP_Players | list=e0d1ff71-04a8-4340-ae64-9684d846eb83 | mapping=9a922d78-e14f-47d6-b1f5-5357a109ed91</span></li></ul>
+        </details>
+      </div>
+    </header>
+    <section class="tree-shell">
+      <div class="tree-shell-inner">
+        <ul class="root-list"><li class='node-item'><div class='node-shell' id='node-22'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-22' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-22' aria-expanded='true' tabindex='0' data-detail-target='details-22' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>22.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>Forgive me. I was lost in my thoughts, as usual.</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>As the player enters camp, Gale stands gazing into the fire. He looks lost, brooding. Hearing the player approach, he turns to greet them.</span></span></span></span><div class='node-detail-panel' id='details-22' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 52fcee65-bb23-0964-a2fd-a46fcdc514ef</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: ha5d3e7beg6ab8g41d6g8f0dgdb78a1d67a16</span><span class='meta-item'><strong>Text UUID</strong>: 56f7751e-991e-4493-9025-f8a8630546a5</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 0</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 52fcee65-bb23-0964-a2fd-a46fcdc514ef</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 17s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: GroupID, GroupIndex, addressedspeaker</span></div></section></div></div></div><div class='node-branch' id='branch-22'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-43'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-43' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-43' aria-expanded='false' tabindex='0' data-detail-target='details-43' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>43.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>I&#x27;ve found myself in something of a quandry. Yours is an opinion I&#x27;d gladly hear on the matter.</span></span></span></span><div class='node-detail-panel' id='details-43' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: a2dd594c-46e4-73c5-554b-cd9f1cb68239</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: hf4d62c95g292dg4782ga8eaga5a74d243908</span><span class='meta-item'><strong>Text UUID</strong>: d5ecd290-0427-439e-af8f-15216504595d</span><span class='meta-item'><strong>Group ID</strong>: 52fcee65-bb23-0964-a2fd-a46fcdc514ef</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-43' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-9'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-9' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-9' aria-expanded='false' tabindex='0' data-detail-target='details-9' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>9.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>You know I&#x27;ll always help you.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>ORI_State_PartneredWithGale</span></span></span></span><div class='node-detail-panel' id='details-9' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 2 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='This character is in an exclusive relationship with Gale'>ORI_State_PartneredWithGale</span> <span class='asset-id'>{e008e20d-d642-42ed-9008-297b6273aa21}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 33b57020-701f-2c21-54ff-b7c6f853911b</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h0d0885beg4c59g4506ga991g77d0393aaa38</span><span class='meta-item'><strong>Text UUID</strong>: f786ae70-12aa-48c5-a74d-8ae109e4b289</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-9' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-8'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-8' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-8' aria-expanded='false' tabindex='0' data-detail-target='details-8' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>8.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>Careful. You don&#x27;t know what I&#x27;m about to ask.</span></span></span></span><div class='node-detail-panel' id='details-8' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 2562c0ca-7c7c-8326-853b-ade76499a1c1</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: h146724bag4ad7g41fdg95a0g56e4674b0e75</span><span class='meta-item'><strong>Text UUID</strong>: 3d912400-fb49-448d-9b7c-7b9ceb54641e</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 20</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 2562c0ca-7c7c-8326-853b-ade76499a1c1</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.51s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-8' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-42'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-42' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-42' aria-expanded='false' tabindex='0' data-detail-target='details-42' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>42.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>I fear our unwillingness to make difficult decisions is doing more harm than good.</span></span></span></span><div class='node-detail-panel' id='details-42' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 969dd73c-f5b2-e9ea-70ef-6e64ea6d774a</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: h9390d316gf184g4bdfg8ad5g481345191dc9</span><span class='meta-item'><strong>Text UUID</strong>: 4705cdd7-8cab-4646-b258-19a0dd4931cb</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 7</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 969dd73c-f5b2-e9ea-70ef-6e64ea6d774a</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 18.2s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 5</span><span class='meta-item'><strong>Group ID</strong>: 969dd73c-f5b2-e9ea-70ef-6e64ea6d774a</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-42' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-35'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-35' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-35' aria-expanded='false' tabindex='0' data-detail-target='details-35' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>35.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>I regret straying from Mystra&#x27;s instruction. All the suffering around us, it is our fault. I am reconsidering taking a more drastic approach.</span></span></span></span><div class='node-detail-panel' id='details-35' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 853f1d45-9a57-3517-f009-a34fc99efd84</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: hc7acdb89g3a03g4b5bg9efdg829e8ceb5012</span><span class='meta-item'><strong>Text UUID</strong>: 05b0abb9-9ffe-464f-abab-9ba93949b4e4</span><span class='meta-item'><strong>Group ID</strong>: 969dd73c-f5b2-e9ea-70ef-6e64ea6d774a</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-35' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-26'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-26' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-26' aria-expanded='false' tabindex='0' data-detail-target='details-26' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>26.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>What do you mean by &#x27;drastic&#x27;?</span></span></span></span><div class='node-detail-panel' id='details-26' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 6912911c-e6a2-5a15-b7b7-be4254406559</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: he710e71cg2dcdg4b78gba62gb5e444c52071</span><span class='meta-item'><strong>Text UUID</strong>: 8b07d69a-c8cc-4f3c-8e91-1a8475184c3a</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-26' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-56'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-56' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>56.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-27'>Node 27</a></span></span></span></span><div class='node-detail-panel' id='details-56' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: d8c39617-8e90-7596-95ea-bb740a43217a</span><span class='meta-item'><strong>Jump Target</strong>: Node 27 (6cf46d48-bb99-7e67-65c4-459901e912b4)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-47'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-47' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-47' aria-expanded='false' tabindex='0' data-detail-target='details-47' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>47.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Why change course now?</span></span></span></span><div class='node-detail-panel' id='details-47' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: c3f5b50c-4b53-d1a2-5a8d-1d756e83aac0</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h8767354egc4f1g436egb5a4g1f822ab767f9</span><span class='meta-item'><strong>Text UUID</strong>: fecb7433-d8fe-47f0-a774-0f3ce1ea69eb</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-47' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-65'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-65' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-65' aria-expanded='false' tabindex='0' data-detail-target='details-65' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>65.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>Every day we spend inching our way towards our enemies is a day we <i>choose </i>to let countless die in the Absolute&#x27;s path.</span></span></span></span><div class='node-detail-panel' id='details-65' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: fca3efc9-d059-19a2-b6c9-45778180349c</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: h7e04a065gbcb5g402bg96cdg439a03c2c50b</span><span class='meta-item'><strong>Text UUID</strong>: 00127c5d-4cce-49e1-94c4-107f941cc519</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 12</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: fca3efc9-d059-19a2-b6c9-45778180349c</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 7.17s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-65' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-27'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-27' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-27' aria-expanded='false' tabindex='0' data-detail-target='details-27' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>27.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>We both know the orb I carry inside me is powerful enough to burn away the Absolute&#x27;s blight in an instant. </span></span></span></span><div class='node-detail-panel' id='details-27' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 6cf46d48-bb99-7e67-65c4-459901e912b4</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: h69dd2ecfge094g4a24gb98bge05cdc0ef666</span><span class='meta-item'><strong>Text UUID</strong>: be0c0dd4-5535-4c00-b2a0-72a646de5292</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 17</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 6cf46d48-bb99-7e67-65c4-459901e912b4</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 28s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 6</span><span class='meta-item'><strong>Group ID</strong>: 6cf46d48-bb99-7e67-65c4-459901e912b4</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-27' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-50'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-50' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-50' aria-expanded='false' tabindex='0' data-detail-target='details-50' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>50.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>But what stays my hand? Obstinacy? Misplaced morals? Simple fear of dying? You?</span></span></span></span><div class='node-detail-panel' id='details-50' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: ca7203c7-7df9-a54c-1721-cdaa0acb794f</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: h8b964e88g6c7fg4301g986eg95259ef3adb7</span><span class='meta-item'><strong>Text UUID</strong>: 924d5f43-19ab-4010-9bf9-ce45dea892d6</span><span class='meta-item'><strong>Group ID</strong>: 6cf46d48-bb99-7e67-65c4-459901e912b4</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-50' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-12'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-12' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-12' aria-expanded='false' tabindex='0' data-detail-target='details-12' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>12.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>The inevitable has been delayed far too long already - no more, I say. It&#x27;s time to make a stand.</span></span></span></span><div class='node-detail-panel' id='details-12' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 37a30e95-3d18-61fb-93b1-b3595c750d2a</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: hf8e1de21gea86g41fag9483g315f25683e39</span><span class='meta-item'><strong>Text UUID</strong>: 4ca11fe3-81a8-42fd-9efd-c24b53b6b561</span><span class='meta-item'><strong>Group ID</strong>: 6cf46d48-bb99-7e67-65c4-459901e912b4</span><span class='meta-item'><strong>Group Index</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-12' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-49'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-49' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-49' aria-expanded='false' tabindex='0' data-detail-target='details-49' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>49.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>But I thought you had your heart set on the Crown of Karsus? A difficult thing to aspire to, if you&#x27;re dead.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>ORI_Gale_State_ReactedElderBrain</span><span class='preview-token check'>ORI_Gale_State_SwayedTowardsCrown</span></span></span></span><div class='node-detail-panel' id='details-49' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Gale has reflected on having talked to the Elder Brain'>ORI_Gale_State_ReactedElderBrain</span> <span class='asset-id'>{be06e142-c83f-387b-b6e3-da74517f786c}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='Gets set when players advise to use the Crown to combine it with the orb'>ORI_Gale_State_SwayedTowardsCrown</span> <span class='asset-id'>{76150a10-511d-4eeb-b263-46994bab0b48}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: c78bd93d-4cae-22b6-c145-ffc23b569669</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h02d6b289gf95ag4c31ga6f3g06117405e855</span><span class='meta-item'><strong>Text UUID</strong>: 4c435a6f-791b-46d9-9657-591bd4a4aac0</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-49' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-10'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-10' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-10' aria-expanded='false' tabindex='0' data-detail-target='details-10' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>10.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>A passing fancy, one that has lost its lustre. No - unleashing the power within me will be far more magnificent than some crown.</span></span></span></span><div class='node-detail-panel' id='details-10' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 37071f25-b0fd-d61c-ebb4-ac2fa6510a05</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: h57a62f6eg940bg4453ga19egabc3e2b470e7</span><span class='meta-item'><strong>Text UUID</strong>: 17d039f3-c3d2-4864-99d7-085a9abde9f0</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 19</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 37071f25-b0fd-d61c-ebb4-ac2fa6510a05</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 10.88s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-10' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-53'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-53' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-53' aria-expanded='false' tabindex='0' data-detail-target='details-53' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>53.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>The day will come when I lose control of the power within me anyway. There&#x27;s nothing you or I can do to stop that.</span></span></span></span><div class='node-detail-panel' id='details-53' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: cedf83e0-8959-5f32-6b83-800b7152e5f8</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: he20ca680ga99dg4f4aga807gf3f0a617427b</span><span class='meta-item'><strong>Text UUID</strong>: 6e674ec0-d4b4-4190-aadb-98b0d598fb57</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 5</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: cedf83e0-8959-5f32-6b83-800b7152e5f8</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 20.52s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Group ID</strong>: cedf83e0-8959-5f32-6b83-800b7152e5f8</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-53' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-37'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-37' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-37' aria-expanded='false' tabindex='0' data-detail-target='details-37' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>37.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>Gods damned if I&#x27;m going to let it be for nothing. If Mystra gave me one purpose, it was this: to destroy Baldur&#x27;s Gate, and the Absolute with it.</span></span></span></span><div class='node-detail-panel' id='details-37' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 87b4f801-8197-bf38-af97-d66e3f53857e</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: he918fe88g5689g41afga07dgf788e2457b36</span><span class='meta-item'><strong>Text UUID</strong>: 27517bee-2a70-40c3-83c6-50f02cf20d5a</span><span class='meta-item'><strong>Group ID</strong>: cedf83e0-8959-5f32-6b83-800b7152e5f8</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-37' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-38'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-38' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-38' aria-expanded='false' tabindex='0' data-detail-target='details-38' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>38.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>There is another way Gale!</span></span></span></span><div class='node-detail-panel' id='details-38' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 896f8fb6-9d3f-0154-0c0a-44dab7ed3ad7</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hda94c264gfb2eg4dacga0eagb5c192bb74e4</span><span class='meta-item'><strong>Text UUID</strong>: 2b6964b1-8e66-4235-9ee8-4f2e22426411</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-38' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-28'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-28' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-28' aria-expanded='false' tabindex='0' data-detail-target='details-28' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>28.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>There isn&#x27;t.</span></span></span></span><div class='node-detail-panel' id='details-28' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 6d297de0-0124-6c56-2403-b3d8b3d30fc5</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: h7e64ca19g1330g44adg8093ga1730e3faf7f</span><span class='meta-item'><strong>Text UUID</strong>: 5d1f427f-bf60-4363-a95b-357d98de51e4</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 9</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 6d297de0-0124-6c56-2403-b3d8b3d30fc5</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 2.72s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-28' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-25'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-25' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>25.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'><i>Caeci verum videant.</i></span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Gale assumes a spell-casting pose, muttering a strange incantation. He begins to glow fiercely. The player braces themselves agains a brilliant flash of magic. The player staggers, then realises they&#x27;re unharmed. They open their eyes, dazed. Instead of Gale, it is now Orin stood before us.</span></span><span class='preview-inline'><span class='preview-token set'>LOW_BhaalTemple_Event_TransformToOrin</span></span></span></span><div class='node-detail-panel' id='details-25' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Flag when Orin turns back to herself.'>LOW_BhaalTemple_Event_TransformToOrin</span> <span class='asset-id'>{9280b884-9f8e-41f4-bd49-dbfcb2827fe5}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 666009a1-7d25-b04b-c549-04cc1f77ea69</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: h7119dc6cg95adg480fg8546g186afb64dbad</span><span class='meta-item'><strong>Text UUID</strong>: 8b22120c-041e-4bac-9b0b-ca895a2f2d69</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 23</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 666009a1-7d25-b04b-c549-04cc1f77ea69</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 16.5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 4</span><span class='meta-item'><strong>End Node</strong>: True</span><span class='meta-item'><strong>Addressed Speaker</strong>: 2</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-31'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-31' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-31' aria-expanded='false' tabindex='0' data-detail-target='details-31' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>31.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>You wouldn&#x27;t <i>dare</i>.</span></span></span></span><div class='node-detail-panel' id='details-31' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 73bcda80-8b57-4817-1043-81e37e5eaa15</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: he00f105bg72c1g467eg82edg3d4bb4ec08e9</span><span class='meta-item'><strong>Text UUID</strong>: 54fe5dde-0cc8-420d-b703-fea428251da8</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-31' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-32'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-32' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-32' aria-expanded='false' tabindex='0' data-detail-target='details-32' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>32.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>Wouldn&#x27;t I?</span></span></span></span><div class='node-detail-panel' id='details-32' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 77e9d89e-426c-1410-207d-bbf83661f2c5</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: hdbc58759g57c8g48b1gaec9gc752aba189a1</span><span class='meta-item'><strong>Text UUID</strong>: 8ee1245f-b5b5-4215-aa78-26fc3c288b1c</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 8</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 77e9d89e-426c-1410-207d-bbf83661f2c5</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-32' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-25'>Node 25</a> <span class='repeat-speaker speaker-label npc'>(Gale)</span> <span class='dialog'><i>Caeci verum videant.</i></span></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-54'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-54' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-54' aria-expanded='false' tabindex='0' data-detail-target='details-54' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>54.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>So be it. End this, once and for all.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>WYR_OrinsImpersonation_EncouragedViolenceCompanion</span></span></span></span><div class='node-detail-panel' id='details-54' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 2 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='WYR_OrinsImpersonation_EncouragedViolenceCompanion'>WYR_OrinsImpersonation_EncouragedViolenceCompanion</span> <span class='asset-id'>{e7429274-3815-5695-53ca-f7b0d0663de2}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: d33609d1-c869-c7ed-f453-f526e86b8f96</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hb225a951gafe5g4465gb5e8g55acb99bbfb9</span><span class='meta-item'><strong>Text UUID</strong>: 33be3c29-6797-47bc-be74-304dac22e8eb</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-54' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-25'>Node 25</a> <span class='repeat-speaker speaker-label npc'>(Gale)</span> <span class='dialog'><i>Caeci verum videant.</i></span></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-7'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-7' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-7' aria-expanded='false' tabindex='0' data-detail-target='details-7' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>7.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Destroy an entire city? Sounds wonderful - go ahead.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token rule'>Dark Urge</span><span class='preview-token set'>WYR_OrinsImpersonation_EncouragedViolenceCompanion</span></span></span></span><div class='node-detail-panel' id='details-7' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line rule-line'><div class='signal-heading'><span class='signal-label'>ruletag</span><span class='signal-scope'>type rule</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Dark urge origin tag; ignores shapeshift.|'>Dark Urge</span> <span class='asset-id'>{cd611d7d-b67d-42b4-a75c-a0c6091ef8a2}</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 2 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='WYR_OrinsImpersonation_EncouragedViolenceCompanion'>WYR_OrinsImpersonation_EncouragedViolenceCompanion</span> <span class='asset-id'>{e7429274-3815-5695-53ca-f7b0d0663de2}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section'><h3>Text</h3><div class='text-block'><h3>Variant 1</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='|Dark urge origin tag; ignores shapeshift.|'><code>Dark Urge</code></li></ul><div class='text-line'>Destroy an entire city? Sounds wonderful - go ahead.</div><div class='line-meta'><code>h8bbe5042g502dg4c2cg89f3gcdb77241a348</code> | <code>c45d6495-a88e-4dd7-881e-e1a4e41b26d4</code> | stub</div></div><div class='text-block'><h3>Variant 2</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='|Dark urge origin tag; ignores shapeshift.|'><code>Dark Urge</code></li></ul><div class='text-line'>A city snuffed out in one moment: it will be a beautiful offering for Bhaal.</div><div class='line-meta'><code>h41cb5eccgfa83g40abg9b7fg731a186cdf51</code> | <code>7282c56c-8b59-421d-96be-8505deaa3944</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 1e63a194-47e2-40f2-9897-a640338c2aca</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h8bbe5042g502dg4c2cg89f3gcdb77241a348</span><span class='meta-item'><strong>Text 1 UUID</strong>: c45d6495-a88e-4dd7-881e-e1a4e41b26d4</span><span class='meta-item'><strong>Text 2 Handle</strong>: h41cb5eccgfa83g40abg9b7fg731a186cdf51</span><span class='meta-item'><strong>Text 2 UUID</strong>: 7282c56c-8b59-421d-96be-8505deaa3944</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-7' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-48'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-48' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-48' aria-expanded='false' tabindex='0' data-detail-target='details-48' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>48.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>With <i>pleasure</i>.</span></span></span></span><div class='node-detail-panel' id='details-48' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: c77c011b-044f-e20a-564d-9cd93de5e78b</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: h27f50fb7g60c2g4a93g8d1fg6b730ab17993</span><span class='meta-item'><strong>Text UUID</strong>: 58be68d6-402e-4537-988e-f484a3bba0c3</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 3</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: c77c011b-044f-e20a-564d-9cd93de5e78b</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.93s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-48' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-25'>Node 25</a> <span class='repeat-speaker speaker-label npc'>(Gale)</span> <span class='dialog'><i>Caeci verum videant.</i></span></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-39'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-39' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-39' aria-expanded='false' tabindex='0' data-detail-target='details-39' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>39.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Charisma, Intimidation, SkillCheck) vs 60916b01-ba4c-418e-9f30-19a669704b4d [0] target=0</span></span></span></span><div class='node-detail-panel' id='details-39' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 8c364740-d304-7e42-6a7e-5e2f668f39cd</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h60852ffegd663g44b2g84f2g0d07608d8d88</span><span class='meta-item'><strong>Text UUID</strong>: df226238-f9f7-409f-b9b1-efae14e76dba</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Advantage</strong>: 0</span><span class='meta-item'><strong>Difficulty Class</strong>: 60916b01-ba4c-418e-9f30-19a669704b4d</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Intimidation</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-39' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-41'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-41' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive' data-branch-target='branch-41' aria-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>41.</span><span class='dialog'>Failure</span></span></span></span></div></div><div class='node-branch' id='branch-41' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-57'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-57' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-57' aria-expanded='false' tabindex='0' data-detail-target='details-57' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>57.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>Kill me, and I&#x27;ll destroy the city anyway.</span></span></span></span><div class='node-detail-panel' id='details-57' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: d997bc46-3e3e-c1a6-af0a-282517a32179</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: hbc009f7dg47f1g4482gbf2cg0116b800b71f</span><span class='meta-item'><strong>Text UUID</strong>: 5e86b80e-2f96-4018-87c6-8be34dcafad4</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 2</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: d997bc46-3e3e-c1a6-af0a-282517a32179</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.84s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-57' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-25'>Node 25</a> <span class='repeat-speaker speaker-label npc'>(Gale)</span> <span class='dialog'><i>Caeci verum videant.</i></span></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-4'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-4' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-4' aria-expanded='false' tabindex='0' data-detail-target='details-4' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>4.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-4' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 0b6be1d0-a3f0-2199-f5c3-af45f0a498dd</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-4' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-19'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-19' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-19' aria-expanded='false' tabindex='0' data-detail-target='details-19' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>19.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>So quick to turn on your friends... a sure sign of an unsound mind, and a villainous heart.</span></span></span></span><div class='node-detail-panel' id='details-19' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 4a733e96-20ee-63ea-8f25-149c87965bd5</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: hd33fbf50g24d5g4e7cgaf73gcb25459f2c4e</span><span class='meta-item'><strong>Text UUID</strong>: 3956604e-7ea2-4cd6-b4e2-a69a8c0f374f</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 13</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 4a733e96-20ee-63ea-8f25-149c87965bd5</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 7.85s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-19' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-14'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-14' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>14.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>(no line text)</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>SHORT Orin transforms.</span></span><span class='preview-inline'><span class='preview-token check'>WYR_OrinsImpersonation_State_MetOrinOnce</span><span class='preview-token set'>LOW_BhaalTemple_Event_TransformToOrin</span></span></span></span><div class='node-detail-panel' id='details-14' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Flag set when players have met Orin at least once during her impersonation.'>WYR_OrinsImpersonation_State_MetOrinOnce</span> <span class='asset-id'>{5f82392a-6e8f-4c9b-a927-b9d77ee263ec}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Flag when Orin turns back to herself.'>LOW_BhaalTemple_Event_TransformToOrin</span> <span class='asset-id'>{9280b884-9f8e-41f4-bd49-dbfcb2827fe5}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagCinematic</span><span class='meta-item'><strong>UUID</strong>: 3ec001a1-6623-bcd8-2338-286dd24ad530</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 24</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 3ec001a1-6623-bcd8-2338-286dd24ad530</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5.32s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-1'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-1' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>1.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>(no line text)</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Gale transforms into Orin.</span></span><span class='preview-inline'><span class='preview-token set'>LOW_BhaalTemple_Event_TransformToOrin</span></span></span></span><div class='node-detail-panel' id='details-1' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Flag when Orin turns back to herself.'>LOW_BhaalTemple_Event_TransformToOrin</span> <span class='asset-id'>{9280b884-9f8e-41f4-bd49-dbfcb2827fe5}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagCinematic</span><span class='meta-item'><strong>UUID</strong>: 00d57438-a5f5-7a54-9bb7-82b9db7ac8e4</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 25</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 00d57438-a5f5-7a54-9bb7-82b9db7ac8e4</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 16.32s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 6</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode, addressedspeaker</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-34'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-34' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-34' aria-expanded='false' tabindex='0' data-detail-target='details-34' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>34.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Charisma, Persuasion, SkillCheck) vs 60916b01-ba4c-418e-9f30-19a669704b4d [0] target=0</span></span></span></span><div class='node-detail-panel' id='details-34' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 84568003-3a02-77ba-6ea6-1a095d8bdee7</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hfa8b40bdgc84cg4b7fga70egd120fe9b29c6</span><span class='meta-item'><strong>Text UUID</strong>: 300f6450-87ba-41f6-bc3c-79b8097ce928</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Advantage</strong>: 0</span><span class='meta-item'><strong>Difficulty Class</strong>: 60916b01-ba4c-418e-9f30-19a669704b4d</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Persuasion</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-34' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-44'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-44' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive' data-branch-target='branch-44' aria-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>44.</span><span class='dialog'>Failure</span></span></span></span></div></div><div class='node-branch' id='branch-44' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-3'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-3' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-3' aria-expanded='false' tabindex='0' data-detail-target='details-3' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>3.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>There is nothing better than leaving in a blaze of glory.</span></span></span></span><div class='node-detail-panel' id='details-3' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 09264386-d612-8cee-a185-331dc5663d22</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: he369416fgcae0g4d3aga100gce459af0c1cd</span><span class='meta-item'><strong>Text UUID</strong>: e98bbb46-f57e-42c2-8991-33b2be42db91</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 21</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 09264386-d612-8cee-a185-331dc5663d22</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5.04s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-3' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-30'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-30' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>30.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-25'>Node 25</a></span></span></span></span><div class='node-detail-panel' id='details-30' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 718f1921-ab45-3c78-abed-53dab799fdbb</span><span class='meta-item'><strong>Jump Target</strong>: Node 25 (666009a1-7d25-b04b-c549-04cc1f77ea69)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-18'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-18' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-18' aria-expanded='false' tabindex='0' data-detail-target='details-18' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>18.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-18' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 4952162a-2e45-7712-09bb-35b139edc20e</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-18' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-46'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-46' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-46' aria-expanded='false' tabindex='0' data-detail-target='details-46' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>46.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>So <i>gentle. </i>You think saving him will stop the bloodshed? It <i>won&#x27;t</i>.</span></span></span></span><div class='node-detail-panel' id='details-46' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: bc3b9127-d6fe-3ec1-1271-acb4a4afaf56</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: hebb22d6ag6003g4012ga150g179e63ec1efa</span><span class='meta-item'><strong>Text UUID</strong>: cb5b440d-9800-4470-adc4-c08949a8ac35</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 4</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: bc3b9127-d6fe-3ec1-1271-acb4a4afaf56</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 7.74s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-46' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-59'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-59' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>59.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-19'>Node 19</a></span></span></span></span><div class='node-detail-panel' id='details-59' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: ddfe22c2-9fcf-63e3-5f07-a0321151e6af</span><span class='meta-item'><strong>Jump Target</strong>: Node 19 (4a733e96-20ee-63ea-8f25-149c87965bd5)</span><span class='meta-item'><strong>Jump Target Point</strong>: 2</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-29'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-29' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-29' aria-expanded='false' tabindex='0' data-detail-target='details-29' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>29.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'><i>Attack.</i></span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>WYR_OrinsImpersonation_EncouragedViolenceCompanion</span></span></span></span><div class='node-detail-panel' id='details-29' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 2 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='WYR_OrinsImpersonation_EncouragedViolenceCompanion'>WYR_OrinsImpersonation_EncouragedViolenceCompanion</span> <span class='asset-id'>{e7429274-3815-5695-53ca-f7b0d0663de2}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 6e65ee73-8bdd-3876-a6d0-a483a2a5af42</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hd04b55e5gc998g48c1g8906g32f80d7d9580</span><span class='meta-item'><strong>Text UUID</strong>: e54a5cc3-eaa3-47c8-b88f-36fa6e41e1ad</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-29' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-11'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-11' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-11' aria-expanded='false' tabindex='0' data-detail-target='details-11' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>11.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>Most foolish. Wanton violence against your dear Gale? After all, the man has a budding apocalypse tucked beside his heart - you would <i>provoke </i>it?</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>The player readies their weapon, but Gale throws up a hand. The player hesitates.</span></span></span></span><div class='node-detail-panel' id='details-11' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 3745f762-79d1-151a-b8db-6ee5d2459424</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: h8e7a3950gbf78g4792g86e6g548dd8589de2</span><span class='meta-item'><strong>Text UUID</strong>: 51f3b4c4-6072-4b08-aa1c-2832acfb8f7f</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 18</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 3745f762-79d1-151a-b8db-6ee5d2459424</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 13.04s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-11' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-67'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-67' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>67.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-19'>Node 19</a></span></span></span></span><div class='node-detail-panel' id='details-67' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: ff25a3bb-34bf-a8be-5920-3ddb98a6a972</span><span class='meta-item'><strong>Jump Target</strong>: Node 19 (4a733e96-20ee-63ea-8f25-149c87965bd5)</span><span class='meta-item'><strong>Jump Target Point</strong>: 2</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-66'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-66' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-66' aria-expanded='false' tabindex='0' data-detail-target='details-66' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>66.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>There&#x27;s no need for anything so drastic. You thought the Crown of Karsus was worth pursuing...</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>ORI_Gale_State_ReactedElderBrain</span><span class='preview-token check'>!ORI_Gale_State_SwayedTowardsCrown</span><span class='preview-token check'>ORI_Gale_Knows_BrainHasCrownOfKarsus</span></span></span></span><div class='node-detail-panel' id='details-66' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Gale has reflected on having talked to the Elder Brain'>ORI_Gale_State_ReactedElderBrain</span> <span class='asset-id'>{be06e142-c83f-387b-b6e3-da74517f786c}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='Gets set when players advise to use the Crown to combine it with the orb'>ORI_Gale_State_SwayedTowardsCrown</span> <span class='asset-id'>{76150a10-511d-4eeb-b263-46994bab0b48}</span> <span class='asset-state'>= False</span></li><li class='signal-item'><span class='asset-name'>ORI_Gale_Knows_BrainHasCrownOfKarsus</span> <span class='asset-id'>{e456f90c-13ac-4f79-b7b1-e21db1800fe4}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: fdf51c2e-27ab-e31f-e2a7-4774e24acdd3</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h771db46cg8a42g4a3fg9b7egdc2b16b0c5f6</span><span class='meta-item'><strong>Text UUID</strong>: 6d7dbd39-c058-4c19-90ad-853d5ed88a1a</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-66' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-10'>Node 10</a> <span class='repeat-speaker speaker-label npc'>(Gale)</span> <span class='dialog'>A passing fancy, one that has lost its lustre. No - unleashing the power within me will be far more magnificent than some crown.</span></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-6'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-6' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-6' aria-expanded='false' tabindex='0' data-detail-target='details-6' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>6.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>We haven&#x27;t yet learned what the crown might be capable of. I thought you wanted to find out?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>ORI_Gale_State_ReactedElderBrain</span><span class='preview-token check'>!ORI_Gale_State_SwayedTowardsCrown</span><span class='preview-token check'>!ORI_Gale_Knows_BrainHasCrownOfKarsus</span></span></span></span><div class='node-detail-panel' id='details-6' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Gale has reflected on having talked to the Elder Brain'>ORI_Gale_State_ReactedElderBrain</span> <span class='asset-id'>{be06e142-c83f-387b-b6e3-da74517f786c}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='Gets set when players advise to use the Crown to combine it with the orb'>ORI_Gale_State_SwayedTowardsCrown</span> <span class='asset-id'>{76150a10-511d-4eeb-b263-46994bab0b48}</span> <span class='asset-state'>= False</span></li><li class='signal-item'><span class='asset-name'>ORI_Gale_Knows_BrainHasCrownOfKarsus</span> <span class='asset-id'>{e456f90c-13ac-4f79-b7b1-e21db1800fe4}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 1dd7a1d9-57d7-687e-4d62-0fbe25ccaa24</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h7a628a2ag730eg4d80ga910g9af80d24187a</span><span class='meta-item'><strong>Text UUID</strong>: ec2b80f8-59a3-4d2b-97fa-fcdedc6eec9c</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-6' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-10'>Node 10</a> <span class='repeat-speaker speaker-label npc'>(Gale)</span> <span class='dialog'>A passing fancy, one that has lost its lustre. No - unleashing the power within me will be far more magnificent than some crown.</span></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-55'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-55' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-55' aria-expanded='false' tabindex='0' data-detail-target='details-55' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>55.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>What makes you think it will work?</span></span></span></span><div class='node-detail-panel' id='details-55' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: d7024ea9-c9f7-baaa-8ffa-6ce9f5d72fa8</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hb130c1c6g1237g43dcg95c2g1302a924d251</span><span class='meta-item'><strong>Text UUID</strong>: ebbb1d1a-f3cf-4229-b2f6-c1fa9c88145e</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-55' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-33'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-33' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-33' aria-expanded='false' tabindex='0' data-detail-target='details-33' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>33.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>I know how much power rests within me - enough to turn Baldur&#x27;s Gate to ashes, its memory to no more than a children&#x27;s fable.</span></span></span></span><div class='node-detail-panel' id='details-33' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 78549949-241a-b093-5a12-acc16218b869</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: hf19ffdc8g3038g4a57gaadfg1a8b24073211</span><span class='meta-item'><strong>Text UUID</strong>: a51e52e3-971d-45cd-a1cc-ad54aa9edde2</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 22</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 78549949-241a-b093-5a12-acc16218b869</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 25.4s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Group ID</strong>: 78549949-241a-b093-5a12-acc16218b869</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-33' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-21'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-21' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-21' aria-expanded='false' tabindex='0' data-detail-target='details-21' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>21.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>Act now, and we take out the brain and every footsoldier in the Absolute&#x27;s army. All their hatred, their bile, their violence - erased. It would finally be over.</span></span></span></span><div class='node-detail-panel' id='details-21' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 50b8072a-68a8-d045-1af3-b7c0ef8eb84b</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: h1c5987e4g79e2g434cga992g53df90cd35f5</span><span class='meta-item'><strong>Text UUID</strong>: aecb7094-c01e-45b7-b927-8169c1efe8f5</span><span class='meta-item'><strong>Group ID</strong>: 78549949-241a-b093-5a12-acc16218b869</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-21' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-53'>Node 53</a> <span class='repeat-speaker speaker-label npc'>(Gale)</span> <span class='dialog'>The day will come when I lose control of the power within me anyway. There&#x27;s nothing you or I can do to stop that.</span></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-16'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-16' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-16' aria-expanded='false' tabindex='0' data-detail-target='details-16' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>16.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>It wouldn&#x27;t only kill Absolutists - it would kill <i>everyone</i>. You can&#x27;t be serious.</span></span></span></span><div class='node-detail-panel' id='details-16' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 428bab73-34b6-9836-11b2-1ec3588cf89b</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h8416adc2gb3f9g4242gb157g815950bce240</span><span class='meta-item'><strong>Text UUID</strong>: 1c0da7eb-789c-4e8d-85c5-653efafc74e5</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-16' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-62'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-62' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-62' aria-expanded='false' tabindex='0' data-detail-target='details-62' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>62.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>Deadly serious. This is the burden we must carry - to condemn the few to save the many, or Baldur&#x27;s Gate will only be the <i>first</i> city to fall.</span></span></span></span><div class='node-detail-panel' id='details-62' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: ecceb460-65ab-e133-2ca7-c03ae18335cf</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: h67530315gf065g40bbg8f5dga449d158c8b2</span><span class='meta-item'><strong>Text UUID</strong>: 3c08e972-f193-46ba-8ee2-b95806ec8f15</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 11</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: ecceb460-65ab-e133-2ca7-c03ae18335cf</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 10.12s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-62' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-53'>Node 53</a> <span class='repeat-speaker speaker-label npc'>(Gale)</span> <span class='dialog'>The day will come when I lose control of the power within me anyway. There&#x27;s nothing you or I can do to stop that.</span></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-2'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-2' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-2' aria-expanded='false' tabindex='0' data-detail-target='details-2' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>2.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Great idea. Go right ahead.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>WYR_OrinsImpersonations_SacrificeCity</span></span></span></span><div class='node-detail-panel' id='details-2' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 2 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='WYR_OrinsImpersonations_SacrificeCity'>WYR_OrinsImpersonations_SacrificeCity</span> <span class='asset-id'>{f4df924e-c220-f229-2a99-82118bbd7b7a}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 03f13a8d-0d9b-da02-7dbf-916ff138930b</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hf64c77a4gc1b5g4d94g960eg2dabdf747565</span><span class='meta-item'><strong>Text UUID</strong>: fbce2b39-219b-45fc-970a-a7852956dd6b</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-2' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-40'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-40' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>40.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-48'>Node 48</a></span></span></span></span><div class='node-detail-panel' id='details-40' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 929f741e-3292-a534-ca28-bedde68b3ae5</span><span class='meta-item'><strong>Jump Target</strong>: Node 48 (c77c011b-044f-e20a-564d-9cd93de5e78b)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-20'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-20' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-20' aria-expanded='false' tabindex='0' data-detail-target='details-20' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>20.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>You think I&#x27;ve been holding back this whole time?</span></span></span></span><div class='node-detail-panel' id='details-20' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 4ece399b-d20a-4626-ffab-7b5ce63b4073</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hd90e1c33g05d3g49ecgb633g4a7c56b4f715</span><span class='meta-item'><strong>Text UUID</strong>: 18bd3ad5-84b6-4bde-8556-90ebc79f2799</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-20' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-64'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-64' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-64' aria-expanded='false' tabindex='0' data-detail-target='details-64' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>64.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>My apologies. I shouldn&#x27;t place my own guilt onto your shoulders.</span></span></span></span><div class='node-detail-panel' id='details-64' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: fbb0cf9d-810a-b90c-61a8-17009b18a04e</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: h422f585dg317ag48e1ga4d4gbd89c5770168</span><span class='meta-item'><strong>Text UUID</strong>: 1f88f5de-4cca-403f-ab7a-5dd6d249be51</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 6</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: fbb0cf9d-810a-b90c-61a8-17009b18a04e</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 10.72s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Group ID</strong>: fbb0cf9d-810a-b90c-61a8-17009b18a04e</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-64' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-36'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-36' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-36' aria-expanded='false' tabindex='0' data-detail-target='details-36' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>36.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>I&#x27;m afraid to say I <i>have</i> been holding back. Every. Single. Day. </span></span></span></span><div class='node-detail-panel' id='details-36' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 85673b5b-043c-9f53-5dd0-2a7fb7f30468</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: h74212182g1865g4f61g9331g2cae256186dc</span><span class='meta-item'><strong>Text UUID</strong>: c83dfaf9-08a7-4e12-bf2c-d6cf093163dd</span><span class='meta-item'><strong>Group ID</strong>: fbb0cf9d-810a-b90c-61a8-17009b18a04e</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-36' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-27'>Node 27</a> <span class='repeat-speaker speaker-label npc'>(Gale)</span> <span class='dialog'>We both know the orb I carry inside me is powerful enough to burn away the Absolute&#x27;s blight in an instant. </span></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-52'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-52' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-52' aria-expanded='false' tabindex='0' data-detail-target='details-52' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>52.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>If &#x27;drastic&#x27; means violent, then count me in.</span></span></span></span><div class='node-detail-panel' id='details-52' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: ce4ec2d1-fe90-2673-10df-45c508dd2630</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h02bb6182g7dd3g4779g99dcg0338b98467a9</span><span class='meta-item'><strong>Text UUID</strong>: a5989e57-b9ce-4096-b836-93e0b31b633b</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-52' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-17'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-17' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-17' aria-expanded='false' tabindex='0' data-detail-target='details-17' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>17.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>As always, I&#x27;m grateful for your enthusiasm. And yes, it will require some amount of brutality on our part.</span></span></span></span><div class='node-detail-panel' id='details-17' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 449f9f0e-8fbc-f83f-d390-21aaea9a96a7</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: heac444e0g5250g4499ga81bg5e850e6f376e</span><span class='meta-item'><strong>Text UUID</strong>: fe05b3ff-13e1-41f9-b18d-972a3337fbf1</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 14</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 449f9f0e-8fbc-f83f-d390-21aaea9a96a7</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 9.12s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-17' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-27'>Node 27</a> <span class='repeat-speaker speaker-label npc'>(Gale)</span> <span class='dialog'>We both know the orb I carry inside me is powerful enough to burn away the Absolute&#x27;s blight in an instant. </span></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-63'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-63' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-63' aria-expanded='false' tabindex='0' data-detail-target='details-63' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>63.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I disagree. Using restraint has kept us alive so far.</span></span></span></span><div class='node-detail-panel' id='details-63' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: f303d214-3de0-c68a-f287-9b68a20b60d1</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h9585dde5g6bb1g4451gbe51g461d4812310d</span><span class='meta-item'><strong>Text UUID</strong>: f9f37876-3061-42cf-bd16-0241c77853b8</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-63' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-13'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-13' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-13' aria-expanded='false' tabindex='0' data-detail-target='details-13' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>13.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>That may be, but has it put a stop to the Absolute? Or cured us of our tadpoles?</span></span></span></span><div class='node-detail-panel' id='details-13' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 3a8c5bb1-5872-34ec-ab84-0ddcc95d1abc</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: hf4ce2368g4d09g4a52g84a4gbacce2eb9aba</span><span class='meta-item'><strong>Text UUID</strong>: 5f6ac3e9-cdf1-4a89-8cc4-6921a4239035</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 16</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 3a8c5bb1-5872-34ec-ab84-0ddcc95d1abc</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 16.16s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Group ID</strong>: 3a8c5bb1-5872-34ec-ab84-0ddcc95d1abc</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-13' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-45'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-45' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-45' aria-expanded='false' tabindex='0' data-detail-target='details-45' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>45.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>All we&#x27;ve done is delay the inevitable, a delay that puts thousands more lives at risk. But those lives can be saved.</span></span></span></span><div class='node-detail-panel' id='details-45' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: b306d0a3-a03b-9c62-35fa-a9bd3ac3b82f</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: hd2777d6fg3eccg4f3eg84a0ge13f10925cf2</span><span class='meta-item'><strong>Text UUID</strong>: afbd4f70-e9cd-4a6a-82ca-508393bb37d1</span><span class='meta-item'><strong>Group ID</strong>: 3a8c5bb1-5872-34ec-ab84-0ddcc95d1abc</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-45' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-27'>Node 27</a> <span class='repeat-speaker speaker-label npc'>(Gale)</span> <span class='dialog'>We both know the orb I carry inside me is powerful enough to burn away the Absolute&#x27;s blight in an instant. </span></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-51'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-51' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-51' aria-expanded='false' tabindex='0' data-detail-target='details-51' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>51.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Of course. What&#x27;s on your mind?</span></span></span></span><div class='node-detail-panel' id='details-51' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: cddd1577-0327-9ed6-d75b-ea1c4cce57f5</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h53d4cb17g8f8fg4df4g8745gb4cd93dce8fa</span><span class='meta-item'><strong>Text UUID</strong>: 70fcfe48-9997-45d1-9959-70ebfdf05b68</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: addressedspeaker</span></div></section></div></div></div><div class='node-branch' id='branch-51' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-42'>Node 42</a> <span class='repeat-speaker speaker-label npc'>(Gale)</span> <span class='dialog'>I fear our unwillingness to make difficult decisions is doing more harm than good.</span></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-61'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-61' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-61' aria-expanded='false' tabindex='0' data-detail-target='details-61' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>61.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I didn&#x27;t know you thought so highly of my opinions.</span></span></span></span><div class='node-detail-panel' id='details-61' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: e08e90e4-c69a-01f2-a0e2-983ed05fc9d4</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h1d6425f8g718cg4cc7gb217g80c303b3692b</span><span class='meta-item'><strong>Text UUID</strong>: 0e9a7a22-9dca-459d-9420-b6f65b0cd804</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-61' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-24'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-24' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-24' aria-expanded='false' tabindex='0' data-detail-target='details-24' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>24.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>Of course! I find them to be almost the same quality as my own.</span></span></span></span><div class='node-detail-panel' id='details-24' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 62147208-eb89-89a2-e1de-192fe9510a0a</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: he4fac416gbfdfg49d9gb99ag618af79fe93c</span><span class='meta-item'><strong>Text UUID</strong>: 1be68165-cc90-4a62-a7db-1445ca9c1af2</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 15</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 62147208-eb89-89a2-e1de-192fe9510a0a</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 10s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Group ID</strong>: 62147208-eb89-89a2-e1de-192fe9510a0a</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-24' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-15'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-15' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-15' aria-expanded='false' tabindex='0' data-detail-target='details-15' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>15.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>Just a bit of late-night humour for you. Your input would be most welcome.</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>The player raises an eyebrow.</span></span></span></span><div class='node-detail-panel' id='details-15' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 427e6b00-e7b0-3350-1815-044d28800310</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: he3fff1a3g7717g4d9dg8626g246ac75e6fa6</span><span class='meta-item'><strong>Text UUID</strong>: 4c303bdb-a9b3-4b06-8e52-d19554aa688a</span><span class='meta-item'><strong>Group ID</strong>: 62147208-eb89-89a2-e1de-192fe9510a0a</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-15' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-42'>Node 42</a> <span class='repeat-speaker speaker-label npc'>(Gale)</span> <span class='dialog'>I fear our unwillingness to make difficult decisions is doing more harm than good.</span></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-5'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-5' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-5' aria-expanded='false' tabindex='0' data-detail-target='details-5' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>5.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>An intellectual dilemma to round off the evening? Sounds just the thing.</span></span></span></span><div class='node-detail-panel' id='details-5' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 0fb5c1bb-19f6-a899-666c-a35a512ea5a9</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h971726ebgac4cg4102g9999g14f2cc64012e</span><span class='meta-item'><strong>Text UUID</strong>: 5294806f-92ff-4e26-86ff-cfcd1c526707</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-5' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-23'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-23' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-23' aria-expanded='false' tabindex='0' data-detail-target='details-23' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>23.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>A puzzle for the mind, I&#x27;d solve quite comfortably. Unfortunately, this is a struggle for the heart.</span></span></span></span><div class='node-detail-panel' id='details-23' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 5b02f669-d27f-4053-ad8e-486bf27d4ba9</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: hede4a71eg1840g46fagb8d7g071139b6345a</span><span class='meta-item'><strong>Text UUID</strong>: 541cd930-527d-4ea4-8b8d-5b77388a9818</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 10</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 5b02f669-d27f-4053-ad8e-486bf27d4ba9</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6.82s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-23' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-42'>Node 42</a> <span class='repeat-speaker speaker-label npc'>(Gale)</span> <span class='dialog'>I fear our unwillingness to make difficult decisions is doing more harm than good.</span></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-58'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-58' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-58' aria-expanded='false' tabindex='0' data-detail-target='details-58' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>58.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Sounds a bit heavy for so late an hour. Another time.</span></span></span></span><div class='node-detail-panel' id='details-58' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: daf166fc-41d2-4950-ee7c-0674662c0532</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hb9c80da3g8fc3g4b49g86e1g250645f22605</span><span class='meta-item'><strong>Text UUID</strong>: 149f14e7-827e-4518-96f4-26e6aa4cc8df</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: addressedspeaker</span></div></section></div></div></div><div class='node-branch' id='branch-58' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-60'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-60' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-60' aria-expanded='false' tabindex='0' data-detail-target='details-60' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>60.</span><span class='speaker-label npc'>Gale</span><span>: </span><span class='dialog'>Wait. What I have to say... well, there may not be another chance. Please.</span></span></span></span><div class='node-detail-panel' id='details-60' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: e049ff25-323d-bb5f-b976-9302b2b4abcf</span><span class='meta-item'><strong>Speaker</strong>: 0 (Gale)</span><span class='meta-item'><strong>Text Handle</strong>: he64206c0gbdbeg4fbdga11egece44ae78d5a</span><span class='meta-item'><strong>Text UUID</strong>: ac51e0b3-0702-4755-85d6-c5c974f0f073</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 1</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: e049ff25-323d-bb5f-b976-9302b2b4abcf</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6.72s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-60' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-42'>Node 42</a> <span class='repeat-speaker speaker-label npc'>(Gale)</span> <span class='dialog'>I fear our unwillingness to make difficult decisions is doing more harm than good.</span></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul>
+        
+      </div>
+    </section>
+  </div>
+  <div class="tree-scrollbar-proxy" hidden>
+    <div class="tree-scrollbar-proxy-inner"></div>
+  </div>
+  <script>
+    function getNodeDetailPanel(shell) {
+      if (!shell) {
+        return null;
+      }
+      const content = shell.querySelector(":scope > .node-row > .node-content");
+      if (!content) {
+        return null;
+      }
+      return Array.from(content.children).find((child) => child.classList && child.classList.contains("node-detail-panel")) || null;
+    }
+    function getNodeDetailToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-detail-target]");
+    }
+    function getNodeBranchToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-branch-target]");
+    }
+    function getNodeBranchMarker(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .tree-toggle-marker[data-branch-target]");
+    }
+    const jumpHighlightTimers = new WeakMap();
+    const nodeSummaryClickTimers = new WeakMap();
+    const NODE_DETAIL_DOUBLE_CLICK_MS = 160;
+    const treeShell = document.querySelector(".tree-shell");
+    const treeShellInner = treeShell ? treeShell.querySelector(".tree-shell-inner") : null;
+    const treeScrollbarProxy = document.querySelector(".tree-scrollbar-proxy");
+    const treeScrollbarProxyInner = treeScrollbarProxy
+      ? treeScrollbarProxy.querySelector(".tree-scrollbar-proxy-inner")
+      : null;
+    let syncingTreeScroll = false;
+    let syncingProxyScroll = false;
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+    function setToggleButtonState(button, active) {
+      if (!button) {
+        return;
+      }
+      button.classList.toggle("is-active", active);
+      const hideLabel = button.dataset.hideLabel;
+      const showLabel = button.dataset.showLabel;
+      if (hideLabel && showLabel) {
+        button.textContent = active ? showLabel : hideLabel;
+      }
+    }
+    function syncAllDetailsToggle() {
+      const button = document.querySelector("button[data-toggle-details='all']");
+      if (!button) {
+        return;
+      }
+      const panels = Array.from(document.querySelectorAll(".node-detail-panel"));
+      const allOpen = panels.length > 0 && panels.every((panel) => !panel.hasAttribute("hidden"));
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function syncAllBranchesToggle() {
+      const button = document.querySelector("button[data-toggle-branches='all']");
+      if (!button) {
+        return;
+      }
+      const branchMarkers = Array.from(document.querySelectorAll(".tree-toggle-marker[data-branch-target]"));
+      const allOpen = branchMarkers.length > 0 && branchMarkers.every((marker) => marker.dataset.branchExpanded === "true");
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function updateTreeScrollbarProxy() {
+      if (!treeShell || !treeShellInner || !treeScrollbarProxy || !treeScrollbarProxyInner) {
+        return;
+      }
+      const contentWidth = treeShellInner.scrollWidth;
+      const viewportWidth = treeShell.clientWidth;
+      const needsProxy = contentWidth > viewportWidth + 1;
+      if (!needsProxy) {
+        treeScrollbarProxy.hidden = true;
+        return;
+      }
+      const rect = treeShell.getBoundingClientRect();
+      treeScrollbarProxy.hidden = false;
+      treeScrollbarProxy.style.left = `${Math.max(0, rect.left)}px`;
+      treeScrollbarProxy.style.width = `${Math.max(0, rect.width)}px`;
+      treeScrollbarProxyInner.style.width = `${contentWidth}px`;
+      if (!syncingTreeScroll && Math.abs(treeScrollbarProxy.scrollLeft - treeShell.scrollLeft) > 1) {
+        syncingProxyScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingProxyScroll = false;
+      }
+    }
+    function resetTreeScrollToStart() {
+      document.querySelectorAll(".tree-shell").forEach((shell) => {
+        shell.scrollLeft = 0;
+      });
+      if (treeScrollbarProxy) {
+        treeScrollbarProxy.scrollLeft = 0;
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setBranchOpen(control, openState, syncState = true) {
+      if (!control) {
+        return;
+      }
+      const targetId = control.dataset.branchTarget;
+      const target = targetId ? document.getElementById(targetId) : null;
+      if (!target) {
+        return;
+      }
+      const shell = control.closest(".node-shell");
+      const marker = shell ? getNodeBranchMarker(shell) : null;
+      const summary = shell ? getNodeBranchToggle(shell) : null;
+      if (openState) {
+        target.removeAttribute("hidden");
+      } else {
+        target.setAttribute("hidden", "until-found");
+      }
+      if (marker) {
+        marker.dataset.branchExpanded = openState ? "true" : "false";
+        marker.textContent = openState ? "-" : "+";
+      }
+      if (summary) {
+        summary.setAttribute("aria-expanded", openState ? "true" : "false");
+      }
+      if (syncState) {
+        syncAllBranchesToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setDetailOpen(shell, openState, syncState = true) {
+      const panel = getNodeDetailPanel(shell);
+      const toggle = getNodeDetailToggle(shell);
+      if (!panel) {
+        return;
+      }
+      if (openState) {
+        panel.removeAttribute("hidden");
+      } else {
+        panel.setAttribute("hidden", "until-found");
+      }
+      if (toggle) {
+        toggle.dataset.detailExpanded = openState ? "true" : "false";
+      }
+      if (syncState) {
+        syncAllDetailsToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setAllBranches(openState) {
+      document.querySelectorAll(".tree-toggle-marker[data-branch-target]").forEach((marker) => { setBranchOpen(marker, openState, false); });
+      syncAllBranchesToggle();
+    }
+    function setAllNodeDetails(openState) {
+      document.querySelectorAll(".node-shell").forEach((shell) => {
+        if (getNodeDetailPanel(shell)) {
+          setDetailOpen(shell, openState, false);
+        }
+      });
+      syncAllDetailsToggle();
+    }
+    function openParents(target) {
+      let current = target;
+      while (current) {
+        if (current.classList && current.classList.contains("node-branch")) {
+          const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${current.id}"]`);
+          setBranchOpen(marker, true);
+        }
+        current = current.parentElement;
+      }
+    }
+    function highlightJumpTarget(target) {
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      if (!shell) {
+        return;
+      }
+      const existingTimer = jumpHighlightTimers.get(shell);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+      shell.classList.add("jump-highlight");
+      const timeoutId = window.setTimeout(() => {
+        shell.classList.remove("jump-highlight");
+        jumpHighlightTimers.delete(shell);
+      }, 5000);
+      jumpHighlightTimers.set(shell, timeoutId);
+    }
+    function revealAndFocusNodeTarget(target, href = "") {
+      if (!target) {
+        return;
+      }
+      openParents(target);
+      if (href) {
+        history.replaceState(null, "", href);
+      }
+      requestAnimationFrame(() => {
+        target.scrollIntoView({ block: "center" });
+        highlightJumpTarget(target);
+        updateTreeScrollbarProxy();
+      });
+    }
+    if (treeShell && treeScrollbarProxy) {
+      treeShell.addEventListener("scroll", () => {
+        if (syncingProxyScroll) {
+          return;
+        }
+        syncingTreeScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingTreeScroll = false;
+      });
+      treeScrollbarProxy.addEventListener("scroll", () => {
+        if (syncingTreeScroll) {
+          return;
+        }
+        syncingProxyScroll = true;
+        treeShell.scrollLeft = treeScrollbarProxy.scrollLeft;
+        syncingProxyScroll = false;
+      });
+    }
+    document.addEventListener("click", (event) => {
+      const allBranchesButton = event.target.closest("button[data-toggle-branches='all']");
+      if (allBranchesButton) {
+        const isOpen = allBranchesButton.dataset.active === "true";
+        setAllBranches(!isOpen);
+        return;
+      }
+      const allDetailsButton = event.target.closest("button[data-toggle-details='all']");
+      if (allDetailsButton) {
+        const isOpen = allDetailsButton.dataset.active === "true";
+        setAllNodeDetails(!isOpen);
+        return;
+      }
+      const button = event.target.closest("button[data-toggle-class]");
+      if (button) {
+        const active = document.body.classList.toggle(button.dataset.toggleClass);
+        setToggleButtonState(button, active);
+        return;
+      }
+      const link = event.target.closest("a[href^='#node-']");
+      if (link) {
+        event.preventDefault();
+        const target = document.querySelector(link.getAttribute("href"));
+        if (target) {
+          revealAndFocusNodeTarget(target, link.getAttribute("href"));
+        }
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (summary) {
+        const branchTarget = summary.dataset.branchTarget;
+        const shell = summary.closest(".node-shell");
+        if (!shell) {
+          return;
+        }
+        if (!branchTarget) {
+          if (summary.dataset.detailTarget) {
+            const isOpen = summary.dataset.detailExpanded === "true";
+            setDetailOpen(shell, !isOpen);
+          }
+          return;
+        }
+        const existingTimer = nodeSummaryClickTimers.get(summary);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+          nodeSummaryClickTimers.delete(summary);
+          event.preventDefault();
+          const isOpen = summary.dataset.detailExpanded === "true";
+          setDetailOpen(shell, !isOpen);
+          return;
+        }
+        const timerId = window.setTimeout(() => {
+          nodeSummaryClickTimers.delete(summary);
+          const isOpen = summary.getAttribute("aria-expanded") === "true";
+          setBranchOpen(summary, !isOpen);
+          if (isOpen) {
+            const panel = getNodeDetailPanel(shell);
+            if (panel && !panel.hasAttribute("hidden")) {
+              setDetailOpen(shell, false);
+            }
+          }
+        }, NODE_DETAIL_DOUBLE_CLICK_MS);
+        nodeSummaryClickTimers.set(summary, timerId);
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (!summary) {
+        return;
+      }
+      event.preventDefault();
+      const shell = summary.closest(".node-shell");
+      if (!shell) {
+        return;
+      }
+      if (summary.dataset.branchTarget) {
+        const isOpen = summary.getAttribute("aria-expanded") === "true";
+        setBranchOpen(summary, !isOpen);
+        if (isOpen) {
+          const panel = getNodeDetailPanel(shell);
+          if (panel && !panel.hasAttribute("hidden")) {
+            setDetailOpen(shell, false);
+          }
+        }
+        return;
+      }
+      if (summary.dataset.detailTarget) {
+        const isOpen = summary.dataset.detailExpanded === "true";
+        setDetailOpen(shell, !isOpen);
+      }
+    });
+    document.addEventListener("beforematch", (event) => {
+      const branch = event.target.closest(".node-branch");
+      if (branch && branch.id) {
+        const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${branch.id}"]`);
+        setBranchOpen(marker, true);
+      }
+      const panel = event.target.closest(".node-detail-panel");
+      if (panel) {
+        const shell = panel.closest(".node-shell");
+        if (shell) {
+          openParents(shell);
+          setDetailOpen(shell, true);
+        }
+      }
+    });
+    document.querySelectorAll("button[data-toggle-class]").forEach((button) => {
+      const active = document.body.classList.contains(button.dataset.toggleClass);
+      setToggleButtonState(button, active);
+    });
+    if (window.ResizeObserver && treeShell) {
+      const observer = new ResizeObserver(() => {
+        updateTreeScrollbarProxy();
+      });
+      observer.observe(treeShell);
+      if (treeShellInner) {
+        observer.observe(treeShellInner);
+      }
+    }
+    window.addEventListener("resize", updateTreeScrollbarProxy);
+    window.addEventListener("scroll", updateTreeScrollbarProxy, { passive: true });
+    window.addEventListener("pageshow", () => {
+      if (window.location.hash) {
+        updateTreeScrollbarProxy();
+        return;
+      }
+      resetTreeScrollToStart();
+      window.requestAnimationFrame(() => {
+        resetTreeScrollToStart();
+      });
+      window.setTimeout(() => {
+        resetTreeScrollToStart();
+      }, 0);
+    });
+    syncAllBranchesToggle();
+    document.querySelectorAll("button[data-toggle-details='all']").forEach((button) => {
+      const active = button.dataset.active === "true";
+      setToggleButtonState(button, active);
+    });
+    updateTreeScrollbarProxy();
+    if (window.location.hash) {
+      const target = document.querySelector(window.location.hash);
+      if (target) {
+        revealAndFocusNodeTarget(target, window.location.hash);
+      }
+    }
+  </script>
+</body>
+</html>
