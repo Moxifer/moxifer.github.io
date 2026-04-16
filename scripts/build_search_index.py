@@ -20,10 +20,75 @@ TARGET_STYLE_BLOCK = """  <style data-search-target-highlight>
       background: #fff7db;
       scroll-margin-top: 1rem;
     }
+    .text-line.search-target-line {
+      background: #fff0a6;
+      border-radius: 2px;
+      padding: 0 0.08rem;
+    }
   </style>
 """
 TARGET_STYLE_RE = re.compile(
     r"\s*<style data-search-target-highlight>.*?</style>\s*",
+    re.DOTALL,
+)
+TARGET_LINE_SCRIPT_BLOCK = """  <script data-search-target-line>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const targetLine = params.get("line");
+      const targetHash = window.location.hash;
+
+      if (!targetLine || !targetHash) {
+        return;
+      }
+
+      const targetShell = document.querySelector(targetHash);
+      if (!targetShell) {
+        return;
+      }
+
+      if (typeof openParents === "function") {
+        openParents(targetShell);
+      }
+      if (typeof setDetailOpen === "function") {
+        setDetailOpen(targetShell, true);
+      }
+
+      const normalize = (value) =>
+        (value || "")
+          .toLowerCase()
+          .normalize("NFKD")
+          .replace(/[\\u0300-\\u036f]/g, "")
+          .replace(/\\s+/g, " ")
+          .trim();
+
+      const normalizedTargetLine = normalize(targetLine);
+      if (!normalizedTargetLine) {
+        return;
+      }
+
+      const lineElements = Array.from(targetShell.querySelectorAll(".text-line"));
+      const matchingLine = lineElements.find((element) => {
+        const lineText = normalize(element.textContent);
+        return (
+          lineText === normalizedTargetLine ||
+          lineText.includes(normalizedTargetLine) ||
+          normalizedTargetLine.includes(lineText)
+        );
+      });
+
+      if (!matchingLine) {
+        return;
+      }
+
+      matchingLine.classList.add("search-target-line");
+      requestAnimationFrame(() => {
+        matchingLine.scrollIntoView({ block: "center" });
+      });
+    })();
+  </script>
+"""
+TARGET_LINE_SCRIPT_RE = re.compile(
+    r"\s*<script data-search-target-line>.*?</script>\s*",
     re.DOTALL,
 )
 
@@ -168,9 +233,13 @@ class DialogHTMLParser(HTMLParser):
 
 def ensure_target_highlight(html_text: str) -> str:
     cleaned = TARGET_STYLE_RE.sub("\n", html_text)
+    cleaned = TARGET_LINE_SCRIPT_RE.sub("\n", cleaned)
     if "</head>" not in cleaned:
         return cleaned
-    return cleaned.replace("</head>", f"{TARGET_STYLE_BLOCK}</head>", 1)
+    cleaned = cleaned.replace("</head>", f"{TARGET_STYLE_BLOCK}</head>", 1)
+    if "</body>" in cleaned:
+        cleaned = cleaned.replace("</body>", f"{TARGET_LINE_SCRIPT_BLOCK}</body>", 1)
+    return cleaned
 
 
 def parse_dialog_html(html_text: str) -> DialogParseResult:
@@ -202,12 +271,11 @@ def build_index(repo_root: Path, dialog_root: Path, output_path: Path) -> dict:
         title = parsed.title or html_path.stem
         nodes = []
         for node in parsed.nodes:
-            combined_text = clean_text(" ".join(node.texts))
             nodes.append(
                 {
                     "id": node.node_id,
                     "speakers": node.speakers,
-                    "text": combined_text,
+                    "lines": node.texts,
                 }
             )
 

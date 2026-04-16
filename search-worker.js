@@ -24,13 +24,21 @@ function prepareDocuments(sourceDocuments) {
     const nodes = Array.isArray(document.nodes)
       ? document.nodes.map((node) => {
           const nodeSpeakers = Array.isArray(node.speakers) ? node.speakers : [];
-          const nodeText = node.text || "";
+          const nodeLines = Array.isArray(node.lines)
+            ? node.lines
+            : node.text
+              ? [node.text]
+              : [];
           return {
             id: node.id || "",
             speakers: nodeSpeakers,
-            text: nodeText,
-            haystack: normalize(nodeText),
-            phraseHaystack: normalizePhrase(nodeText),
+            lines: nodeLines
+              .filter((line) => typeof line === "string" && line.trim())
+              .map((line) => ({
+                text: line,
+                haystack: normalize(line),
+                phraseHaystack: normalizePhrase(line),
+              })),
           };
         })
       : [];
@@ -88,37 +96,39 @@ function searchDocuments(query, speaker, speakerMode, queryMode) {
     }
 
     for (const node of document.nodes) {
-      if (!node.haystack) {
-        continue;
-      }
-
-      if (matchMode === "phrase") {
-        if (!normalizedPhraseQuery || !node.phraseHaystack.includes(normalizedPhraseQuery)) {
+      for (const line of node.lines) {
+        if (!line.haystack) {
           continue;
         }
-      } else if (!node.haystack.includes(normalizedQuery)) {
-        let allTermsPresent = true;
-        for (const term of queryTerms) {
-          if (!node.haystack.includes(term)) {
-            allTermsPresent = false;
-            break;
+
+        if (matchMode === "phrase") {
+          if (!normalizedPhraseQuery || !line.phraseHaystack.includes(normalizedPhraseQuery)) {
+            continue;
+          }
+        } else if (!line.haystack.includes(normalizedQuery)) {
+          let allTermsPresent = true;
+          for (const term of queryTerms) {
+            if (!line.haystack.includes(term)) {
+              allTermsPresent = false;
+              break;
+            }
+          }
+          if (!allTermsPresent) {
+            continue;
           }
         }
-        if (!allTermsPresent) {
-          continue;
-        }
-      }
 
-      totalCount += 1;
-      if (results.length < MAX_RESULTS) {
-        results.push({
-          path: document.path + "#" + node.id,
-          documentPath: document.path,
-          title: document.title,
-          speakers: node.speakers,
-          excerpt: node.text,
-          sizeBytes: document.sizeBytes,
-        });
+        totalCount += 1;
+        if (results.length < MAX_RESULTS) {
+          results.push({
+            path: document.path + "#" + node.id,
+            documentPath: document.path,
+            title: document.title,
+            speakers: node.speakers,
+            excerpt: line.text,
+            sizeBytes: document.sizeBytes,
+          });
+        }
       }
     }
   }
