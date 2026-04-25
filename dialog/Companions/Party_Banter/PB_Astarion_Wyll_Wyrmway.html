@@ -4,6 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PB_Astarion_Wyll_Wyrmway</title>
+  <script>
+    (function () {
+      const probe = document.createElement("div");
+      const supportsUntilFound = "onbeforematch" in probe;
+      document.documentElement.classList.add(
+        supportsUntilFound ? "supports-until-found" : "no-until-found"
+      );
+    })();
+  </script>
   <style>
     :root {
       color-scheme: light;
@@ -432,8 +441,11 @@
       font-size: 1rem;
       font-weight: 700;
     }
-    .node-branch[hidden]:not([hidden='until-found']) {
+    .node-branch[hidden] {
       display: none;
+    }
+    html.supports-until-found .node-branch[hidden='until-found'] {
+      display: block;
     }
     .repeat {
       color: var(--muted);
@@ -604,10 +616,11 @@
       gap: 0;
       max-width: none;
     }
-    .node-detail-panel[hidden]:not([hidden='until-found']) {
+    .node-detail-panel[hidden] {
       display: none;
     }
-    .node-detail-panel[hidden='until-found'] {
+    html.supports-until-found .node-detail-panel[hidden='until-found'] {
+      display: block;
       margin: 0;
       padding: 0;
       border: none;
@@ -827,6 +840,7 @@
     const jumpHighlightTimers = new WeakMap();
     const nodeSummaryClickTimers = new WeakMap();
     const NODE_DETAIL_DOUBLE_CLICK_MS = 160;
+    const SUPPORTS_UNTIL_FOUND = document.documentElement.classList.contains("supports-until-found");
     const treeShell = document.querySelector(".tree-shell");
     const treeShellInner = treeShell ? treeShell.querySelector(".tree-shell-inner") : null;
     const treeScrollbarProxy = document.querySelector(".tree-scrollbar-proxy");
@@ -835,8 +849,23 @@
       : null;
     let syncingTreeScroll = false;
     let syncingProxyScroll = false;
+    if (!SUPPORTS_UNTIL_FOUND) {
+      document.querySelectorAll("[hidden='until-found']").forEach((element) => {
+        element.setAttribute("hidden", "");
+      });
+    }
     if ("scrollRestoration" in history) {
       history.scrollRestoration = "manual";
+    }
+    function hideCollapsible(target) {
+      if (!target) {
+        return;
+      }
+      if (SUPPORTS_UNTIL_FOUND) {
+        target.setAttribute("hidden", "until-found");
+        return;
+      }
+      target.setAttribute("hidden", "");
     }
     function setToggleButtonState(button, active) {
       if (!button) {
@@ -915,7 +944,7 @@
       if (openState) {
         target.removeAttribute("hidden");
       } else {
-        target.setAttribute("hidden", "until-found");
+        hideCollapsible(target);
       }
       if (marker) {
         marker.dataset.branchExpanded = openState ? "true" : "false";
@@ -938,7 +967,7 @@
       if (openState) {
         panel.removeAttribute("hidden");
       } else {
-        panel.setAttribute("hidden", "until-found");
+        hideCollapsible(panel);
       }
       if (toggle) {
         toggle.dataset.detailExpanded = openState ? "true" : "false";
