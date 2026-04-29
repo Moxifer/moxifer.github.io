@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DEN_Thieflings_Trainer</title>
+  <script>
+    (function () {
+      const probe = document.createElement("div");
+      const supportsUntilFound = "onbeforematch" in probe;
+      document.documentElement.classList.add(
+        supportsUntilFound ? "supports-until-found" : "no-until-found"
+      );
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #182330;
+      --muted: #586477;
+      --line: #c7d2df;
+      --npc: #b91c1c;
+      --player: #15803d;
+      --system: #2563eb;
+      --rule: #2f6f44;
+      --tag: #0f766e;
+      --check: #7c3aed;
+      --set: #ea580c;
+      --roll: #6d28d9;
+      --approval: #0f766e;
+      --jump: #155eef;
+      --context: #475467;
+      --surface: #f3f6fa;
+      --surface-active: #e6edf5;
+      --surface-hover: #edf3f9;
+      --detail-surface: #e3ebf4;
+      --detail-border: #b4c2d4;
+      --focus: #90a4bc;
+      --highlight: #d9e5f5;
+      --scrollbar-proxy-bg: rgba(255, 255, 255, 0.94);
+      --mono: Consolas, "SFMono-Regular", Menlo, monospace;
+      --sans: Georgia, "Palatino Linotype", serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #fff;
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.35;
+      overflow-x: hidden;
+    }
+    a { color: var(--jump); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: none;
+      padding: 0;
+      border-radius: 0;
+    }
+    .page {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0.55rem 0.9rem 1.8rem;
+      overflow-x: hidden;
+    }
+    .hero {
+      margin-bottom: 0.55rem;
+    }
+    .hero h1 {
+      margin: 0 0 0.2rem;
+      font-size: 1.4rem;
+      line-height: 1.15;
+    }
+    .source {
+      color: var(--muted);
+      font-size: 0.9rem;
+      word-break: break-all;
+      margin-bottom: 0.2rem;
+    }
+    .source-label {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.3rem;
+    }
+    .summary-line {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 0.35rem;
+    }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.45rem;
+      margin-bottom: 0.45rem;
+      padding: 0.35rem 0;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      overflow: visible;
+    }
+    .toolbar-scroll {
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: calc(100% - 7rem);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+    }
+    .controls {
+      display: inline-flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0.45rem;
+      white-space: nowrap;
+      font-size: 0.9rem;
+      min-width: max-content;
+      overflow: visible;
+    }
+    .controls button,
+    .controls summary,
+    .speaker-map > summary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 1.85rem;
+      padding: 0.12rem 0.5rem;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: var(--surface);
+      color: var(--jump);
+      font: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      list-style: none;
+      user-select: none;
+    }
+    .controls button.is-active,
+    .controls details[open] > summary,
+    .speaker-map[open] > summary {
+      background: var(--surface-active);
+      border-color: var(--focus);
+    }
+    .controls button:hover,
+    .controls summary:hover,
+    .speaker-map > summary:hover {
+      background: var(--surface-hover);
+      text-decoration: none;
+    }
+    .controls summary:focus,
+    .controls button:focus,
+    .speaker-map > summary:focus {
+      outline: 1px solid var(--focus);
+      outline-offset: 1px;
+    }
+    .speaker-map {
+      flex: 0 0 auto;
+      position: relative;
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .speaker-map summary,
+    .meta-block summary {
+      cursor: pointer;
+      color: var(--jump);
+      list-style: none;
+    }
+    .speaker-map summary::-webkit-details-marker,
+    .meta-block summary::-webkit-details-marker {
+      display: none;
+    }
+    .speaker-map[open] ul {
+      display: block;
+    }
+    .speaker-map ul {
+      display: none;
+      list-style: none;
+      margin: 0.3rem 0 0;
+      padding: 0.45rem 0.6rem;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 0.2rem);
+      min-width: 20rem;
+      max-width: min(34rem, calc(100vw - 2rem));
+      max-height: 24rem;
+      overflow: auto;
+      background: #fbfcfe;
+      border: 1px solid var(--line);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+      z-index: 30;
+    }
+    .speaker-map li + li {
+      margin-top: 0.1rem;
+    }
+    .speaker-index {
+      display: inline-block;
+      min-width: 2rem;
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 600;
+    }
+    .speaker-name {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.25rem;
+    }
+    .inline-meta, .line-meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .tree-shell {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: visible;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-shell-inner {
+      width: max-content;
+      min-width: 100%;
+    }
+    .tree-scrollbar-proxy {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 1.1rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      background: var(--scrollbar-proxy-bg);
+      border-top: 1px solid var(--line);
+      z-index: 40;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-scrollbar-proxy[hidden] {
+      display: none;
+    }
+    .tree-scrollbar-proxy-inner {
+      height: 1px;
+    }
+    .orphan-section {
+      width: auto;
+      min-width: 0;
+      margin-top: 1rem;
+      padding-top: 0.55rem;
+      border-top: 1px dotted var(--line);
+    }
+    .orphan-section h2 {
+      margin: 0 0 0.15rem;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+    .orphan-note {
+      margin: 0 0 0.35rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .root-list, .child-list {
+      list-style: none;
+      margin: 0;
+      padding-left: 0;
+      width: auto;
+      min-width: 0;
+    }
+    .child-list {
+      margin-left: 1.1rem;
+      padding-left: 0.85rem;
+      border-left: 1px dotted var(--line);
+    }
+    .node-item {
+      margin: 0.18rem 0;
+    }
+    details.node {
+      margin: 0;
+    }
+    details.node:target > summary .node-line {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    .node-leaf:target {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 0;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    summary::-webkit-details-marker {
+      display: none;
+    }
+    details.node > summary::before {
+      content: "▸";
+      display: inline-block;
+      width: 0.9rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      vertical-align: top;
+      padding-top: 0.12rem;
+    }
+    details.node[open] > summary::before {
+      content: "▾";
+    }
+    details.node.no-children > summary::before {
+      content: "•";
+    }
+    .node-line {
+      display: inline;
+      padding: 0.06rem 0.18rem;
+    }
+    .node-leaf {
+      display: inline-block;
+      padding: 0.06rem 0.18rem;
+      border-radius: 6px;
+    }
+    details.node > summary::before {
+      content: "+";
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    details.node[open] > summary::before {
+      content: "-";
+    }
+    details.node.no-children > summary::before {
+      content: ".";
+    }
+    .node-number {
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 700;
+    }
+    .speaker-label {
+      font-weight: 700;
+      margin-left: 0.2rem;
+    }
+    .speaker-label.npc { color: var(--npc); }
+    .speaker-label.player { color: var(--player); }
+    .speaker-label.system { color: var(--system); }
+    .dialog {
+      color: var(--ink);
+      margin-left: 0.2rem;
+    }
+    .node-kind {
+      color: var(--system);
+      margin-left: 0.2rem;
+    }
+    .ruletag {
+      color: var(--rule);
+      margin-left: 0.35rem;
+    }
+    .tags {
+      color: var(--tag);
+      margin-left: 0.35rem;
+    }
+    .checkflag {
+      color: var(--check);
+      margin-left: 0.35rem;
+    }
+    .setflag {
+      color: var(--set);
+      margin-left: 0.35rem;
+    }
+    .rolls {
+      color: var(--roll);
+      margin-left: 0.35rem;
+    }
+    .approval {
+      color: var(--approval);
+      margin-left: 0.35rem;
+    }
+    .nodelink {
+      color: var(--jump);
+      margin-left: 0.35rem;
+    }
+    .context {
+      color: var(--context);
+      margin-left: 0.3rem;
+      cursor: help;
+    }
+    .end {
+      color: #8b1e1e;
+      margin-left: 0.35rem;
+    }
+    .node-shell:target,
+    .node-leaf:target {
+      background: none;
+      border-radius: 0;
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-shell {
+      display: block;
+    }
+    .node-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.32rem;
+      width: max-content;
+      min-width: 100%;
+      transition: background-color 0.18s ease;
+    }
+    .node-shell.jump-highlight > .node-row {
+      background: var(--highlight);
+    }
+    .node-content {
+      min-width: 0;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker,
+    .tree-spacer {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 0.95rem;
+      height: 0.95rem;
+      margin-top: 0.08rem;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker {
+      border: none;
+      background: none;
+      color: var(--muted);
+      padding: 0;
+      font: inherit;
+      font-weight: 800;
+      font-size: 1.18rem;
+      line-height: 1;
+      user-select: none;
+    }
+    .tree-spacer {
+      border: none;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .node-branch[hidden] {
+      display: none;
+    }
+    html.supports-until-found .node-branch[hidden='until-found'] {
+      display: block;
+    }
+    .repeat {
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+    .node-summary {
+      display: block;
+      cursor: default;
+    }
+    .node-summary.is-interactive {
+      cursor: pointer;
+    }
+    .node-summary.is-interactive:focus-visible {
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-main-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.35rem;
+    }
+    .node-main {
+      display: block;
+      flex: 1 1 auto;
+      min-width: 0;
+      white-space: normal;
+      line-height: 1.28;
+      overflow-wrap: anywhere;
+    }
+    .node-leaf {
+      display: block;
+      border-radius: 0;
+    }
+    .node-number {
+      font-weight: 600;
+    }
+    .speaker-label {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind,
+    .nodelink {
+      overflow-wrap: anywhere;
+    }
+    .nodelink,
+    .end {
+      margin-left: 0;
+    }
+    .node-previews {
+      display: block;
+      margin: 0.12rem 0 0 1.1rem;
+      font-size: 0.88rem;
+      white-space: normal;
+      line-height: 1.28;
+    }
+    .preview-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.12rem 0.45rem;
+    }
+    .preview-token {
+      display: inline;
+      overflow-wrap: anywhere;
+    }
+    .preview-token.tag {
+      color: var(--tag);
+    }
+    .preview-token.rule {
+      color: var(--rule);
+    }
+    .preview-token.check {
+      color: var(--check);
+    }
+    .preview-token.set {
+      color: var(--set);
+    }
+    .preview-note {
+      display: block;
+      margin-top: 0.08rem;
+      color: var(--context);
+      overflow-wrap: anywhere;
+      font-weight: 700;
+    }
+    .preview-note-label {
+      color: var(--context);
+      font-weight: 700;
+    }
+    .preview-note-value {
+      color: #4f463f;
+      font-weight: 600;
+    }
+    .signal-line {
+      display: block;
+      margin: 0.14rem 0 0.2rem;
+    }
+    .signal-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem;
+    }
+    .signal-label {
+      font-weight: 700;
+    }
+    .signal-scope {
+      color: var(--muted);
+    }
+    .tag-line, .tag-line .signal-label { color: var(--tag); }
+    .rule-line, .rule-line .signal-label { color: var(--rule); }
+    .checkflag-line, .checkflag-line .signal-label { color: var(--check); }
+    .setflag-line, .setflag-line .signal-label { color: var(--set); }
+    .roll-line, .roll-line .signal-label { color: var(--roll); }
+    .approval-line, .approval-line .signal-label { color: var(--approval); }
+    .context-line, .context-line .signal-label { color: var(--context); }
+    .context-line .signal-heading {
+      font-weight: 700;
+    }
+    .context-line .signal-item {
+      color: #4f463f;
+    }
+    .signal-values {
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .signal-list {
+      list-style: none;
+      margin: 0.06rem 0 0 0.9rem;
+      padding: 0;
+    }
+    .signal-item {
+      margin: 0.1rem 0;
+      overflow-wrap: anywhere;
+    }
+    .signal-item::before {
+      content: "- ";
+      color: var(--muted);
+    }
+    .signal-body {
+      display: block;
+      margin: 0.06rem 0 0 0.9rem;
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .asset-name {
+      color: var(--ink);
+    }
+    .asset-id {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.92em;
+      overflow-wrap: anywhere;
+    }
+    .asset-state {
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .node-detail-panel {
+      margin: 0.08rem 0 0.18rem 1.1rem;
+      padding: 0.35rem 0.5rem;
+      border: 1px solid var(--detail-border);
+      background: var(--detail-surface);
+      border-radius: 0;
+      display: block;
+      gap: 0;
+      max-width: none;
+    }
+    .node-detail-panel[hidden] {
+      display: none;
+    }
+    html.supports-until-found .node-detail-panel[hidden='until-found'] {
+      display: block;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: none;
+    }
+    .section {
+      margin: 0.16rem 0;
+      padding: 0;
+      background: none;
+      border: none;
+    }
+    .section h3 {
+      margin: 0 0 0.22rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .node-detail-panel > .section + .section {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-block + .text-block {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-line {
+      font-size: 0.96rem;
+      margin-bottom: 0.15rem;
+    }
+    .text-line {
+      margin: 0.08rem 0;
+      font-size: inherit;
+      overflow-wrap: anywhere;
+    }
+    .badge-row, .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .badge, .meta-item {
+      display: block;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+    }
+    .meta-items {
+      margin: 0.12rem 0 0 0.85rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+      white-space: normal;
+    }
+    .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .meta-item {
+      display: block;
+      margin: 0.06rem 0;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+      overflow-wrap: anywhere;
+    }
+    .meta-item strong {
+      color: var(--ink);
+    }
+    .badge.flags { color: var(--check); }
+    .badge.tags { color: var(--tag); }
+    .flag-groups {
+      display: block;
+      gap: 0;
+    }
+    .flag-group-type {
+      display: inline-block;
+      color: var(--muted);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.15rem;
+    }
+    .rule-tree, .rule-tree ul {
+      margin: 0;
+      padding-left: 1rem;
+    }
+    .body-hide-flags .section-flags,
+    .body-hide-rules .section-rules,
+    .body-hide-details .section-metadata,
+    .body-hide-context .preview-note,
+    .body-hide-context .context-line,
+    .body-hide-context .node-line .context {
+      display: none;
+    }
+    .body-hide-flags .node-line .checkflag,
+    .body-hide-flags .node-line .setflag,
+    .body-hide-rules .node-line .ruletag {
+      display: none;
+    }
+    .body-hide-flags .checkflag-line,
+    .body-hide-flags .setflag-line {
+      display: none;
+    }
+    .body-hide-flags .preview-token.check,
+    .body-hide-flags .preview-token.set {
+      display: none;
+    }
+    .body-hide-context .context-line {
+      display: none;
+    }
+    .body-hide-numbers .node-number {
+      display: none;
+    }
+    .missing, .cycle {
+      padding: 0.2rem 0.35rem;
+      color: #8b1e1e;
+      background: rgba(139, 30, 30, 0.08);
+      border-radius: 6px;
+      display: inline-block;
+    }
+    .missing, .cycle {
+      padding: 0;
+      background: none;
+      border-radius: 0;
+      display: block;
+      overflow-wrap: anywhere;
+    }
+    @media (max-width: 920px) {
+      .page {
+        padding: 0.45rem 0.5rem 0.9rem;
+      }
+      .tree-shell {
+        padding: 0;
+      }
+    }
+  </style>
+  <style data-search-target-highlight>
+    .node-shell:target {
+      outline: 3px solid #c68b00;
+      background: #fff7db;
+      scroll-margin-top: 1rem;
+    }
+    .text-line.search-target-line {
+      background: #fff0a6;
+      border-radius: 2px;
+      padding: 0 0.08rem;
+    }
+  </style>
+</head>
+  <body class="body-hide-numbers">
+  <div class="page">
+    <header class="hero">
+      <h1>DEN_Thieflings_Trainer</h1>
+      <div class="source"><span class="source-label">Start Dialog UUID:</span><strong><code>f2596c8f-2b4f-0c9c-f371-e7940f4405d4</code></strong></div><div class="source"><span class="source-label">Timeline File UUID:</span><strong><code>50dce7d6-8489-22b9-6441-f631c5769696</code></strong></div><div class="source"><span class="source-label">Dialog File UUID:</span><strong><code>5d578681-f48c-3087-6ae7-c46677416c03</code></strong></div><div class="source"><span class="source-label">Dialog:</span>Mods\Gustav\Story\DialogsBinary\Act1\DEN\DEN_Thieflings_Trainer.lsf.lsx</div><div class="source"><span class="source-label">Timeline:</span>Public\Gustav\Timeline\Generated\DEN_Thieflings_Trainer.lsf.lsx</div><div class="source"><span class="source-label">Scene:</span>Public\Gustav\Timeline\Generated\DEN_Thieflings_Trainer_Scene.lsf.lsx</div>
+      <div class="summary-line">
+        category=Generic NPC Dialog | nodes=56 | roots=10
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-scroll">
+          <div class="controls">
+            <button type="button" data-toggle-branches="all" data-hide-label="Expand all" data-show-label="Collapse all" data-active="false">Expand all</button>
+            <button type="button" data-toggle-class="body-hide-flags" data-hide-label="Hide flags" data-show-label="Show flags">Hide flags</button>
+            <button type="button" data-toggle-details="all" data-hide-label="Show details" data-show-label="Hide details" data-active="false">Show details</button>
+            <button type="button" data-toggle-class="body-hide-context" data-hide-label="Hide notes" data-show-label="Show notes">Hide notes</button>
+            <button type="button" data-toggle-class="body-hide-numbers" data-hide-label="Hide node numbers" data-show-label="Show node numbers">Hide node numbers</button>
+          </div>
+        </div>
+        <details class="speaker-map">
+          <summary>Speakers</summary>
+          <ul><li><span class='speaker-index'>0</span><span class='speaker-name'>Speaker 0</span><span class='inline-meta'>list=02025646-347a-4235-aef7-e46b7c94b435 | mapping=d6117d1a-38ea-faf0-88a0-4f297a1ed091</span></li><li><span class='speaker-index'>1</span><span class='speaker-name'>Player</span><span class='inline-meta'>GROUP_Players | list=e0d1ff71-04a8-4340-ae64-9684d846eb83 | mapping=c7241704-f5ee-cb9e-227b-871923552ec1</span></li><li><span class='speaker-index'>2</span><span class='speaker-name'>Speaker 2</span><span class='inline-meta'>list=1f839ad2-2bcb-47d2-8de9-db7a1fb5d67f | mapping=4768c897-2951-f506-d128-b2b3d3d6d442</span></li><li><span class='speaker-index'>3</span><span class='speaker-name'>Speaker 3</span><span class='inline-meta'>list=bd7f31a6-98e8-46cd-97be-4347fa45d387 | mapping=d7653fe2-1576-8f19-2054-f6ebb45a3352</span></li><li><span class='speaker-index'>4</span><span class='speaker-name'>Speaker 4</span><span class='inline-meta'>list=71bdc11d-b488-427d-8453-632e91178c7e | mapping=3fb302e0-b23c-1c14-3f39-0feb056097a1</span></li><li><span class='speaker-index'>5</span><span class='speaker-name'>Origin_Intro_Wyll</span><span class='inline-meta'>list=c774d764-4a17-48dc-b470-32ace9ce447d | mapping=b7b9d3eb-d31a-021f-5236-ada29579f1a7 | Peanuts=True</span></li></ul>
+        </details>
+      </div>
+    </header>
+    <section class="tree-shell">
+      <div class="tree-shell-inner">
+        <ul class="root-list"><li class='node-item'><div class='node-shell' id='node-13'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-13' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-13' aria-expanded='true' tabindex='0' data-detail-target='details-13' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>13.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>The Blade of Frontiers. What a thrill for the children.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>DEN_Wyll_State_TrainingChildren</span></span></span></span><div class='node-detail-panel' id='details-13' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Wyll is actively training the kids in the Druid Grove.'>DEN_Wyll_State_TrainingChildren</span> <span class='asset-id'>{b949d261-4c0f-5eae-bee9-fa0fa0a8cea7}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 3ae41f76-ffb2-8614-ccb2-db1b95a37de5</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h2c3edb8cgd947g4e39g88d5ge214edd4370d</span><span class='meta-item'><strong>Text UUID</strong>: 58135bbc-5543-3d3c-61d4-5581987acc1a</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 7</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 3ae41f76-ffb2-8614-ccb2-db1b95a37de5</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.01s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: dbc601ad-2df1-3be3-a9ad-8998cc76a07a</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_TrainingKids_OM_Wyll_AOM/HUM_CHD_Rig_DFLT_SCENE_DEN_TrainingKids_OM_Wyll_AOM_CheeringBig_Child_01.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: 97c2f951-1cb5-5609-d87c-c50a41e21888</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_TrainingKids_OM_Wyll_AOM/HUM_CHD_Rig_DFLT_SCENE_DEN_TrainingKids_OM_Wyll_AOM_CheeringSmall_Child_01.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [29.1s-33.11s] | @ 29.84s | speaker 0 | Surprise (64) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [29.1s-33.11s] | @ 30.44s | speaker 0 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [29.1s-33.11s] | @ 31.9s | speaker 0 | Surprise (64) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [29.1s-33.11s] | @ 32.5s | speaker 0 | Happy (2)</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-13'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-41'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-41' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>41.</span><span class='speaker-label npc'>Origin_Intro_Wyll</span><span>: </span><span class='dialog'>They&#x27;re tough kids. Smart, too. The future&#x27;s in good hands.</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>DEN_Trainer_State_WyllPresent</span></span></span></span><div class='node-detail-panel' id='details-41' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Wyll is in the trainer&#x27;s dialog'>DEN_Trainer_State_WyllPresent</span> <span class='asset-id'>{7d11d20e-9cf4-57c2-9ab2-c8c052199128}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: bdb50092-21d9-bf50-5690-f4db8df97d03</span><span class='meta-item'><strong>Speaker</strong>: 5 (Origin_Intro_Wyll)</span><span class='meta-item'><strong>Text Handle</strong>: h2cc0bf37gd5c6g4793gb39cg17cee243ec65</span><span class='meta-item'><strong>Text UUID</strong>: 35b40b37-53c4-f827-4227-6ef969c40e92</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 20</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: bdb50092-21d9-bf50-5690-f4db8df97d03</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5.94s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [84.95s-90.89s] | @ 85.21s | speaker 5 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [84.95s-90.89s] | @ 85.81s | speaker 5 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [84.95s-90.89s] | @ 86.65s | speaker 5 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [84.95s-90.89s] | @ 87.25s | speaker 5 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [84.95s-90.89s] | @ 87.91s | speaker 5 | Happy (2) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 1 [84.95s-90.89s] | @ 89.08s | speaker 5 | Surprise (64) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 1 [84.95s-90.89s] | @ 89.68s | speaker 5 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 1 [90.89s-94.57s] | @ 90.89s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>End Node</strong>: True</span><span class='meta-item'><strong>Optional</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-26'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-26' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>26.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>I think you&#x27;ve inspired them enough today. </span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>DEN_Trainer_State_ScaredTrainees</span><span class='preview-token check'>DEN_Trainer_State_ChildrenWereScared</span></span></span></span><div class='node-detail-panel' id='details-26' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='DEN_Trainer_State_ScaredTraineesdescription'>DEN_Trainer_State_ScaredTrainees</span> <span class='asset-id'>{f333e604-fee9-7499-9b50-1942331da94a}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player said something that scared the children. This permanently changes Asharak&#x27;s greeting node.'>DEN_Trainer_State_ChildrenWereScared</span> <span class='asset-id'>{5e2c8c29-6dc9-7ef1-56c8-4660a190c533}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 94c307b4-7c0d-9128-53f2-502977975f2d</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h536b6276g7e77g4affgb03fg9dbede909644</span><span class='meta-item'><strong>Text UUID</strong>: b5fcb18b-a628-d52e-4459-f9ac783c927f</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 5</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 94c307b4-7c0d-9128-53f2-502977975f2d</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.31s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [23.09s-26.4s] | @ 23.09s | speaker 0 | Thinking (4)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [23.09s-26.4s] | @ 23.69s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [23.09s-26.4s] | @ 25.12s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [23.09s-26.4s] | @ 25.72s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [26.4s-29.1s] | @ 26.4s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 1 [26.4s-29.1s] | @ 26.4s | speaker 2 | Sad (32)</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 1 [26.4s-29.1s] | @ 26.4s | speaker 3 | Sad (32)</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 1 [26.4s-29.1s] | @ 26.4s | speaker 4 | Sad (32)</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-3'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-3' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>3.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Not now, sorry. I have to comfort these little warriors. </span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!DEN_Trainer_State_ScaredTrainees</span><span class='preview-token check'>DEN_Trainer_State_TraineesAreScared</span></span></span></span><div class='node-detail-panel' id='details-3' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='DEN_Trainer_State_ScaredTraineesdescription'>DEN_Trainer_State_ScaredTrainees</span> <span class='asset-id'>{f333e604-fee9-7499-9b50-1942331da94a}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Trainees are scared and refuse to train at this moment. After a long rest, this is cleared.'>DEN_Trainer_State_TraineesAreScared</span> <span class='asset-id'>{b50848b6-8bbe-907c-b65a-c7f03bd797ad}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 1bb82fb4-ea18-d879-6a0b-d559cb079474</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h06e02696gfcebg47dfga72eg863940057b25</span><span class='meta-item'><strong>Text UUID</strong>: 79ccf4c7-f8c3-7928-8869-b9232ede0763</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 0</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 1bb82fb4-ea18-d879-6a0b-d559cb079474</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.73s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [0s-3.73s] | @ 0s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [0s-3.73s] | @ 1.8s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-49'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-49' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>49.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Not now, sorry. I have to comfort these little warriors.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!DEN_Trainer_State_ScaredTrainees</span><span class='preview-token check'>DEN_Trainer_State_ChildrenWereScared</span></span></span></span><div class='node-detail-panel' id='details-49' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='DEN_Trainer_State_ScaredTraineesdescription'>DEN_Trainer_State_ScaredTrainees</span> <span class='asset-id'>{f333e604-fee9-7499-9b50-1942331da94a}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player said something that scared the children. This permanently changes Asharak&#x27;s greeting node.'>DEN_Trainer_State_ChildrenWereScared</span> <span class='asset-id'>{5e2c8c29-6dc9-7ef1-56c8-4660a190c533}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: e77d1940-b9da-67db-5cc3-a27d5b9dae72</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h15b812fdg74ddg443agb2afgdfaf399045c2</span><span class='meta-item'><strong>Text UUID</strong>: 1180c502-8a41-1d05-f19c-abed883a22ee</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 1</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: e77d1940-b9da-67db-5cc3-a27d5b9dae72</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.86s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [3.73s-7.59s] | @ 3.73s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [3.73s-7.59s] | @ 5.95s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-46'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-46' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>46.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Look at them beaming. You did that.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>DEN_Trainer_State_InspiredTrainees</span><span class='preview-token check'>DEN_Trainer_State_ChildrenWereInspired</span></span></span></span><div class='node-detail-panel' id='details-46' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='DEN_Trainer_State_InspiredTraineesdescription'>DEN_Trainer_State_InspiredTrainees</span> <span class='asset-id'>{cf5772cb-0bda-2db6-00c2-21e2100d61b1}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player said something that inspired the children. This permanently changes Asharak&#x27;s greeting node.'>DEN_Trainer_State_ChildrenWereInspired</span> <span class='asset-id'>{fd9dcd0a-4f9f-f8b2-065e-d74fdd4bbf67}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: e44757cc-7f45-51f6-e61c-1afd2e5471f7</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h91b7cb7fgdad8g4715g9c35ge54c2e8736aa</span><span class='meta-item'><strong>Text UUID</strong>: 0a5c43e8-20e6-0474-da2d-066ade488b24</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 2</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: e44757cc-7f45-51f6-e61c-1afd2e5471f7</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.6s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [7.59s-11.19s] | @ 7.59s | speaker 0 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [7.59s-11.19s] | @ 8.19s | speaker 0 | Surprise (64) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [7.59s-11.19s] | @ 8.79s | speaker 0 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [7.59s-11.19s] | @ 9.38s | speaker 0 | Surprise (64) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [7.59s-11.19s] | @ 9.98s | speaker 0 | Happy (2)</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-4'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-4' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>4.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Fierce little fighters, aren&#x27;t they?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!DEN_Trainer_State_InspiredTrainees</span><span class='preview-token check'>DEN_Trainer_State_ChildrenWereInspired</span></span></span></span><div class='node-detail-panel' id='details-4' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='DEN_Trainer_State_InspiredTraineesdescription'>DEN_Trainer_State_InspiredTrainees</span> <span class='asset-id'>{cf5772cb-0bda-2db6-00c2-21e2100d61b1}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player said something that inspired the children. This permanently changes Asharak&#x27;s greeting node.'>DEN_Trainer_State_ChildrenWereInspired</span> <span class='asset-id'>{fd9dcd0a-4f9f-f8b2-065e-d74fdd4bbf67}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 1c66f64a-a873-3782-bd8a-a27db56d88ff</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h9f09ae21g6264g4458g8c58g961bbe0dbc1f</span><span class='meta-item'><strong>Text UUID</strong>: cd22e177-3479-5e11-7396-d69780c0698e</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 8</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 1c66f64a-a873-3782-bd8a-a27db56d88ff</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 2.73s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [33.11s-35.84s] | @ 33.11s | speaker 0 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [33.11s-35.84s] | @ 33.71s | speaker 0 | Surprise (64) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [33.11s-35.84s] | @ 34.31s | speaker 0 | Confusion (1024) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [33.11s-35.84s] | @ 35s | speaker 0 | Confusion (1024) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [35.84s-38.94s] | @ 35.84s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-54'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-54' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>54.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Thanks for spending time with the kids. I just wish... well. Thanks.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!DEN_Trainer_HasMet</span><span class='preview-token check'>Wyll</span><span class='preview-token check'>!Avatar</span><span class='preview-token set'>DEN_Trainer_HasMet</span></span></span></span><div class='node-detail-panel' id='details-54' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='HasMet Asharak.'>DEN_Trainer_HasMet</span> <span class='asset-id'>{d391d77b-fa1a-8810-35e5-04c2e32e4c7f}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Wyll, the superhero warlock|'>Wyll</span> <span class='asset-id'>{facf82dc-a6e1-4720-a0bd-6efde960dc5f}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='A Character Selected in Character Creation'>Avatar</span> <span class='asset-id'>{306b9b05-1057-4770-aa17-01af21acd650}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='HasMet Asharak.'>DEN_Trainer_HasMet</span> <span class='asset-id'>{d391d77b-fa1a-8810-35e5-04c2e32e4c7f}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: fb2651e7-b6f1-83a3-51bf-52f2a0316c8f</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: heafb4f1dg1c9eg497cga4bfgeeec9c023888</span><span class='meta-item'><strong>Text UUID</strong>: b7b88ed8-b546-57d3-a12a-1d801b191ac8</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 3</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: fb2651e7-b6f1-83a3-51bf-52f2a0316c8f</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 7.5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 13c773c7-4626-0515-f5b4-abba9536f3e0</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_TrainingKids_OM_Wyll_AOM/HUM_CHD_Rig_DFLT_SCENE_DEN_TrainingKids_OM_Wyll_AOM_CheeringSmall_Child_02.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [11.19s-18.69s] | @ 11.19s | speaker 0 | Surprise (64) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [11.19s-18.69s] | @ 11.19s | speaker 2 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [11.19s-18.69s] | @ 11.19s | speaker 3 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [11.19s-18.69s] | @ 11.19s | speaker 4 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [11.19s-18.69s] | @ 11.79s | speaker 0 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 1 [11.19s-18.69s] | @ 12.98s | speaker 0 | Happy (2) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 1 [11.19s-18.69s] | @ 14.52s | speaker 0 | Surprise (64) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 1 [11.19s-18.69s] | @ 15.12s | speaker 0 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 9</strong>: Shot 1 [11.19s-18.69s] | @ 16.54s | speaker 0 | Sleeping (256)</span><span class='meta-item'><strong>Timeline Emotion 10</strong>: Shot 1 [11.19s-18.69s] | @ 17.14s | speaker 0 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 11</strong>: Shot 1 [11.19s-18.69s] | @ 17.89s | speaker 0 | Surprise (64) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 12</strong>: Shot 1 [11.19s-18.69s] | @ 18.49s | speaker 0 | Happy (2)</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-56'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-56' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>56.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Can&#x27;t talk now. The children need me.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>DEN_Trainer_HasMet</span><span class='preview-token check'>Wyll</span><span class='preview-token check'>!Avatar</span></span></span></span><div class='node-detail-panel' id='details-56' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='HasMet Asharak.'>DEN_Trainer_HasMet</span> <span class='asset-id'>{d391d77b-fa1a-8810-35e5-04c2e32e4c7f}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Wyll, the superhero warlock|'>Wyll</span> <span class='asset-id'>{facf82dc-a6e1-4720-a0bd-6efde960dc5f}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='A Character Selected in Character Creation'>Avatar</span> <span class='asset-id'>{306b9b05-1057-4770-aa17-01af21acd650}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: feac1ebc-c821-4713-6942-64a7086a3d30</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h4f75afd8g8eeag4697gabdcg33c35e838706</span><span class='meta-item'><strong>Text UUID</strong>: bf98e4e0-b905-4630-44d4-09abbf61313c</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 6</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: feac1ebc-c821-4713-6942-64a7086a3d30</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 2.7s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: b53204b9-6c78-3141-7f1c-84646255d942</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_TrainingKids_OM_Wyll_AOM/HUM_CHD_Rig_DFLT_SCENE_DEN_TrainingKids_OM_Wyll_AOM_Frightened_Child_04.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: 75337aea-57a1-be29-4721-9ef74cef73a9</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_TrainingKids_OM_Wyll_AOM/HUM_CHD_Rig_DFLT_SCENE_DEN_TrainingKids_OM_Wyll_AOM_Frightened_Child_02.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [26.4s-29.1s] | @ 27.91s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [26.4s-29.1s] | @ 28.51s | speaker 0 | emotion unchanged | variation 1</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [29.1s-33.11s] | @ 29.1s | speaker 0 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [29.1s-33.11s] | @ 29.1s | speaker 2 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [29.1s-33.11s] | @ 29.1s | speaker 3 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 1 [29.1s-33.11s] | @ 29.1s | speaker 4 | Happy (2)</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-15'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-15' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>15.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Can&#x27;t talk now. The children need me.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>DEN_Trainer_HasMet</span></span></span></span><div class='node-detail-panel' id='details-15' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='HasMet Asharak.'>DEN_Trainer_HasMet</span> <span class='asset-id'>{d391d77b-fa1a-8810-35e5-04c2e32e4c7f}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 4b69d021-ee4e-4d4c-0b3f-b5c10f42447a</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h089bea69ga74bg4955g845egbf2e3363cd37</span><span class='meta-item'><strong>Text UUID</strong>: 2e6d2654-95f3-a083-fcb6-c472ea2d2370</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 9</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 4b69d021-ee4e-4d4c-0b3f-b5c10f42447a</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [35.84s-38.94s] | @ 37.77s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [38.94s-41.53s] | @ 38.94s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-29'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-29' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-29' aria-expanded='true' tabindex='0' data-detail-target='details-29' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>29.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>I saw you at the gates. You fight well.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>DEN_Trainer_Event_IncludeTrainee3</span><span class='preview-token set'>DEN_Trainer_Event_IncludeTrainee2</span><span class='preview-token set'>DEN_Trainer_Event_IncludeTrainee1</span></span></span></span><div class='node-detail-panel' id='details-29' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='DEN_Trainer_Event_IncludeTrainee3description'>DEN_Trainer_Event_IncludeTrainee3</span> <span class='asset-id'>{c2a9f683-0c58-613e-7e40-f25a00d68236}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='DEN_Trainer_Event_IncludeTrainee2description'>DEN_Trainer_Event_IncludeTrainee2</span> <span class='asset-id'>{a1c08e2e-50ae-cd30-15c2-6a69fb101521}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='DEN_Trainer_Event_IncludeTrainee1description'>DEN_Trainer_Event_IncludeTrainee1</span> <span class='asset-id'>{9eebce8b-68a9-d8ac-5b1d-9242ea3cf131}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 9de21857-f6b9-d935-5b13-bd6c64e0d29a</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h60779ae7g90f2g4d16ga8c2g36b96ae17fc6</span><span class='meta-item'><strong>Text UUID</strong>: 86c51321-826f-beb4-d070-37475a205f04</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 4</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 9de21857-f6b9-d935-5b13-bd6c64e0d29a</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.4s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: dbc601ad-2df1-3be3-a9ad-8998cc76a07a</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_TrainingKids_OM_Wyll_AOM/HUM_CHD_Rig_DFLT_SCENE_DEN_TrainingKids_OM_Wyll_AOM_CheeringBig_Child_01.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: 97c2f951-1cb5-5609-d87c-c50a41e21888</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_TrainingKids_OM_Wyll_AOM/HUM_CHD_Rig_DFLT_SCENE_DEN_TrainingKids_OM_Wyll_AOM_CheeringSmall_Child_01.GR2</span><span class='meta-item'><strong>Timeline Animation 3 Resource ID</strong>: 13c773c7-4626-0515-f5b4-abba9536f3e0</span><span class='meta-item'><strong>Timeline Animation 3 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_TrainingKids_OM_Wyll_AOM/HUM_CHD_Rig_DFLT_SCENE_DEN_TrainingKids_OM_Wyll_AOM_CheeringSmall_Child_02.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [18.69s-21.58s] | @ 18.69s | speaker 0 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [18.69s-21.58s] | @ 18.69s | speaker 2 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [18.69s-21.58s] | @ 18.69s | speaker 3 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [18.69s-21.58s] | @ 18.69s | speaker 4 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [18.69s-21.58s] | @ 19.61s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 1 [18.69s-21.58s] | @ 20.21s | speaker 0 | Thinking (4)</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 2 [21.58s-23.09s] | @ 21.62s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 2 [21.58s-23.09s] | @ 22.22s | speaker 0 | Happy (2)</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-29'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-31'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-31' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-31' aria-expanded='false' tabindex='0' data-detail-target='details-31' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>31.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>A few words for the kids? Spare a story or two?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>Lae&#x27;zel</span><span class='preview-token set'>DEN_Trainer_Event_CheckChildrenInclusions</span></span></span></span><div class='node-detail-panel' id='details-31' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='| Lae&#x27;zel, the Gith Companion |'>Lae&#x27;zel</span> <span class='asset-id'>{3b07eac7-fab3-4120-a46c-51dbb3ec500b}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='| Lae&#x27;zel, the Gith Companion |'>Lae&#x27;zel</span> <span class='asset-id'>{b5682d1d-c395-489c-9675-1f9b0c328ea5}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Check how many of the children managed to be included in Asharak&#x27;s dialog'>DEN_Trainer_Event_CheckChildrenInclusions</span> <span class='asset-id'>{7bd6857b-74e9-bfa4-cf13-3f625f039f20}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: a1716a46-a7d7-8c2f-1c2b-6f9a8e7c08fb</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h75d95181g1e79g415bg9d5eg086369125a47</span><span class='meta-item'><strong>Text UUID</strong>: aef99047-2ba8-5fea-36af-4d83305fa00b</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 13</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: a1716a46-a7d7-8c2f-1c2b-6f9a8e7c08fb</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5.31s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: fbccf687-a2e6-5bab-9f3f-e1ab967062a7</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_TrainingKids_OM_Wyll_AOM/HUM_CHD_Rig_DFLT_SCENE_DEN_TrainingKids_OM_Wyll_AOM_CheeringSmall_Child_03.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: dbc601ad-2df1-3be3-a9ad-8998cc76a07a</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_TrainingKids_OM_Wyll_AOM/HUM_CHD_Rig_DFLT_SCENE_DEN_TrainingKids_OM_Wyll_AOM_CheeringBig_Child_01.GR2</span><span class='meta-item'><strong>Timeline Animation 3 Resource ID</strong>: 13c773c7-4626-0515-f5b4-abba9536f3e0</span><span class='meta-item'><strong>Timeline Animation 3 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_TrainingKids_OM_Wyll_AOM/HUM_CHD_Rig_DFLT_SCENE_DEN_TrainingKids_OM_Wyll_AOM_CheeringSmall_Child_02.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [52.04s-53.21s] | @ 52.64s | speaker 0 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 2 [53.21s-56.24s] | @ 53.55s | speaker 3 | Happy (2) | variation 24</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 2 [53.21s-56.24s] | @ 53.56s | speaker 4 | Happy (2) | variation 23</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 2 [53.21s-56.24s] | @ 54.35s | speaker 4 | Happy (2) | variation 25</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 2 [53.21s-56.24s] | @ 54.73s | speaker 3 | Happy (2) | variation 25</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 2 [53.21s-56.24s] | @ 55.22s | speaker 4 | Happy (2) | variation 24</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 2 [53.21s-56.24s] | @ 55.36s | speaker 3 | Happy (2) | variation 24</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 2 [53.21s-56.24s] | @ 55.53s | speaker 2 | Happy (2) | variation 23</span><span class='meta-item'><strong>Timeline Emotion 9</strong>: Shot 1 [57.35s-60.3s] | @ 57.35s | speaker 0 | Fear (16)</span><span class='meta-item'><strong>Timeline Emotion 10</strong>: Shot 1 [57.35s-60.3s] | @ 57.35s | speaker 2 | Sad (32)</span><span class='meta-item'><strong>Timeline Emotion 11</strong>: Shot 1 [57.35s-60.3s] | @ 57.35s | speaker 3 | Sad (32)</span><span class='meta-item'><strong>Timeline Emotion 12</strong>: Shot 1 [57.35s-60.3s] | @ 57.35s | speaker 4 | Sad (32)</span></div></section></div></div></div><div class='node-branch' id='branch-31' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-27'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-27' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-27' aria-expanded='false' tabindex='0' data-detail-target='details-27' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>27.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>These hatchlings are weak. Your teachings will fail.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>Lae&#x27;zel</span></span></span></span><div class='node-detail-panel' id='details-27' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='| Lae&#x27;zel, the Gith Companion |'>Lae&#x27;zel</span> <span class='asset-id'>{3b07eac7-fab3-4120-a46c-51dbb3ec500b}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='| Lae&#x27;zel, the Gith Companion |'>Lae&#x27;zel</span> <span class='asset-id'>{b5682d1d-c395-489c-9675-1f9b0c328ea5}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 968bf298-e682-661c-7d5e-96fb73fdf361</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h50279d5bg7abag43c2gb3f4gec3349e59c32</span><span class='meta-item'><strong>Text UUID</strong>: 1efc503f-f608-a0bc-4df3-631aedd97dee</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-27' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-17'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-17' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-17' aria-expanded='false' tabindex='0' data-detail-target='details-17' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>17.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='nodelink'>Alias to <a href='#node-28'>Node 28</a></span></span></span></span><div class='node-detail-panel' id='details-17' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Alias</span><span class='meta-item'><strong>UUID</strong>: 56256388-0d99-ec99-786a-e8bdd721f67b</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span></div></section></div></div></div><div class='node-branch' id='branch-17' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-28'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-28' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-28' aria-expanded='false' tabindex='0' data-detail-target='details-28' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>28.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='nodelink'>Alias to <a href='#node-48'>Node 48</a></span></span></span></span><div class='node-detail-panel' id='details-28' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Alias</span><span class='meta-item'><strong>UUID</strong>: 9a62c3ae-e91c-feaa-e4ca-93ff3b2c6677</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span></div></section></div></div></div><div class='node-branch' id='branch-28' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-48'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-48' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-48' aria-expanded='false' tabindex='0' data-detail-target='details-48' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>48.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='nodelink'>Alias to <a href='#node-2'>Node 2</a>, <a href='#node-45'>Node 45</a>, <a href='#node-25'>Node 25</a>, <a href='#node-43'>Node 43</a>, <a href='#node-14'>Node 14</a></span></span></span></span><div class='node-detail-panel' id='details-48' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Alias</span><span class='meta-item'><strong>UUID</strong>: e4b9438b-0310-3894-6d47-6f524298e59b</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span></div></section></div></div></div><div class='node-branch' id='branch-48' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-2'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-2' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>2.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-10'>Node 10</a></span></span></span></span><div class='node-detail-panel' id='details-2' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 0ae8a89b-0ed1-f76f-dbf4-cc2bbf0b9de5</span><span class='meta-item'><strong>Jump Target</strong>: Node 10 (2e5ea1dc-4212-69e2-62af-4acdecaf08f8)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-45'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-45' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>45.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-51'>Node 51</a></span></span></span></span><div class='node-detail-panel' id='details-45' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: d5e03bbf-ef1a-71a5-36b0-6e02bc8ee7fd</span><span class='meta-item'><strong>Jump Target</strong>: Node 51 (f0c085ac-a9f1-4b2a-559b-b2508920e718)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-25'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-25' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>25.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-36'>Node 36</a></span></span></span></span><div class='node-detail-panel' id='details-25' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 843f3034-e330-e145-f338-b51b2a62268c</span><span class='meta-item'><strong>Jump Target</strong>: Node 36 (ae551378-68f4-c26e-fdb3-874ac50b06c5)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-43'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-43' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>43.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-12'>Node 12</a></span></span></span></span><div class='node-detail-panel' id='details-43' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: c53fa620-c58c-dca1-b570-1189eae8de1b</span><span class='meta-item'><strong>Jump Target</strong>: Node 12 (38f58645-07fe-14ff-2fab-bc44a5dee131)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-14'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-14' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>14.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-20'>Node 20</a></span></span></span></span><div class='node-detail-panel' id='details-14' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 3c9d6826-d499-97c1-f9d2-0db01047c883</span><span class='meta-item'><strong>Jump Target</strong>: Node 20 (71dab2ae-3653-bba6-81e7-b4cf51e0966d)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-36'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-36' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-36' aria-expanded='false' tabindex='0' data-detail-target='details-36' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>36.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I once sliced out a scavver&#x27;s eye and ate it whole - and not out of hunger.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>Lae&#x27;zel</span></span></span></span><div class='node-detail-panel' id='details-36' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='| Lae&#x27;zel, the Gith Companion |'>Lae&#x27;zel</span> <span class='asset-id'>{3b07eac7-fab3-4120-a46c-51dbb3ec500b}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='| Lae&#x27;zel, the Gith Companion |'>Lae&#x27;zel</span> <span class='asset-id'>{b5682d1d-c395-489c-9675-1f9b0c328ea5}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: ae551378-68f4-c26e-fdb3-874ac50b06c5</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h6527b98eg4c37g404dga43agf742ea813af3</span><span class='meta-item'><strong>Text UUID</strong>: b85791fb-9322-1cf5-c041-c7c1891e988d</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-36' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-47'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-47' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-47' aria-expanded='false' tabindex='0' data-detail-target='details-47' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>47.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>I don&#x27;t think...</span></span></span></span><div class='node-detail-panel' id='details-47' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: e4655319-2a9b-0441-dc68-f7f012971d6c</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h18984d10g0ad9g4f5dg9215g0becd3aab8f2</span><span class='meta-item'><strong>Text UUID</strong>: 71ee1770-5ad4-c4b1-f494-bdb7ba596f99</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 16</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: e4655319-2a9b-0441-dc68-f7f012971d6c</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.02s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [66.57s-68.63s] | @ 67.2s | speaker 0 | Surprise (64) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [66.57s-68.63s] | @ 67.8s | speaker 0 | Fear (16) | variation 24</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [69.6s-74.23s] | @ 69.6s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [69.6s-74.23s] | @ 69.6s | speaker 1 | Happy (2)</span></div></section></div></div></div><div class='node-branch' id='branch-47' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-44'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-44' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-44' aria-expanded='false' tabindex='0' data-detail-target='details-44' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>44.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I will rip off a horrid mind flayer&#x27;s head and gift it to my Lich Queen!</span></span></span></span><div class='node-detail-panel' id='details-44' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: d5127a13-5260-2725-4de1-e596fa66bd8f</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h45ba35b6g3c89g4e82gb4f3g18b10b165bfa</span><span class='meta-item'><strong>Text UUID</strong>: 9caea2e8-3c48-697b-390b-0d73221de1f7</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-44' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-38'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-38' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>38.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-32'>Node 32</a></span></span></span></span><div class='node-detail-panel' id='details-38' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: b4a2111c-789b-12a5-51e0-aaf03b166b56</span><span class='meta-item'><strong>Jump Target</strong>: Node 32 (a4de9c86-86f7-8b58-e5c3-de4be0305c30)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-52'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-52' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-52' aria-expanded='false' tabindex='0' data-detail-target='details-52' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>52.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I crawled inside a red dragon&#x27;s corpse to stay warm among the Tears of Selûne.</span></span></span></span><div class='node-detail-panel' id='details-52' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: f35c71ea-dd64-aa44-e71e-7f04c47cd0df</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h84075023gece9g4d3fg8857gdae2a2dd4f86</span><span class='meta-item'><strong>Text UUID</strong>: 32e9f588-41a0-5589-07c3-1cf7f253d6ea</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-52' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-38'>Node 38</a> <span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-32'>Node 32</a></span></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-23'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-23' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>23.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-21'>Node 21</a></span></span></span></span><div class='node-detail-panel' id='details-23' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 7c8a8ed2-3571-8c26-8e6c-ea62bf5b8dab</span><span class='meta-item'><strong>Jump Target</strong>: Node 21 (72ab4954-533b-de27-a16a-74a7c3cd146d)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-12'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-12' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-12' aria-expanded='false' tabindex='0' data-detail-target='details-12' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>12.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I slit my own cousin&#x27;s throat and tasted her blood.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>Lae&#x27;zel</span></span></span></span><div class='node-detail-panel' id='details-12' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='| Lae&#x27;zel, the Gith Companion |'>Lae&#x27;zel</span> <span class='asset-id'>{3b07eac7-fab3-4120-a46c-51dbb3ec500b}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='| Lae&#x27;zel, the Gith Companion |'>Lae&#x27;zel</span> <span class='asset-id'>{b5682d1d-c395-489c-9675-1f9b0c328ea5}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 38f58645-07fe-14ff-2fab-bc44a5dee131</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h457e4b51g3e0ag4ddcgbae7g421c892fb163</span><span class='meta-item'><strong>Text UUID</strong>: 9cfcb72e-8746-d4bb-547b-6942a19f7ee7</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-12' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-47'>Node 47</a> <span class='repeat-speaker speaker-label npc'>(Speaker 0)</span> <span class='dialog'>I don&#x27;t think...</span></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-5'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-5' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>5.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-20'>Node 20</a></span></span></span></span><div class='node-detail-panel' id='details-5' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 1ce32880-591c-8aa6-ef31-4242a3d882cd</span><span class='meta-item'><strong>Jump Target</strong>: Node 20 (71dab2ae-3653-bba6-81e7-b4cf51e0966d)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-35'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-35' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-35' aria-expanded='false' tabindex='0' data-detail-target='details-35' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>35.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>A few words for the kids? Spare a story or two?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>DEN_Trainer_Event_CheckChildrenInclusions</span></span></span></span><div class='node-detail-panel' id='details-35' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Check how many of the children managed to be included in Asharak&#x27;s dialog'>DEN_Trainer_Event_CheckChildrenInclusions</span> <span class='asset-id'>{7bd6857b-74e9-bfa4-cf13-3f625f039f20}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: abc68455-4a78-4484-a06c-e97de959f255</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: ha0cdd819g61d8g46a4gb3b0g3297dd0a0f7f</span><span class='meta-item'><strong>Text UUID</strong>: 96048b69-a742-f673-7a47-f7c25f6155f7</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 15</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: abc68455-4a78-4484-a06c-e97de959f255</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5.97s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 13c773c7-4626-0515-f5b4-abba9536f3e0</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_TrainingKids_OM_Wyll_AOM/HUM_CHD_Rig_DFLT_SCENE_DEN_TrainingKids_OM_Wyll_AOM_CheeringSmall_Child_02.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: dbc601ad-2df1-3be3-a9ad-8998cc76a07a</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_TrainingKids_OM_Wyll_AOM/HUM_CHD_Rig_DFLT_SCENE_DEN_TrainingKids_OM_Wyll_AOM_CheeringBig_Child_01.GR2</span><span class='meta-item'><strong>Timeline Animation 3 Resource ID</strong>: fbccf687-a2e6-5bab-9f3f-e1ab967062a7</span><span class='meta-item'><strong>Timeline Animation 3 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_TrainingKids_OM_Wyll_AOM/HUM_CHD_Rig_DFLT_SCENE_DEN_TrainingKids_OM_Wyll_AOM_CheeringSmall_Child_03.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [60.6s-61.76s] | @ 61.2s | speaker 0 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 2 [61.76s-64.8s] | @ 62.11s | speaker 3 | Happy (2) | variation 24</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 2 [61.76s-64.8s] | @ 62.12s | speaker 4 | Happy (2) | variation 23</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 2 [61.76s-64.8s] | @ 62.91s | speaker 4 | Happy (2) | variation 25</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 2 [61.76s-64.8s] | @ 63.29s | speaker 3 | Happy (2) | variation 25</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 2 [61.76s-64.8s] | @ 63.78s | speaker 4 | Happy (2) | variation 24</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 2 [61.76s-64.8s] | @ 63.92s | speaker 3 | Happy (2) | variation 24</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 2 [61.76s-64.8s] | @ 64.09s | speaker 2 | Happy (2) | variation 23</span></div></section></div></div></div><div class='node-branch' id='branch-35' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-37'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-37' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-37' aria-expanded='false' tabindex='0' data-detail-target='details-37' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>37.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>They&#x27;re just children - why are you teaching them to fight?</span></span></span></span><div class='node-detail-panel' id='details-37' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: afbe2112-640a-d88d-cb33-9179f18bb56e</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: ha468318cgfca9g4dbdga466g50536ac61766</span><span class='meta-item'><strong>Text UUID</strong>: 1f9e7e26-223d-dceb-9bad-6fa459129224</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-37' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-30'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-30' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-30' aria-expanded='false' tabindex='0' data-detail-target='details-30' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>30.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>It&#x27;s that or teach them to beg for their lives. </span></span></span></span><div class='node-detail-panel' id='details-30' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: a125925f-8e46-8919-881d-a61783dfded3</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h1a11ab51g9d3ag4b40g9033g86ff4fc73428</span><span class='meta-item'><strong>Text UUID</strong>: 9d9a61e4-267c-86e4-9fcd-ae489bc2233e</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 17</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: a125925f-8e46-8919-881d-a61783dfded3</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.63s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [69.6s-74.23s] | @ 69.73s | peanut slot 0 | Happy (2) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [69.6s-74.23s] | @ 70.1s | peanut slot 1 | Happy (2) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [69.6s-74.23s] | @ 70.1s | peanut slot 2 | Happy (2) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [69.6s-74.23s] | @ 70.27s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [69.6s-74.23s] | @ 70.87s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 1 [69.6s-74.23s] | @ 72.26s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 1 [69.6s-74.23s] | @ 72.86s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 1 [74.23s-80.84s] | @ 74.23s | speaker 0 | Angry (8)</span></div></section></div></div></div><div class='node-branch' id='branch-30' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-22'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-22' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-22' aria-expanded='false' tabindex='0' data-detail-target='details-22' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>22.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>The goblins will chase us to Baldur&#x27;s Gate and these kids know it. </span></span></span></span><div class='node-detail-panel' id='details-22' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 76300d11-72ca-d881-da97-3afbd4fde21e</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h781d84a1g6577g4527g833eg7c4db5f9693f</span><span class='meta-item'><strong>Text UUID</strong>: 700bc4a9-4dc0-b9e8-7a62-ed6709b4259c</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 10</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 76300d11-72ca-d881-da97-3afbd4fde21e</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5.42s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [38.94s-41.53s] | @ 39.97s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [38.94s-41.53s] | @ 40.57s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [38.94s-41.53s] | @ 41.07s | speaker 0 | Disgust (128)</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 2 [41.53s-44.36s] | @ 41.67s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [44.36s-47.51s] | @ 44.36s | speaker 0 | Happy (2)</span></div></section></div></div></div><div class='node-branch' id='branch-22' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-9'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-9' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-9' aria-expanded='false' tabindex='0' data-detail-target='details-9' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>9.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>A warrior like you could lift their spirits.</span></span></span></span><div class='node-detail-panel' id='details-9' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 28d831a6-344a-0a6d-15e9-2fc3e6898d05</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: ha07809f0g5536g4cd9g98bagd3a038793275</span><span class='meta-item'><strong>Text UUID</strong>: 8d148324-0db0-7db4-30a2-638be554ade2</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 11</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 28d831a6-344a-0a6d-15e9-2fc3e6898d05</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.08s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [44.36s-47.51s] | @ 46.09s | speaker 0 | Surprise (64) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [44.36s-47.51s] | @ 46.69s | speaker 0 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [48.44s-50.9s] | @ 48.44s | speaker 2 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [48.44s-50.9s] | @ 48.44s | speaker 3 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [48.44s-50.9s] | @ 48.44s | speaker 4 | Happy (2)</span></div></section></div></div></div><div class='node-branch' id='branch-9' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-10'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-10' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-10' aria-expanded='false' tabindex='0' data-detail-target='details-10' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>10.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I&#x27;ll lift their spirits by wiping out that whole camp of goblins by myself.</span></span></span></span><div class='node-detail-panel' id='details-10' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 2e5ea1dc-4212-69e2-62af-4acdecaf08f8</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h8a5a1c91gf1b7g4ed9g9744g3d0baebb17d3</span><span class='meta-item'><strong>Text UUID</strong>: 5eaaf79f-adf8-a83e-0e89-1c0d888a5180</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-10' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-8'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-8' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-8' aria-expanded='false' tabindex='0' data-detail-target='details-8' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>8.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>(no line text)</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>|Cinematic Node:  The children cheer.|</span></span><span class='preview-inline'><span class='preview-token check'>!DEN_Trainer_State_HasMissingKid</span></span></span></span><div class='node-detail-panel' id='details-8' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Any children failed to be included'>DEN_Trainer_State_HasMissingKid</span> <span class='asset-id'>{fe6ee226-6d33-f17c-7f05-9d4b99b742b8}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagCinematic</span><span class='meta-item'><strong>UUID</strong>: 22dbc810-c1cf-79a7-508f-fc2c8c866c8a</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 12</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 22dbc810-c1cf-79a7-508f-fc2c8c866c8a</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.6s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: dbc601ad-2df1-3be3-a9ad-8998cc76a07a</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_TrainingKids_OM_Wyll_AOM/HUM_CHD_Rig_DFLT_SCENE_DEN_TrainingKids_OM_Wyll_AOM_CheeringBig_Child_01.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: 41729cdf-68a3-86af-9f80-7cc4a8dad9c1</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_TrainingKids_OM_Wyll_AOM/HUM_CHD_Rig_DFLT_SCENE_DEN_TrainingKids_OM_Wyll_AOM_CheeringBig_Child_04.GR2</span><span class='meta-item'><strong>Timeline Animation 3 Resource ID</strong>: f77f47c9-198f-38a8-5ed0-d9f75eeb137c</span><span class='meta-item'><strong>Timeline Animation 3 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_TrainingKids_OM_Wyll_AOM/HUM_CHD_Rig_DFLT_SCENE_DEN_TrainingKids_OM_Wyll_AOM_CheeringBig_Child_02.GR2</span><span class='meta-item'><strong>Timeline Animation 4 Resource ID</strong>: 5891bf79-342d-4ef8-9d09-a52baa46c1cc</span><span class='meta-item'><strong>Timeline Animation 4 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/Dwarves/_Female/DWR_F_Rig/_Construction/DWR_F_Rig_DFLT_CINE_LookBehindLeft_StandL_01.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [48.44s-50.9s] | @ 49.12s | speaker 3 | Happy (2) | variation 24</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [48.44s-50.9s] | @ 49.21s | speaker 2 | Happy (2) | variation 23</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [48.44s-50.9s] | @ 49.21s | speaker 4 | Happy (2) | variation 23</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [48.44s-50.9s] | @ 49.54s | speaker 3 | Sleeping (256)</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [48.44s-50.9s] | @ 49.98s | speaker 4 | Happy (2) | variation 25</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 1 [48.44s-50.9s] | @ 50.16s | speaker 2 | Happy (2) | variation 25</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 1 [48.44s-50.9s] | @ 50.16s | speaker 3 | Happy (2) | variation 25</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 1 [48.44s-50.9s] | @ 50.68s | speaker 4 | Happy (2) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 9</strong>: Shot 2 [50.9s-52.04s] | @ 50.97s | speaker 1 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 10</strong>: Shot 2 [50.9s-52.04s] | @ 51.34s | peanut slot 0 | Happy (2) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 11</strong>: Shot 2 [50.9s-52.04s] | @ 51.63s | peanut slot 1 | Happy (2) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 12</strong>: Shot 2 [50.9s-52.04s] | @ 51.77s | peanut slot 2 | Happy (2) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 13</strong>: Shot 1 [52.04s-53.21s] | @ 52.04s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 14</strong>: Shot 1 [52.04s-53.21s] | @ 52.04s | speaker 2 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 15</strong>: Shot 1 [52.04s-53.21s] | @ 52.04s | speaker 3 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 16</strong>: Shot 1 [52.04s-53.21s] | @ 52.04s | speaker 4 | Happy (2)</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: optional</span></div></section></div></div></div><div class='node-branch' id='branch-8' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-39'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-39' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>39.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Thanks. I prefer when they smile.</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>DEN_Trainer_State_InspiredTrainees</span><span class='preview-token set'>DEN_Trainer_State_ChildrenWereInspired</span></span></span></span><div class='node-detail-panel' id='details-39' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='DEN_Trainer_State_InspiredTraineesdescription'>DEN_Trainer_State_InspiredTrainees</span> <span class='asset-id'>{cf5772cb-0bda-2db6-00c2-21e2100d61b1}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player said something that inspired the children. This permanently changes Asharak&#x27;s greeting node.'>DEN_Trainer_State_ChildrenWereInspired</span> <span class='asset-id'>{fd9dcd0a-4f9f-f8b2-065e-d74fdd4bbf67}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: b79ed12d-3d5c-265c-3aff-717e7a82a151</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h40605d61gf5d6g49b7ga24bgaa46915151a9</span><span class='meta-item'><strong>Text UUID</strong>: 7acea830-bc59-4ec6-ecd2-c2a38f24873f</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 19</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: b79ed12d-3d5c-265c-3aff-717e7a82a151</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.11s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [80.84s-84.95s] | @ 82.9s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [80.84s-84.95s] | @ 83.5s | speaker 0 | Happy (2)</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-51'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-51' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-51' aria-expanded='false' tabindex='0' data-detail-target='details-51' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>51.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>You&#x27;re just going to get them killed - probably by each other.</span></span></span></span><div class='node-detail-panel' id='details-51' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: f0c085ac-a9f1-4b2a-559b-b2508920e718</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hb8b48cf6g4890g451cg8e1cg3a08c3122cd8</span><span class='meta-item'><strong>Text UUID</strong>: 2326388b-5b37-fdd9-370b-9126c03c806c</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-51' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-32'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-32' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-32' aria-expanded='false' tabindex='0' data-detail-target='details-32' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>32.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>(no line text)</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>|Cinematic node: the children gasp in horror and S_DEN_Trainee_001 starts crying.|</span></span><span class='preview-inline'><span class='preview-token check'>!DEN_Trainer_State_HasMissingKid</span></span></span></span><div class='node-detail-panel' id='details-32' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Any children failed to be included'>DEN_Trainer_State_HasMissingKid</span> <span class='asset-id'>{fe6ee226-6d33-f17c-7f05-9d4b99b742b8}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagCinematic</span><span class='meta-item'><strong>UUID</strong>: a4de9c86-86f7-8b58-e5c3-de4be0305c30</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 14</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: a4de9c86-86f7-8b58-e5c3-de4be0305c30</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.25s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 75337aea-57a1-be29-4721-9ef74cef73a9</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_TrainingKids_OM_Wyll_AOM/HUM_CHD_Rig_DFLT_SCENE_DEN_TrainingKids_OM_Wyll_AOM_Frightened_Child_02.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: 13813723-14fc-125e-9b9d-d0ffff31064a</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: (not found)</span><span class='meta-item'><strong>Timeline Animation 3 Resource ID</strong>: c34cfb84-d584-781c-6bbd-ea6d2b957663</span><span class='meta-item'><strong>Timeline Animation 3 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/Humans/_Male/HUM_M_Rig/_Construction/HUM_M_Rig_DFLT_CINE_LookBehindLeft_StandR_01.GR2</span><span class='meta-item'><strong>Timeline Animation 4 Resource ID</strong>: 4fea8e8c-cdfa-9880-ea97-28b74c79e9a5</span><span class='meta-item'><strong>Timeline Animation 4 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_TrainingKids_OM_Wyll_AOM/HUM_CHD_Rig_DFLT_SCENE_DEN_TrainingKids_OM_Wyll_AOM_Frightened_Child_01.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [57.35s-60.3s] | @ 57.72s | speaker 2 | Sad (32) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [57.35s-60.3s] | @ 58.39s | speaker 3 | Sad (32) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 2 [60.3s-60.6s] | @ 60.6s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 2 [60.3s-60.6s] | @ 60.6s | speaker 2 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 2 [60.3s-60.6s] | @ 60.6s | speaker 3 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 2 [60.3s-60.6s] | @ 60.6s | speaker 4 | Happy (2)</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: optional</span></div></section></div></div></div><div class='node-branch' id='branch-32' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-6'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-6' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>6.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Good job. Now they&#x27;re even more scared.</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>DEN_Trainer_State_SpokeOfBloodAndGlory</span><span class='preview-token set'>DEN_Trainer_State_ScaredTrainees</span><span class='preview-token set'>DEN_Trainer_State_ChildrenWereScared</span><span class='preview-token set'>DEN_Trainer_State_TraineesAreScared</span></span></span></span><div class='node-detail-panel' id='details-6' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Minor flag used to tweak one of Asharak&#x27;s answer node.'>DEN_Trainer_State_SpokeOfBloodAndGlory</span> <span class='asset-id'>{e537df0d-7a77-acaf-ba2b-8afb241eb51c}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='DEN_Trainer_State_ScaredTraineesdescription'>DEN_Trainer_State_ScaredTrainees</span> <span class='asset-id'>{f333e604-fee9-7499-9b50-1942331da94a}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player said something that scared the children. This permanently changes Asharak&#x27;s greeting node.'>DEN_Trainer_State_ChildrenWereScared</span> <span class='asset-id'>{5e2c8c29-6dc9-7ef1-56c8-4660a190c533}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='Trainees are scared and refuse to train at this moment. After a long rest, this is cleared.'>DEN_Trainer_State_TraineesAreScared</span> <span class='asset-id'>{b50848b6-8bbe-907c-b65a-c7f03bd797ad}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 1f233921-6d46-21f4-6fb7-369e4c6968a1</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h4a91e0e2g2b7eg4ea0gb8e8g81d392bacc62</span><span class='meta-item'><strong>Text UUID</strong>: ea01390c-c2e0-fa75-667f-c5877b1cec92</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 21</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 1f233921-6d46-21f4-6fb7-369e4c6968a1</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.68s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [90.89s-94.57s] | @ 92.44s | speaker 0 | Fear (16)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [90.89s-94.57s] | @ 93.04s | speaker 0 | Angry (8) | variation 2</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-34'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-34' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>34.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Good job. Little ears hear far - I better take care of this.</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>DEN_Trainer_State_ScaredTrainees</span><span class='preview-token set'>DEN_Trainer_State_ChildrenWereScared</span><span class='preview-token set'>DEN_Trainer_State_TraineesAreScared</span></span></span></span><div class='node-detail-panel' id='details-34' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='DEN_Trainer_State_ScaredTraineesdescription'>DEN_Trainer_State_ScaredTrainees</span> <span class='asset-id'>{f333e604-fee9-7499-9b50-1942331da94a}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player said something that scared the children. This permanently changes Asharak&#x27;s greeting node.'>DEN_Trainer_State_ChildrenWereScared</span> <span class='asset-id'>{5e2c8c29-6dc9-7ef1-56c8-4660a190c533}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='Trainees are scared and refuse to train at this moment. After a long rest, this is cleared.'>DEN_Trainer_State_TraineesAreScared</span> <span class='asset-id'>{b50848b6-8bbe-907c-b65a-c7f03bd797ad}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: aa32c6a7-636a-9478-743d-e3c02e681eed</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h12cbb6aeg6834g4017g8868gd8a51d421494</span><span class='meta-item'><strong>Text UUID</strong>: ddb8c91b-0904-6d1d-d516-f8832d5fbf1b</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 18</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: aa32c6a7-636a-9478-743d-e3c02e681eed</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6.61s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [74.23s-80.84s] | @ 75.18s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [74.23s-80.84s] | @ 75.78s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [74.23s-80.84s] | @ 76.41s | speaker 0 | Thinking (4) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [74.23s-80.84s] | @ 77.31s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [74.23s-80.84s] | @ 78.63s | speaker 0 | Angry (8) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 1 [74.23s-80.84s] | @ 79.49s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 1 [74.23s-80.84s] | @ 80.09s | speaker 0 | Angry (8) | variation 1</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-55'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-55' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>55.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-11'>Node 11</a></span></span></span></span><div class='node-detail-panel' id='details-55' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: fda5eca8-0d8a-6a24-2d63-fe924356b282</span><span class='meta-item'><strong>Jump Target</strong>: Node 11 (32b90d73-56ed-d537-7171-73a818bdc0e1)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-16'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-16' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>16.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-36'>Node 36</a></span></span></span></span><div class='node-detail-panel' id='details-16' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 4ca3aa37-a8ba-c846-c311-e02e5aac4d08</span><span class='meta-item'><strong>Jump Target</strong>: Node 36 (ae551378-68f4-c26e-fdb3-874ac50b06c5)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-24'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-24' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>24.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-12'>Node 12</a></span></span></span></span><div class='node-detail-panel' id='details-24' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 7ff5d313-0957-ab2a-588a-0157961d3fe5</span><span class='meta-item'><strong>Jump Target</strong>: Node 12 (38f58645-07fe-14ff-2fab-bc44a5dee131)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-50'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-50' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>50.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-40'>Node 40</a></span></span></span></span><div class='node-detail-panel' id='details-50' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: e816f784-78e0-e408-a7f4-68f2f41faaff</span><span class='meta-item'><strong>Jump Target</strong>: Node 40 (b9982442-823c-b3c6-d52b-74fa03675884)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-21'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-21' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>21.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'><i>Leave.</i></span></span></span></span><div class='node-detail-panel' id='details-21' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 72ab4954-533b-de27-a16a-74a7c3cd146d</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h875c7497gbcd2g4a27g9710g7eecff01a6fe</span><span class='meta-item'><strong>Text UUID</strong>: ee5138de-cb1a-2b6c-fa8e-e5b7307bd6bd</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-33'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-33' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-33' aria-expanded='false' tabindex='0' data-detail-target='details-33' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>33.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Soak the battlefield with blood. Do not resist death, but embrace it!</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>DEN_Trainer_State_SpokeOfBloodAndGlory</span></span></span></span><div class='node-detail-panel' id='details-33' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Minor flag used to tweak one of Asharak&#x27;s answer node.'>DEN_Trainer_State_SpokeOfBloodAndGlory</span> <span class='asset-id'>{e537df0d-7a77-acaf-ba2b-8afb241eb51c}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: a9529b61-35aa-1d3c-3049-dff4e9cfa599</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h59e0d4e3g1f5ag4143g9ed8gc0fa0608c22b</span><span class='meta-item'><strong>Text UUID</strong>: 12857c39-c254-ab87-4c07-0ada8b33e909</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-33' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-53'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-53' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>53.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-32'>Node 32</a></span></span></span></span><div class='node-detail-panel' id='details-53' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: fb1ae00a-8262-7b71-174e-e4643d8de22a</span><span class='meta-item'><strong>Jump Target</strong>: Node 32 (a4de9c86-86f7-8b58-e5c3-de4be0305c30)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-42'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-42' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-42' aria-expanded='false' tabindex='0' data-detail-target='details-42' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>42.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Be strong and watch over your kin. In trust there is victory!<br></span></span></span></span><div class='node-detail-panel' id='details-42' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: c215887a-bfd5-4aec-50d9-dec830ff3cd0</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h5da6f3abg7584g4232g9ff4g41d147506d45</span><span class='meta-item'><strong>Text UUID</strong>: 21375a63-c9d8-f1fd-b807-22dc46b0f149</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-42' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-1'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-1' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>1.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-8'>Node 8</a></span></span></span></span><div class='node-detail-panel' id='details-1' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 00c6113a-6806-59a8-f87f-73111041992c</span><span class='meta-item'><strong>Jump Target</strong>: Node 8 (22dbc810-c1cf-79a7-508f-fc2c8c866c8a)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-19'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-19' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-19' aria-expanded='false' tabindex='0' data-detail-target='details-19' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>19.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Bad news, children: you&#x27;re all going to die.</span></span></span></span><div class='node-detail-panel' id='details-19' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 680e572d-42a3-16cb-3948-2ea525713596</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h9391e391ge014g4b2dga67bg8d5373ad09cc</span><span class='meta-item'><strong>Text UUID</strong>: cee5310e-1ea6-b638-00a0-62a427e1c42e</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Approval Rating</strong>: 4a65991c-afbb-45b7-a27e-d865d0d37c97</span></div></section></div></div></div><div class='node-branch' id='branch-19' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-18'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-18' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>18.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-32'>Node 32</a></span></span></span></span><div class='node-detail-panel' id='details-18' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 5b60031e-2fe8-f785-d832-7d310a607bb4</span><span class='meta-item'><strong>Jump Target</strong>: Node 32 (a4de9c86-86f7-8b58-e5c3-de4be0305c30)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-11'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-11' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-11' aria-expanded='false' tabindex='0' data-detail-target='details-11' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>11.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>You must outsmart and outmanoeuvre. Your greatest weapon is your cunning!</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>Seldarine</span></span></span></span><div class='node-detail-panel' id='details-11' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Seldarine Drow, shapeshifted or not|'>Seldarine</span> <span class='asset-id'>{d2d60a81-688e-4d3d-ba56-3e467cae37fc}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 32b90d73-56ed-d537-7171-73a818bdc0e1</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hf4294048g42beg4e06g8a4cg40c28fffbd00</span><span class='meta-item'><strong>Text UUID</strong>: 07529804-ecd5-a038-c369-69ef6599fd56</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-11' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-7'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-7' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>7.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-8'>Node 8</a></span></span></span></span><div class='node-detail-panel' id='details-7' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 22c2522a-dc69-9d2a-0862-d0aa70b4a560</span><span class='meta-item'><strong>Jump Target</strong>: Node 8 (22dbc810-c1cf-79a7-508f-fc2c8c866c8a)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-40'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-40' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-40' aria-expanded='false' tabindex='0' data-detail-target='details-40' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>40.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>After great adversity comes triumph. Honour and glory!</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>Fighter</span></span></span></span><div class='node-detail-panel' id='details-40' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='A master of martial combat, skilled with a variety of weapons and armour.'>Fighter</span> <span class='asset-id'>{1ae7017c-4884-4a43-bc4a-742fa0d201c0}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: b9982442-823c-b3c6-d52b-74fa03675884</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hfd839e5ag3707g4f66g8289ga63c3cf1d5db</span><span class='meta-item'><strong>Text UUID</strong>: 31431709-9363-269c-fb00-c553ea6583cc</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-40' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-7'>Node 7</a> <span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-8'>Node 8</a></span></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-20'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-20' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>20.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'><i>Leave.</i></span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>!DEN_Trainer_HasMet</span></span></span></span><div class='node-detail-panel' id='details-20' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='HasMet Asharak.'>DEN_Trainer_HasMet</span> <span class='asset-id'>{d391d77b-fa1a-8810-35e5-04c2e32e4c7f}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 71dab2ae-3653-bba6-81e7-b4cf51e0966d</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h1103a165ge7f5g4e87g9deagc87a3d7d3597</span><span class='meta-item'><strong>Text UUID</strong>: b1dcb653-9ed5-921c-1746-474399d221e6</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul>
+        
+      </div>
+    </section>
+  </div>
+  <div class="tree-scrollbar-proxy" hidden>
+    <div class="tree-scrollbar-proxy-inner"></div>
+  </div>
+  <script>
+    function getNodeDetailPanel(shell) {
+      if (!shell) {
+        return null;
+      }
+      const content = shell.querySelector(":scope > .node-row > .node-content");
+      if (!content) {
+        return null;
+      }
+      return Array.from(content.children).find((child) => child.classList && child.classList.contains("node-detail-panel")) || null;
+    }
+    function getNodeDetailToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-detail-target]");
+    }
+    function getNodeBranchToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-branch-target]");
+    }
+    function getNodeBranchMarker(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .tree-toggle-marker[data-branch-target]");
+    }
+    const jumpHighlightTimers = new WeakMap();
+    const nodeSummaryClickTimers = new WeakMap();
+    const NODE_DETAIL_DOUBLE_CLICK_MS = 160;
+    const SUPPORTS_UNTIL_FOUND = document.documentElement.classList.contains("supports-until-found");
+    const treeShell = document.querySelector(".tree-shell");
+    const treeShellInner = treeShell ? treeShell.querySelector(".tree-shell-inner") : null;
+    const treeScrollbarProxy = document.querySelector(".tree-scrollbar-proxy");
+    const treeScrollbarProxyInner = treeScrollbarProxy
+      ? treeScrollbarProxy.querySelector(".tree-scrollbar-proxy-inner")
+      : null;
+    let syncingTreeScroll = false;
+    let syncingProxyScroll = false;
+    if (!SUPPORTS_UNTIL_FOUND) {
+      document.querySelectorAll("[hidden='until-found']").forEach((element) => {
+        element.setAttribute("hidden", "");
+      });
+    }
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+    function hideCollapsible(target) {
+      if (!target) {
+        return;
+      }
+      if (SUPPORTS_UNTIL_FOUND) {
+        target.setAttribute("hidden", "until-found");
+        return;
+      }
+      target.setAttribute("hidden", "");
+    }
+    function setToggleButtonState(button, active) {
+      if (!button) {
+        return;
+      }
+      button.classList.toggle("is-active", active);
+      const hideLabel = button.dataset.hideLabel;
+      const showLabel = button.dataset.showLabel;
+      if (hideLabel && showLabel) {
+        button.textContent = active ? showLabel : hideLabel;
+      }
+    }
+    function syncAllDetailsToggle() {
+      const button = document.querySelector("button[data-toggle-details='all']");
+      if (!button) {
+        return;
+      }
+      const panels = Array.from(document.querySelectorAll(".node-detail-panel"));
+      const allOpen = panels.length > 0 && panels.every((panel) => !panel.hasAttribute("hidden"));
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function syncAllBranchesToggle() {
+      const button = document.querySelector("button[data-toggle-branches='all']");
+      if (!button) {
+        return;
+      }
+      const branchMarkers = Array.from(document.querySelectorAll(".tree-toggle-marker[data-branch-target]"));
+      const allOpen = branchMarkers.length > 0 && branchMarkers.every((marker) => marker.dataset.branchExpanded === "true");
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function updateTreeScrollbarProxy() {
+      if (!treeShell || !treeShellInner || !treeScrollbarProxy || !treeScrollbarProxyInner) {
+        return;
+      }
+      const contentWidth = treeShellInner.scrollWidth;
+      const viewportWidth = treeShell.clientWidth;
+      const needsProxy = contentWidth > viewportWidth + 1;
+      if (!needsProxy) {
+        treeScrollbarProxy.hidden = true;
+        return;
+      }
+      const rect = treeShell.getBoundingClientRect();
+      treeScrollbarProxy.hidden = false;
+      treeScrollbarProxy.style.left = `${Math.max(0, rect.left)}px`;
+      treeScrollbarProxy.style.width = `${Math.max(0, rect.width)}px`;
+      treeScrollbarProxyInner.style.width = `${contentWidth}px`;
+      if (!syncingTreeScroll && Math.abs(treeScrollbarProxy.scrollLeft - treeShell.scrollLeft) > 1) {
+        syncingProxyScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingProxyScroll = false;
+      }
+    }
+    function resetTreeScrollToStart() {
+      document.querySelectorAll(".tree-shell").forEach((shell) => {
+        shell.scrollLeft = 0;
+      });
+      if (treeScrollbarProxy) {
+        treeScrollbarProxy.scrollLeft = 0;
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setBranchOpen(control, openState, syncState = true) {
+      if (!control) {
+        return;
+      }
+      const targetId = control.dataset.branchTarget;
+      const target = targetId ? document.getElementById(targetId) : null;
+      if (!target) {
+        return;
+      }
+      const shell = control.closest(".node-shell");
+      const marker = shell ? getNodeBranchMarker(shell) : null;
+      const summary = shell ? getNodeBranchToggle(shell) : null;
+      if (openState) {
+        target.removeAttribute("hidden");
+      } else {
+        hideCollapsible(target);
+      }
+      if (marker) {
+        marker.dataset.branchExpanded = openState ? "true" : "false";
+        marker.textContent = openState ? "-" : "+";
+      }
+      if (summary) {
+        summary.setAttribute("aria-expanded", openState ? "true" : "false");
+      }
+      if (syncState) {
+        syncAllBranchesToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setDetailOpen(shell, openState, syncState = true) {
+      const panel = getNodeDetailPanel(shell);
+      const toggle = getNodeDetailToggle(shell);
+      if (!panel) {
+        return;
+      }
+      if (openState) {
+        panel.removeAttribute("hidden");
+      } else {
+        hideCollapsible(panel);
+      }
+      if (toggle) {
+        toggle.dataset.detailExpanded = openState ? "true" : "false";
+      }
+      if (syncState) {
+        syncAllDetailsToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setAllBranches(openState) {
+      document.querySelectorAll(".tree-toggle-marker[data-branch-target]").forEach((marker) => { setBranchOpen(marker, openState, false); });
+      syncAllBranchesToggle();
+    }
+    function setAllNodeDetails(openState) {
+      document.querySelectorAll(".node-shell").forEach((shell) => {
+        if (getNodeDetailPanel(shell)) {
+          setDetailOpen(shell, openState, false);
+        }
+      });
+      syncAllDetailsToggle();
+    }
+    function openParents(target) {
+      let current = target;
+      while (current) {
+        if (current.classList && current.classList.contains("node-branch")) {
+          const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${current.id}"]`);
+          setBranchOpen(marker, true);
+        }
+        current = current.parentElement;
+      }
+    }
+    function highlightJumpTarget(target) {
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      if (!shell) {
+        return;
+      }
+      const existingTimer = jumpHighlightTimers.get(shell);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+      shell.classList.add("jump-highlight");
+      const timeoutId = window.setTimeout(() => {
+        shell.classList.remove("jump-highlight");
+        jumpHighlightTimers.delete(shell);
+      }, 5000);
+      jumpHighlightTimers.set(shell, timeoutId);
+    }
+    function getStickyScrollOffset() {
+      const toolbar = document.querySelector(".toolbar");
+      if (!toolbar) {
+        return 8;
+      }
+      return Math.ceil(toolbar.getBoundingClientRect().height) + 8;
+    }
+    function scrollNodeTargetIntoView(target) {
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      const scrollTarget = shell || target;
+      if (!scrollTarget) {
+        return;
+      }
+      const offset = getStickyScrollOffset();
+      const top = window.scrollY + scrollTarget.getBoundingClientRect().top - offset;
+      window.scrollTo({ top: Math.max(0, top), behavior: "auto" });
+    }
+    function revealAndFocusNodeTarget(target, href = "") {
+      if (!target) {
+        return;
+      }
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      openParents(shell || target);
+      if (href) {
+        history.replaceState(null, "", href);
+      }
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollNodeTargetIntoView(target);
+          highlightJumpTarget(target);
+          updateTreeScrollbarProxy();
+        });
+      });
+    }
+    if (treeShell && treeScrollbarProxy) {
+      treeShell.addEventListener("scroll", () => {
+        if (syncingProxyScroll) {
+          return;
+        }
+        syncingTreeScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingTreeScroll = false;
+      });
+      treeScrollbarProxy.addEventListener("scroll", () => {
+        if (syncingTreeScroll) {
+          return;
+        }
+        syncingProxyScroll = true;
+        treeShell.scrollLeft = treeScrollbarProxy.scrollLeft;
+        syncingProxyScroll = false;
+      });
+    }
+    document.addEventListener("click", (event) => {
+      const allBranchesButton = event.target.closest("button[data-toggle-branches='all']");
+      if (allBranchesButton) {
+        const isOpen = allBranchesButton.dataset.active === "true";
+        setAllBranches(!isOpen);
+        return;
+      }
+      const allDetailsButton = event.target.closest("button[data-toggle-details='all']");
+      if (allDetailsButton) {
+        const isOpen = allDetailsButton.dataset.active === "true";
+        setAllNodeDetails(!isOpen);
+        return;
+      }
+      const button = event.target.closest("button[data-toggle-class]");
+      if (button) {
+        const active = document.body.classList.toggle(button.dataset.toggleClass);
+        setToggleButtonState(button, active);
+        return;
+      }
+      const link = event.target.closest("a[href^='#node-']");
+      if (link) {
+        event.preventDefault();
+        const target = document.querySelector(link.getAttribute("href"));
+        if (target) {
+          revealAndFocusNodeTarget(target, link.getAttribute("href"));
+        }
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (summary) {
+        const branchTarget = summary.dataset.branchTarget;
+        const shell = summary.closest(".node-shell");
+        if (!shell) {
+          return;
+        }
+        if (!branchTarget) {
+          if (summary.dataset.detailTarget) {
+            const isOpen = summary.dataset.detailExpanded === "true";
+            setDetailOpen(shell, !isOpen);
+          }
+          return;
+        }
+        const existingTimer = nodeSummaryClickTimers.get(summary);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+          nodeSummaryClickTimers.delete(summary);
+          event.preventDefault();
+          const isOpen = summary.dataset.detailExpanded === "true";
+          setDetailOpen(shell, !isOpen);
+          return;
+        }
+        const timerId = window.setTimeout(() => {
+          nodeSummaryClickTimers.delete(summary);
+          const isOpen = summary.getAttribute("aria-expanded") === "true";
+          setBranchOpen(summary, !isOpen);
+          if (isOpen) {
+            const panel = getNodeDetailPanel(shell);
+            if (panel && !panel.hasAttribute("hidden")) {
+              setDetailOpen(shell, false);
+            }
+          }
+        }, NODE_DETAIL_DOUBLE_CLICK_MS);
+        nodeSummaryClickTimers.set(summary, timerId);
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (!summary) {
+        return;
+      }
+      event.preventDefault();
+      const shell = summary.closest(".node-shell");
+      if (!shell) {
+        return;
+      }
+      if (summary.dataset.branchTarget) {
+        const isOpen = summary.getAttribute("aria-expanded") === "true";
+        setBranchOpen(summary, !isOpen);
+        if (isOpen) {
+          const panel = getNodeDetailPanel(shell);
+          if (panel && !panel.hasAttribute("hidden")) {
+            setDetailOpen(shell, false);
+          }
+        }
+        return;
+      }
+      if (summary.dataset.detailTarget) {
+        const isOpen = summary.dataset.detailExpanded === "true";
+        setDetailOpen(shell, !isOpen);
+      }
+    });
+    document.addEventListener("beforematch", (event) => {
+      const branch = event.target.closest(".node-branch");
+      if (branch && branch.id) {
+        const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${branch.id}"]`);
+        setBranchOpen(marker, true);
+      }
+      const panel = event.target.closest(".node-detail-panel");
+      if (panel) {
+        const shell = panel.closest(".node-shell");
+        if (shell) {
+          openParents(shell);
+          setDetailOpen(shell, true);
+        }
+      }
+    });
+    document.querySelectorAll("button[data-toggle-class]").forEach((button) => {
+      const active = document.body.classList.contains(button.dataset.toggleClass);
+      setToggleButtonState(button, active);
+    });
+    if (window.ResizeObserver && treeShell) {
+      const observer = new ResizeObserver(() => {
+        updateTreeScrollbarProxy();
+      });
+      observer.observe(treeShell);
+      if (treeShellInner) {
+        observer.observe(treeShellInner);
+      }
+    }
+    window.addEventListener("resize", updateTreeScrollbarProxy);
+    window.addEventListener("scroll", updateTreeScrollbarProxy, { passive: true });
+    window.addEventListener("pageshow", () => {
+      if (window.location.hash) {
+        updateTreeScrollbarProxy();
+        return;
+      }
+      resetTreeScrollToStart();
+      window.requestAnimationFrame(() => {
+        resetTreeScrollToStart();
+      });
+      window.setTimeout(() => {
+        resetTreeScrollToStart();
+      }, 0);
+    });
+    syncAllBranchesToggle();
+    document.querySelectorAll("button[data-toggle-details='all']").forEach((button) => {
+      const active = button.dataset.active === "true";
+      setToggleButtonState(button, active);
+    });
+    updateTreeScrollbarProxy();
+    if (window.location.hash) {
+      const target = document.querySelector(window.location.hash);
+      if (target) {
+        revealAndFocusNodeTarget(target, window.location.hash);
+      }
+    }
+  </script>
+  <script data-search-target-line>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const targetLine = params.get("line");
+      const targetHash = window.location.hash;
+
+      if (!targetLine || !targetHash) {
+        return;
+      }
+
+      const targetShell = document.querySelector(targetHash);
+      if (!targetShell) {
+        return;
+      }
+
+      if (typeof openParents === "function") {
+        openParents(targetShell);
+      }
+      if (typeof setDetailOpen === "function") {
+        setDetailOpen(targetShell, true);
+      }
+
+      const normalize = (value) =>
+        (value || "")
+          .toLowerCase()
+          .normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      const normalizedTargetLine = normalize(targetLine);
+      if (!normalizedTargetLine) {
+        return;
+      }
+
+      const lineElements = Array.from(targetShell.querySelectorAll(".text-line"));
+      const matchingLine = lineElements.find((element) => {
+        const lineText = normalize(element.textContent);
+        return (
+          lineText === normalizedTargetLine ||
+          lineText.includes(normalizedTargetLine) ||
+          normalizedTargetLine.includes(lineText)
+        );
+      });
+
+      if (!matchingLine) {
+        return;
+      }
+
+      matchingLine.classList.add("search-target-line");
+      requestAnimationFrame(() => {
+        matchingLine.scrollIntoView({ block: "center" });
+      });
+    })();
+  </script>
+</body>
+</html>

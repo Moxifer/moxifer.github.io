@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PLA_Tavern_OxAlive</title>
+  <script>
+    (function () {
+      const probe = document.createElement("div");
+      const supportsUntilFound = "onbeforematch" in probe;
+      document.documentElement.classList.add(
+        supportsUntilFound ? "supports-until-found" : "no-until-found"
+      );
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #182330;
+      --muted: #586477;
+      --line: #c7d2df;
+      --npc: #b91c1c;
+      --player: #15803d;
+      --system: #2563eb;
+      --rule: #2f6f44;
+      --tag: #0f766e;
+      --check: #7c3aed;
+      --set: #ea580c;
+      --roll: #6d28d9;
+      --approval: #0f766e;
+      --jump: #155eef;
+      --context: #475467;
+      --surface: #f3f6fa;
+      --surface-active: #e6edf5;
+      --surface-hover: #edf3f9;
+      --detail-surface: #e3ebf4;
+      --detail-border: #b4c2d4;
+      --focus: #90a4bc;
+      --highlight: #d9e5f5;
+      --scrollbar-proxy-bg: rgba(255, 255, 255, 0.94);
+      --mono: Consolas, "SFMono-Regular", Menlo, monospace;
+      --sans: Georgia, "Palatino Linotype", serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #fff;
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.35;
+      overflow-x: hidden;
+    }
+    a { color: var(--jump); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: none;
+      padding: 0;
+      border-radius: 0;
+    }
+    .page {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0.55rem 0.9rem 1.8rem;
+      overflow-x: hidden;
+    }
+    .hero {
+      margin-bottom: 0.55rem;
+    }
+    .hero h1 {
+      margin: 0 0 0.2rem;
+      font-size: 1.4rem;
+      line-height: 1.15;
+    }
+    .source {
+      color: var(--muted);
+      font-size: 0.9rem;
+      word-break: break-all;
+      margin-bottom: 0.2rem;
+    }
+    .source-label {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.3rem;
+    }
+    .summary-line {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 0.35rem;
+    }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.45rem;
+      margin-bottom: 0.45rem;
+      padding: 0.35rem 0;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      overflow: visible;
+    }
+    .toolbar-scroll {
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: calc(100% - 7rem);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+    }
+    .controls {
+      display: inline-flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0.45rem;
+      white-space: nowrap;
+      font-size: 0.9rem;
+      min-width: max-content;
+      overflow: visible;
+    }
+    .controls button,
+    .controls summary,
+    .speaker-map > summary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 1.85rem;
+      padding: 0.12rem 0.5rem;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: var(--surface);
+      color: var(--jump);
+      font: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      list-style: none;
+      user-select: none;
+    }
+    .controls button.is-active,
+    .controls details[open] > summary,
+    .speaker-map[open] > summary {
+      background: var(--surface-active);
+      border-color: var(--focus);
+    }
+    .controls button:hover,
+    .controls summary:hover,
+    .speaker-map > summary:hover {
+      background: var(--surface-hover);
+      text-decoration: none;
+    }
+    .controls summary:focus,
+    .controls button:focus,
+    .speaker-map > summary:focus {
+      outline: 1px solid var(--focus);
+      outline-offset: 1px;
+    }
+    .speaker-map {
+      flex: 0 0 auto;
+      position: relative;
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .speaker-map summary,
+    .meta-block summary {
+      cursor: pointer;
+      color: var(--jump);
+      list-style: none;
+    }
+    .speaker-map summary::-webkit-details-marker,
+    .meta-block summary::-webkit-details-marker {
+      display: none;
+    }
+    .speaker-map[open] ul {
+      display: block;
+    }
+    .speaker-map ul {
+      display: none;
+      list-style: none;
+      margin: 0.3rem 0 0;
+      padding: 0.45rem 0.6rem;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 0.2rem);
+      min-width: 20rem;
+      max-width: min(34rem, calc(100vw - 2rem));
+      max-height: 24rem;
+      overflow: auto;
+      background: #fbfcfe;
+      border: 1px solid var(--line);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+      z-index: 30;
+    }
+    .speaker-map li + li {
+      margin-top: 0.1rem;
+    }
+    .speaker-index {
+      display: inline-block;
+      min-width: 2rem;
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 600;
+    }
+    .speaker-name {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.25rem;
+    }
+    .inline-meta, .line-meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .tree-shell {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: visible;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-shell-inner {
+      width: max-content;
+      min-width: 100%;
+    }
+    .tree-scrollbar-proxy {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 1.1rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      background: var(--scrollbar-proxy-bg);
+      border-top: 1px solid var(--line);
+      z-index: 40;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-scrollbar-proxy[hidden] {
+      display: none;
+    }
+    .tree-scrollbar-proxy-inner {
+      height: 1px;
+    }
+    .orphan-section {
+      width: auto;
+      min-width: 0;
+      margin-top: 1rem;
+      padding-top: 0.55rem;
+      border-top: 1px dotted var(--line);
+    }
+    .orphan-section h2 {
+      margin: 0 0 0.15rem;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+    .orphan-note {
+      margin: 0 0 0.35rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .root-list, .child-list {
+      list-style: none;
+      margin: 0;
+      padding-left: 0;
+      width: auto;
+      min-width: 0;
+    }
+    .child-list {
+      margin-left: 1.1rem;
+      padding-left: 0.85rem;
+      border-left: 1px dotted var(--line);
+    }
+    .node-item {
+      margin: 0.18rem 0;
+    }
+    details.node {
+      margin: 0;
+    }
+    details.node:target > summary .node-line {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    .node-leaf:target {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 0;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    summary::-webkit-details-marker {
+      display: none;
+    }
+    details.node > summary::before {
+      content: "▸";
+      display: inline-block;
+      width: 0.9rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      vertical-align: top;
+      padding-top: 0.12rem;
+    }
+    details.node[open] > summary::before {
+      content: "▾";
+    }
+    details.node.no-children > summary::before {
+      content: "•";
+    }
+    .node-line {
+      display: inline;
+      padding: 0.06rem 0.18rem;
+    }
+    .node-leaf {
+      display: inline-block;
+      padding: 0.06rem 0.18rem;
+      border-radius: 6px;
+    }
+    details.node > summary::before {
+      content: "+";
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    details.node[open] > summary::before {
+      content: "-";
+    }
+    details.node.no-children > summary::before {
+      content: ".";
+    }
+    .node-number {
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 700;
+    }
+    .speaker-label {
+      font-weight: 700;
+      margin-left: 0.2rem;
+    }
+    .speaker-label.npc { color: var(--npc); }
+    .speaker-label.player { color: var(--player); }
+    .speaker-label.system { color: var(--system); }
+    .dialog {
+      color: var(--ink);
+      margin-left: 0.2rem;
+    }
+    .node-kind {
+      color: var(--system);
+      margin-left: 0.2rem;
+    }
+    .ruletag {
+      color: var(--rule);
+      margin-left: 0.35rem;
+    }
+    .tags {
+      color: var(--tag);
+      margin-left: 0.35rem;
+    }
+    .checkflag {
+      color: var(--check);
+      margin-left: 0.35rem;
+    }
+    .setflag {
+      color: var(--set);
+      margin-left: 0.35rem;
+    }
+    .rolls {
+      color: var(--roll);
+      margin-left: 0.35rem;
+    }
+    .approval {
+      color: var(--approval);
+      margin-left: 0.35rem;
+    }
+    .nodelink {
+      color: var(--jump);
+      margin-left: 0.35rem;
+    }
+    .context {
+      color: var(--context);
+      margin-left: 0.3rem;
+      cursor: help;
+    }
+    .end {
+      color: #8b1e1e;
+      margin-left: 0.35rem;
+    }
+    .node-shell:target,
+    .node-leaf:target {
+      background: none;
+      border-radius: 0;
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-shell {
+      display: block;
+    }
+    .node-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.32rem;
+      width: max-content;
+      min-width: 100%;
+      transition: background-color 0.18s ease;
+    }
+    .node-shell.jump-highlight > .node-row {
+      background: var(--highlight);
+    }
+    .node-content {
+      min-width: 0;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker,
+    .tree-spacer {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 0.95rem;
+      height: 0.95rem;
+      margin-top: 0.08rem;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker {
+      border: none;
+      background: none;
+      color: var(--muted);
+      padding: 0;
+      font: inherit;
+      font-weight: 800;
+      font-size: 1.18rem;
+      line-height: 1;
+      user-select: none;
+    }
+    .tree-spacer {
+      border: none;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .node-branch[hidden] {
+      display: none;
+    }
+    html.supports-until-found .node-branch[hidden='until-found'] {
+      display: block;
+    }
+    .repeat {
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+    .node-summary {
+      display: block;
+      cursor: default;
+    }
+    .node-summary.is-interactive {
+      cursor: pointer;
+    }
+    .node-summary.is-interactive:focus-visible {
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-main-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.35rem;
+    }
+    .node-main {
+      display: block;
+      flex: 1 1 auto;
+      min-width: 0;
+      white-space: normal;
+      line-height: 1.28;
+      overflow-wrap: anywhere;
+    }
+    .node-leaf {
+      display: block;
+      border-radius: 0;
+    }
+    .node-number {
+      font-weight: 600;
+    }
+    .speaker-label {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind,
+    .nodelink {
+      overflow-wrap: anywhere;
+    }
+    .nodelink,
+    .end {
+      margin-left: 0;
+    }
+    .node-previews {
+      display: block;
+      margin: 0.12rem 0 0 1.1rem;
+      font-size: 0.88rem;
+      white-space: normal;
+      line-height: 1.28;
+    }
+    .preview-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.12rem 0.45rem;
+    }
+    .preview-token {
+      display: inline;
+      overflow-wrap: anywhere;
+    }
+    .preview-token.tag {
+      color: var(--tag);
+    }
+    .preview-token.rule {
+      color: var(--rule);
+    }
+    .preview-token.check {
+      color: var(--check);
+    }
+    .preview-token.set {
+      color: var(--set);
+    }
+    .preview-note {
+      display: block;
+      margin-top: 0.08rem;
+      color: var(--context);
+      overflow-wrap: anywhere;
+      font-weight: 700;
+    }
+    .preview-note-label {
+      color: var(--context);
+      font-weight: 700;
+    }
+    .preview-note-value {
+      color: #4f463f;
+      font-weight: 600;
+    }
+    .signal-line {
+      display: block;
+      margin: 0.14rem 0 0.2rem;
+    }
+    .signal-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem;
+    }
+    .signal-label {
+      font-weight: 700;
+    }
+    .signal-scope {
+      color: var(--muted);
+    }
+    .tag-line, .tag-line .signal-label { color: var(--tag); }
+    .rule-line, .rule-line .signal-label { color: var(--rule); }
+    .checkflag-line, .checkflag-line .signal-label { color: var(--check); }
+    .setflag-line, .setflag-line .signal-label { color: var(--set); }
+    .roll-line, .roll-line .signal-label { color: var(--roll); }
+    .approval-line, .approval-line .signal-label { color: var(--approval); }
+    .context-line, .context-line .signal-label { color: var(--context); }
+    .context-line .signal-heading {
+      font-weight: 700;
+    }
+    .context-line .signal-item {
+      color: #4f463f;
+    }
+    .signal-values {
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .signal-list {
+      list-style: none;
+      margin: 0.06rem 0 0 0.9rem;
+      padding: 0;
+    }
+    .signal-item {
+      margin: 0.1rem 0;
+      overflow-wrap: anywhere;
+    }
+    .signal-item::before {
+      content: "- ";
+      color: var(--muted);
+    }
+    .signal-body {
+      display: block;
+      margin: 0.06rem 0 0 0.9rem;
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .asset-name {
+      color: var(--ink);
+    }
+    .asset-id {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.92em;
+      overflow-wrap: anywhere;
+    }
+    .asset-state {
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .node-detail-panel {
+      margin: 0.08rem 0 0.18rem 1.1rem;
+      padding: 0.35rem 0.5rem;
+      border: 1px solid var(--detail-border);
+      background: var(--detail-surface);
+      border-radius: 0;
+      display: block;
+      gap: 0;
+      max-width: none;
+    }
+    .node-detail-panel[hidden] {
+      display: none;
+    }
+    html.supports-until-found .node-detail-panel[hidden='until-found'] {
+      display: block;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: none;
+    }
+    .section {
+      margin: 0.16rem 0;
+      padding: 0;
+      background: none;
+      border: none;
+    }
+    .section h3 {
+      margin: 0 0 0.22rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .node-detail-panel > .section + .section {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-block + .text-block {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-line {
+      font-size: 0.96rem;
+      margin-bottom: 0.15rem;
+    }
+    .text-line {
+      margin: 0.08rem 0;
+      font-size: inherit;
+      overflow-wrap: anywhere;
+    }
+    .badge-row, .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .badge, .meta-item {
+      display: block;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+    }
+    .meta-items {
+      margin: 0.12rem 0 0 0.85rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+      white-space: normal;
+    }
+    .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .meta-item {
+      display: block;
+      margin: 0.06rem 0;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+      overflow-wrap: anywhere;
+    }
+    .meta-item strong {
+      color: var(--ink);
+    }
+    .badge.flags { color: var(--check); }
+    .badge.tags { color: var(--tag); }
+    .flag-groups {
+      display: block;
+      gap: 0;
+    }
+    .flag-group-type {
+      display: inline-block;
+      color: var(--muted);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.15rem;
+    }
+    .rule-tree, .rule-tree ul {
+      margin: 0;
+      padding-left: 1rem;
+    }
+    .body-hide-flags .section-flags,
+    .body-hide-rules .section-rules,
+    .body-hide-details .section-metadata,
+    .body-hide-context .preview-note,
+    .body-hide-context .context-line,
+    .body-hide-context .node-line .context {
+      display: none;
+    }
+    .body-hide-flags .node-line .checkflag,
+    .body-hide-flags .node-line .setflag,
+    .body-hide-rules .node-line .ruletag {
+      display: none;
+    }
+    .body-hide-flags .checkflag-line,
+    .body-hide-flags .setflag-line {
+      display: none;
+    }
+    .body-hide-flags .preview-token.check,
+    .body-hide-flags .preview-token.set {
+      display: none;
+    }
+    .body-hide-context .context-line {
+      display: none;
+    }
+    .body-hide-numbers .node-number {
+      display: none;
+    }
+    .missing, .cycle {
+      padding: 0.2rem 0.35rem;
+      color: #8b1e1e;
+      background: rgba(139, 30, 30, 0.08);
+      border-radius: 6px;
+      display: inline-block;
+    }
+    .missing, .cycle {
+      padding: 0;
+      background: none;
+      border-radius: 0;
+      display: block;
+      overflow-wrap: anywhere;
+    }
+    @media (max-width: 920px) {
+      .page {
+        padding: 0.45rem 0.5rem 0.9rem;
+      }
+      .tree-shell {
+        padding: 0;
+      }
+    }
+  </style>
+  <style data-search-target-highlight>
+    .node-shell:target {
+      outline: 3px solid #c68b00;
+      background: #fff7db;
+      scroll-margin-top: 1rem;
+    }
+    .text-line.search-target-line {
+      background: #fff0a6;
+      border-radius: 2px;
+      padding: 0 0.08rem;
+    }
+  </style>
+</head>
+  <body class="body-hide-numbers">
+  <div class="page">
+    <header class="hero">
+      <h1>PLA_Tavern_OxAlive</h1>
+      <div class="source"><span class="source-label">Start Dialog UUID:</span><strong><code>5a920f74-a41f-cb9f-b4ac-fac7e452703b</code></strong></div><div class="source"><span class="source-label">Timeline File UUID:</span><strong><code>41f7261f-7100-e25a-14bb-77529be8313a</code></strong></div><div class="source"><span class="source-label">Dialog File UUID:</span><strong><code>1ae9dcd5-ff2b-db0a-44dc-ca2314c9bb33</code></strong></div><div class="source"><span class="source-label">Dialog:</span>Mods\Gustav\Story\DialogsBinary\Act1\Plains\PLA_Tavern_OxAlive.lsf.lsx</div><div class="source"><span class="source-label">Timeline:</span>Public\Gustav\Timeline\Generated\PLA_Tavern_OxAlive.lsf.lsx</div><div class="source"><span class="source-label">Scene:</span>Public\Gustav\Timeline\Generated\PLA_Tavern_OxAlive_Scene.lsf.lsx</div>
+      <div class="summary-line">
+        category=Generic NPC Dialog | nodes=65 | roots=7
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-scroll">
+          <div class="controls">
+            <button type="button" data-toggle-branches="all" data-hide-label="Expand all" data-show-label="Collapse all" data-active="false">Expand all</button>
+            <button type="button" data-toggle-class="body-hide-flags" data-hide-label="Hide flags" data-show-label="Show flags">Hide flags</button>
+            <button type="button" data-toggle-details="all" data-hide-label="Show details" data-show-label="Hide details" data-active="false">Show details</button>
+            <button type="button" data-toggle-class="body-hide-context" data-hide-label="Hide notes" data-show-label="Show notes">Hide notes</button>
+            <button type="button" data-toggle-class="body-hide-numbers" data-hide-label="Hide node numbers" data-show-label="Show node numbers">Hide node numbers</button>
+          </div>
+        </div>
+        <details class="speaker-map">
+          <summary>Speakers</summary>
+          <ul><li><span class='speaker-index'>0</span><span class='speaker-name'>Speaker 0</span><span class='inline-meta'>list=c69aa4c1-bac2-401f-b4ec-cce8d545ba7c | mapping=2af5ae11-70be-34d8-2a5a-85b1dd08f9a3</span></li><li><span class='speaker-index'>1</span><span class='speaker-name'>Player</span><span class='inline-meta'>GROUP_Players | list=e0d1ff71-04a8-4340-ae64-9684d846eb83 | mapping=6ee9431a-6acc-98fa-18ba-c4ab1811270b</span></li></ul>
+        </details>
+      </div>
+    </header>
+    <section class="tree-shell">
+      <div class="tree-shell-inner">
+        <ul class="root-list"><li class='node-item'><div class='node-shell' id='node-32'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-32' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>32.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Walk well, friend.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>PLA_Tavern_Ox_HasMet</span><span class='preview-token check'>PLA_Tavern_State_OxPacified</span><span class='preview-token check'>Speak with Animals</span></span></span></span><div class='node-detail-panel' id='details-32' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='PLA_Tavern_Ox_HasMetdescription'>PLA_Tavern_Ox_HasMet</span> <span class='asset-id'>{6b67ca4c-981d-f905-2809-15791ff00efb}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='PLA_Tavern_State_OxPacifieddescription'>PLA_Tavern_State_OxPacified</span> <span class='asset-id'>{cc948928-15b4-2dd1-5fe4-11b5fa79d78f}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Speak with Animals ability'>Speak with Animals</span> <span class='asset-id'>{dc860a81-f3c2-4c1a-ab90-e7583324845c}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 8b1e4b1d-5ec5-73ca-a300-6e816823b68b</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: ha30db5c1g241fg4c26g80cfgbf629a835ac8</span><span class='meta-item'><strong>Text UUID</strong>: d5aa15fa-f8ab-d11d-ee33-6173f45c07da</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 4</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 8b1e4b1d-5ec5-73ca-a300-6e816823b68b</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 2.65s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 6dc4b982-bd42-2bed-f714-1276e2f6cfba</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Creatures/Ox/OX_Rig/_Construction/Ox_Rig_CINE_Idle_01.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [16.52s-19.17s] | @ 16.64s | peanut slot 2 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [16.52s-19.17s] | @ 17.36s | peanut slot 0 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [16.52s-19.17s] | @ 17.48s | peanut slot 1 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-9'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-9' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-9' aria-expanded='true' tabindex='0' data-detail-target='details-9' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>9.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Hm. You&#x27;re not one of them.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!PLA_Tavern_Ox_HasMet</span><span class='preview-token check'>PLA_Tavern_State_OxPacified</span><span class='preview-token check'>Speak with Animals</span><span class='preview-token set'>PLA_Tavern_Ox_HasMet</span></span></span></span><div class='node-detail-panel' id='details-9' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='PLA_Tavern_Ox_HasMetdescription'>PLA_Tavern_Ox_HasMet</span> <span class='asset-id'>{6b67ca4c-981d-f905-2809-15791ff00efb}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='PLA_Tavern_State_OxPacifieddescription'>PLA_Tavern_State_OxPacified</span> <span class='asset-id'>{cc948928-15b4-2dd1-5fe4-11b5fa79d78f}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Speak with Animals ability'>Speak with Animals</span> <span class='asset-id'>{dc860a81-f3c2-4c1a-ab90-e7583324845c}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='PLA_Tavern_Ox_HasMetdescription'>PLA_Tavern_Ox_HasMet</span> <span class='asset-id'>{6b67ca4c-981d-f905-2809-15791ff00efb}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 20fd1630-cb76-4f99-2133-192d74769a3f</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hd47e3981g1833g4149gae46gb9cde5acaf65</span><span class='meta-item'><strong>Text UUID</strong>: ef372d04-3379-24b7-13a5-24894aab3048</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 0</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 20fd1630-cb76-4f99-2133-192d74769a3f</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.71s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 6dc4b982-bd42-2bed-f714-1276e2f6cfba</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Creatures/Ox/OX_Rig/_Construction/Ox_Rig_CINE_Idle_01.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [0s-3.71s] | @ 0s | speaker 1 | Thinking (4)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [0s-3.71s] | @ 0.53s | peanut slot 1 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [0s-3.71s] | @ 0.55s | peanut slot 0 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [0s-3.71s] | @ 0.93s | peanut slot 2 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-9'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-27'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-27' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>27.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-65'>Node 65</a></span></span></span></span><div class='node-detail-panel' id='details-27' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 7f3fe6f4-fed5-1a0a-2722-7e6648c37f11</span><span class='meta-item'><strong>Jump Target</strong>: Node 65 (ff3bc3f3-7fc3-383e-22ca-1cda8d209014)</span><span class='meta-item'><strong>Jump Target Point</strong>: 2</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-18'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-18' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>18.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>You&#x27;re one of them! Monster!</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token rule'>Drow</span><span class='preview-token check'>Speak with Animals</span><span class='preview-token set'>FactionHostileToPlayerGroupAfterDialog</span></span></span></span><div class='node-detail-panel' id='details-18' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line rule-line'><div class='signal-heading'><span class='signal-label'>ruletag</span><span class='signal-scope'>type rule</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Drow|'>Drow</span> <span class='asset-id'>{a672ac1d-d088-451a-9537-3da4bf74466c}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Speak with Animals ability'>Speak with Animals</span> <span class='asset-id'>{dc860a81-f3c2-4c1a-ab90-e7583324845c}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='FactionHostileToPlayerGroupAfterDialogdescription'>FactionHostileToPlayerGroupAfterDialog</span> <span class='asset-id'>{d73ce44b-1b9a-2e02-f29a-d8e9e68c7edc}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 5b3afba3-0ccd-4c22-7e38-12fe990c3e84</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h202a4511g2df4g4e96gba47ga2224562437d</span><span class='meta-item'><strong>Text UUID</strong>: 86373128-2094-b884-c57e-4fc8cee07f17</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 2</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 5b3afba3-0ccd-4c22-7e38-12fe990c3e84</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 2.81s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: b262df9e-1be5-68be-a8ee-4e6de0f5b525</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Creatures/Ox/OX_Rig/_Construction/Ox_Rig_CINE_Idle_Deep_Breathing_01.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [11.52s-16.52s] | @ 11.52s | speaker 1 | Thinking (4)</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-45'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-45' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-45' aria-expanded='true' tabindex='0' data-detail-target='details-45' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>45.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Monsters... everywhere... kill...</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!PLA_Tavern_State_OxPacified</span><span class='preview-token check'>!Drow</span><span class='preview-token check'>Speak with Animals</span></span></span></span><div class='node-detail-panel' id='details-45' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='PLA_Tavern_State_OxPacifieddescription'>PLA_Tavern_State_OxPacified</span> <span class='asset-id'>{cc948928-15b4-2dd1-5fe4-11b5fa79d78f}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Drow|'>Drow</span> <span class='asset-id'>{a672ac1d-d088-451a-9537-3da4bf74466c}</span> <span class='asset-state'>= False</span></li><li class='signal-item'><span class='asset-name' title='Speak with Animals ability'>Speak with Animals</span> <span class='asset-id'>{dc860a81-f3c2-4c1a-ab90-e7583324845c}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: b73c9b33-16dc-b724-72d9-08ee770a8134</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h2eae864cgba18g4614gb94ag170e63224c5d</span><span class='meta-item'><strong>Text UUID</strong>: 7e76f7f4-3e38-64a5-54d7-1a6654a435c3</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 6</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: b73c9b33-16dc-b724-72d9-08ee770a8134</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.83s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: b262df9e-1be5-68be-a8ee-4e6de0f5b525</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Creatures/Ox/OX_Rig/_Construction/Ox_Rig_CINE_Idle_Deep_Breathing_01.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [24.17s-29s] | @ 24.17s | speaker 1 | Thinking (4)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [24.17s-29s] | @ 24.47s | peanut slot 0 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [24.17s-29s] | @ 24.59s | peanut slot 2 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [24.17s-29s] | @ 24.93s | peanut slot 1 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-45'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-51'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-51' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-51' aria-expanded='false' tabindex='0' data-detail-target='details-51' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>51.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Persuasion, Charisma, SkillCheck) DC 5 target=0 (Speaker 0)</span></span></span></span><div class='node-detail-panel' id='details-51' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line roll-line'><div class='signal-heading'><span class='signal-label'>roll</span></div><div class='signal-body'>Persuasion, Charisma, SkillCheck | dc=5 (Act1_VeryEasy) | speaker 0 Speaker 0</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: c312119f-4737-c6ae-9dab-00169c3eaddd</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h6aa3e25cg5834g4626gbca6g030f0d1547f1</span><span class='meta-item'><strong>Text UUID</strong>: d1bcd25e-a21c-ebe6-e929-adef032c14bc</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Difficulty Class UUID</strong>: 8d398021-34e0-40b9-b7b2-0445f38a4c0b</span><span class='meta-item'><strong>Difficulty Class Name</strong>: Act1_VeryEasy</span><span class='meta-item'><strong>Difficulty Class Value</strong>: 5</span><span class='meta-item'><strong>Exclude Companion Bonuses</strong>: False</span><span class='meta-item'><strong>Exclude Speaker Bonuses</strong>: False</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Persuasion</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-51' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-21'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-21' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-21' aria-expanded='false' tabindex='0' data-detail-target='details-21' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>21.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-21' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 635309dd-0d4d-ffbd-9626-b968109d521c</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-21' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-59'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-59' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-59' aria-expanded='false' tabindex='0' data-detail-target='details-59' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>59.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>No... you&#x27;re not. They were small like you, but uglier.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>Short</span></span></span></span><div class='node-detail-panel' id='details-59' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Is a small humanoid.|'>Short</span> <span class='asset-id'>{50e7beca-4e90-43cd-b7c5-c235e236077f}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: eb289246-d7c2-8f30-710b-0b15445aa5ea</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: ha4f476aeg8f28g4a9ag8faegf5df59fded9f</span><span class='meta-item'><strong>Text UUID</strong>: 3e2be761-420f-d866-f59e-d080c0dfea55</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 16</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: eb289246-d7c2-8f30-710b-0b15445aa5ea</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6.43s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: b262df9e-1be5-68be-a8ee-4e6de0f5b525</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Creatures/Ox/OX_Rig/_Construction/Ox_Rig_CINE_Idle_Deep_Breathing_01.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: 6dc4b982-bd42-2bed-f714-1276e2f6cfba</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Creatures/Ox/OX_Rig/_Construction/Ox_Rig_CINE_Idle_01.GR2</span></div></section></div></div></div><div class='node-branch' id='branch-59' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-65'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-65' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-65' aria-expanded='false' tabindex='0' data-detail-target='details-65' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>65.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>I was ready to run you through. My mistake, friend.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>PLA_Tavern_Ox_HasMet</span><span class='preview-token set'>PLA_Tavern_State_OxPacified</span><span class='preview-token set'>PLA_Tavern_Event_CancelOxHostility</span></span></span></span><div class='node-detail-panel' id='details-65' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='PLA_Tavern_Ox_HasMetdescription'>PLA_Tavern_Ox_HasMet</span> <span class='asset-id'>{6b67ca4c-981d-f905-2809-15791ff00efb}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='PLA_Tavern_State_OxPacifieddescription'>PLA_Tavern_State_OxPacified</span> <span class='asset-id'>{cc948928-15b4-2dd1-5fe4-11b5fa79d78f}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='Cancels any hostility from the ox towards the players.'>PLA_Tavern_Event_CancelOxHostility</span> <span class='asset-id'>{0254f6f1-88f7-4250-aa58-f9022b2cba40}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: ff3bc3f3-7fc3-383e-22ca-1cda8d209014</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h056b6f5bg51f2g45cdg8bf2g85c330c5b2ad</span><span class='meta-item'><strong>Text UUID</strong>: d5abf785-d3b5-3e39-c4b9-96445cb6f4ab</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 19</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: ff3bc3f3-7fc3-383e-22ca-1cda8d209014</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5.81s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-65' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-64'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-64' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-64' aria-expanded='false' tabindex='0' data-detail-target='details-64' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>64.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>It&#x27;s all right. What happened here?</span></span></span></span><div class='node-detail-panel' id='details-64' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: f9738712-bee0-6307-73e8-9ad752fa6b42</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h79ec497bg458fg429ag86a6gbe7773a5cc18</span><span class='meta-item'><strong>Text UUID</strong>: cfd73fe4-b2fd-397a-af6d-de340f1a5d90</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-64' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-22'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-22' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-22' aria-expanded='false' tabindex='0' data-detail-target='details-22' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>22.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>An attack. Monsters... little ones, and taller ones.</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Looks to the dead goblin - camera follows</span></span></span></span><div class='node-detail-panel' id='details-22' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Node is narration and should not have FaceFX applied'>Narration</span> <span class='asset-id'>{4cb0fac6-1396-46ff-8554-e64bc2635909}</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 74d395a2-2d23-1d4d-416f-2dfdfa63dd05</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hf633e221g2799g4548g9a35geb68dd9d4b2d</span><span class='meta-item'><strong>Text UUID</strong>: 43e0462e-227f-4c2f-55e7-9208f8370b7f</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 7</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 74d395a2-2d23-1d4d-416f-2dfdfa63dd05</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 9.27s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 739b6be7-6724-8b23-c8b3-263ee8f5b697</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_AttackOnDen_Mule2/Ox_Rig_SCENE_DEN_Bellow_01.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: 6dc4b982-bd42-2bed-f714-1276e2f6cfba</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Creatures/Ox/OX_Rig/_Construction/Ox_Rig_CINE_Idle_01.GR2</span><span class='meta-item'><strong>Group ID</strong>: 74d395a2-2d23-1d4d-416f-2dfdfa63dd05</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-22' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-5'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-5' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>5.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>They took the shiny one. He killed many.</span></span></span></span><div class='node-detail-panel' id='details-5' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 136b201d-a39d-6715-b92a-17b16edf7617</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h37cac454g82f6g4efag9857g3055a1679983</span><span class='meta-item'><strong>Text UUID</strong>: 8ddb786f-e52b-e212-801d-e41c64be2184</span><span class='meta-item'><strong>Group ID</strong>: 74d395a2-2d23-1d4d-416f-2dfdfa63dd05</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-19'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-19' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-19' aria-expanded='false' tabindex='0' data-detail-target='details-19' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>19.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Did you kill the goblin in the stable?</span></span></span></span><div class='node-detail-panel' id='details-19' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 607f54ac-acf2-34f4-a8e1-6d11d3419a52</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h28b3ee8dg0703g4b06gbed2gad4456d82753</span><span class='meta-item'><strong>Text UUID</strong>: e92687fd-10e5-3768-cbf3-a96fa43e07cd</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-19' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-42'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-42' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-42' aria-expanded='false' tabindex='0' data-detail-target='details-42' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>42.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Yes. It was screaming, waving around its metal.</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Front hoof stomps</span></span></span></span><div class='node-detail-panel' id='details-42' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Node is narration and should not have FaceFX applied'>Narration</span> <span class='asset-id'>{4cb0fac6-1396-46ff-8554-e64bc2635909}</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: a8b06eb2-b5a6-c2c5-84fd-265b17fab281</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h627d52d6g22e2g40bbg80a4g31cd35ec7036</span><span class='meta-item'><strong>Text UUID</strong>: ce6170ed-7928-5894-5d48-f6377c2c7174</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 15</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: a8b06eb2-b5a6-c2c5-84fd-265b17fab281</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 7.28s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: bbc5374a-6945-0144-ebef-f1624f5209bc</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_Tavern_OxAlive/Ox_Rig_SCENE_PLA_Stomps_Hoof_01.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: 6dc4b982-bd42-2bed-f714-1276e2f6cfba</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Creatures/Ox/OX_Rig/_Construction/Ox_Rig_CINE_Idle_01.GR2</span><span class='meta-item'><strong>Group ID</strong>: a8b06eb2-b5a6-c2c5-84fd-265b17fab281</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-42' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-55'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-55' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>55.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>I made him stop screaming.</span></span></span></span><div class='node-detail-panel' id='details-55' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: ddfec2a2-7c89-3d12-d7db-3a088fd83d2e</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hd5e06850g8cafg45e0gac71gab4e698f2cdb</span><span class='meta-item'><strong>Text UUID</strong>: e684777d-e72f-1487-ad3b-f3ab13cd1ef6</span><span class='meta-item'><strong>Group ID</strong>: a8b06eb2-b5a6-c2c5-84fd-265b17fab281</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-6'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-6' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-6' aria-expanded='false' tabindex='0' data-detail-target='details-6' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>6.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Do you know the dead ox outside?</span></span></span></span><div class='node-detail-panel' id='details-6' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 187ff0f0-81b9-7d90-9e12-7134924f4d4b</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h6b73ad22ge70ag45e4g9bbeg285d4bb391b8</span><span class='meta-item'><strong>Text UUID</strong>: df2e2d01-16c4-7f4f-38f7-6aeb2237ed09</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-6' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-49'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-49' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>49.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Him? He was the biggest. Now I&#x27;m the biggest.</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Lowers his head sadly</span></span></span></span><div class='node-detail-panel' id='details-49' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Node is narration and should not have FaceFX applied'>Narration</span> <span class='asset-id'>{4cb0fac6-1396-46ff-8554-e64bc2635909}</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: c140b7ad-2ccd-091e-73c7-05e643b5fb2c</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h94612714gb8a9g4f6dg9733gdb51bd1d3bd9</span><span class='meta-item'><strong>Text UUID</strong>: d11139f0-dfa4-e34c-efd1-cd1a5c3c71eb</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 12</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: c140b7ad-2ccd-091e-73c7-05e643b5fb2c</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5.79s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 6dc4b982-bd42-2bed-f714-1276e2f6cfba</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Creatures/Ox/OX_Rig/_Construction/Ox_Rig_CINE_Idle_01.GR2</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-37'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-37' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>37.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'><i>Leave.</i></span></span></span></span><div class='node-detail-panel' id='details-37' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 9dc8034e-8f66-5c98-f0fb-0bb0176142b5</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h08e4efe7g79c5g4ea7ga9bdg3c834c4a4401</span><span class='meta-item'><strong>Text UUID</strong>: 83c3f3c1-7acf-6100-38a1-135349b2a492</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-46'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-46' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-46' aria-expanded='false' tabindex='0' data-detail-target='details-46' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>46.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>No. You&#x27;re not one of them at all.</span></span></span></span><div class='node-detail-panel' id='details-46' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: b7cbb633-c71a-2eb8-a40c-78ebc046cfbe</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h2f621f63ga5e0g4905g93ffg126bcee8c802</span><span class='meta-item'><strong>Text UUID</strong>: 043c5cc2-5e79-68c1-601e-5c3758b2619d</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 13</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: b7cbb633-c71a-2eb8-a40c-78ebc046cfbe</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.24s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 6dc4b982-bd42-2bed-f714-1276e2f6cfba</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Creatures/Ox/OX_Rig/_Construction/Ox_Rig_CINE_Idle_01.GR2</span></div></section></div></div></div><div class='node-branch' id='branch-46' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-65'>Node 65</a> <span class='repeat-speaker speaker-label npc'>(Speaker 0)</span> <span class='dialog'>I was ready to run you through. My mistake, friend.</span></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-26'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-26' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-26' aria-expanded='false' tabindex='0' data-detail-target='details-26' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>26.</span><span class='dialog'>Failure</span></span></span></span><div class='node-detail-panel' id='details-26' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 7ba82bb1-93b1-c1ae-26b3-32608cbbfad8</span></div></section></div></div></div><div class='node-branch' id='branch-26' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-58'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-58' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>58.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>LIAR! DIE!</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>FactionHostileToPlayerGroupAfterDialog</span></span></span></span><div class='node-detail-panel' id='details-58' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='FactionHostileToPlayerGroupAfterDialogdescription'>FactionHostileToPlayerGroupAfterDialog</span> <span class='asset-id'>{d73ce44b-1b9a-2e02-f29a-d8e9e68c7edc}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: ea22a6fb-f2b9-3d1a-8ddb-bc8e3df54a38</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h2d5411dag52dfg4981ga60dg6f4705abbfb1</span><span class='meta-item'><strong>Text UUID</strong>: d66843ea-f00d-fca7-ab8b-cd5b41e038b4</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 25</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: ea22a6fb-f2b9-3d1a-8ddb-bc8e3df54a38</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 2.26s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: dfaf0aac-8c8e-2fec-e38e-1b243d48a3e4</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_Tavern_OxAlive/Ox_Rig_SCENE_PLA_Enraged_Charging_01.GR2</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-2'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-2' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-2' aria-expanded='false' tabindex='0' data-detail-target='details-2' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>2.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Intimidation, Charisma, SkillCheck) DC 5 target=0 (Speaker 0)</span></span></span></span><div class='node-detail-panel' id='details-2' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line roll-line'><div class='signal-heading'><span class='signal-label'>roll</span></div><div class='signal-body'>Intimidation, Charisma, SkillCheck | dc=5 (Act1_VeryEasy) | speaker 0 Speaker 0</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 04980098-517c-bac3-1049-b8df9879611c</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h72f64afcg5c85g44cag8df2g5d528ce0b380</span><span class='meta-item'><strong>Text UUID</strong>: 942af5df-8e33-df89-957d-8cd6f611c0a2</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Difficulty Class UUID</strong>: 8d398021-34e0-40b9-b7b2-0445f38a4c0b</span><span class='meta-item'><strong>Difficulty Class Name</strong>: Act1_VeryEasy</span><span class='meta-item'><strong>Difficulty Class Value</strong>: 5</span><span class='meta-item'><strong>Exclude Companion Bonuses</strong>: False</span><span class='meta-item'><strong>Exclude Speaker Bonuses</strong>: False</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Intimidation</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-2' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-61'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-61' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-61' aria-expanded='false' tabindex='0' data-detail-target='details-61' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>61.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-61' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: f1838483-a711-f0d4-cec4-7503f163cea4</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-61' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-52'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-52' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-52' aria-expanded='false' tabindex='0' data-detail-target='details-52' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>52.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>You&#x27;d give me a choice? Hm. You&#x27;re not like them.</span></span></span></span><div class='node-detail-panel' id='details-52' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: c8fe40e0-a4bb-5a9e-c21c-aed42b8eaaaa</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h3acd306bga78dg4c1bga773g20611c98dc35</span><span class='meta-item'><strong>Text UUID</strong>: b420b1ba-ba7b-66b9-f68c-0d6a53a931c3</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 10</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: c8fe40e0-a4bb-5a9e-c21c-aed42b8eaaaa</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6.07s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 6dc4b982-bd42-2bed-f714-1276e2f6cfba</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Creatures/Ox/OX_Rig/_Construction/Ox_Rig_CINE_Idle_01.GR2</span></div></section></div></div></div><div class='node-branch' id='branch-52' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-13'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-13' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>13.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-65'>Node 65</a></span></span></span></span><div class='node-detail-panel' id='details-13' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 456390e6-9a6a-9af6-942d-958cf4281dc6</span><span class='meta-item'><strong>Jump Target</strong>: Node 65 (ff3bc3f3-7fc3-383e-22ca-1cda8d209014)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-60'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-60' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-60' aria-expanded='false' tabindex='0' data-detail-target='details-60' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>60.</span><span class='dialog'>Failure</span></span></span></span><div class='node-detail-panel' id='details-60' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: ecf290c6-41d5-a428-64eb-85cd25285083</span></div></section></div></div></div><div class='node-branch' id='branch-60' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-17'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-17' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>17.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>NO! DIE!</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>FactionHostileToPlayerGroupAfterDialog</span></span></span></span><div class='node-detail-panel' id='details-17' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='FactionHostileToPlayerGroupAfterDialogdescription'>FactionHostileToPlayerGroupAfterDialog</span> <span class='asset-id'>{d73ce44b-1b9a-2e02-f29a-d8e9e68c7edc}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 593bfdfb-b3d2-41a9-aa42-95f53a193192</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h761d53dcgf6bfg418cg9474g70d0797da928</span><span class='meta-item'><strong>Text UUID</strong>: 47dccf58-e42a-a17e-b7f9-b7c150c2344d</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 23</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 593bfdfb-b3d2-41a9-aa42-95f53a193192</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 2.06s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: dfaf0aac-8c8e-2fec-e38e-1b243d48a3e4</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_Tavern_OxAlive/Ox_Rig_SCENE_PLA_Enraged_Charging_01.GR2</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-11'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-11' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-11' aria-expanded='false' tabindex='0' data-detail-target='details-11' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>11.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Persuasion, Charisma, SkillCheck) DC 5 target=0 (Speaker 0)</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>Druid</span></span></span></span><div class='node-detail-panel' id='details-11' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='A priest of the Old Faith, wielding the powers of nature and adopting animal forms.'>Druid</span> <span class='asset-id'>{44ac4317-4d38-4d28-80e2-94024c6e42f0}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line roll-line'><div class='signal-heading'><span class='signal-label'>roll</span></div><div class='signal-body'>Persuasion, Charisma, SkillCheck | dc=5 (Act1_VeryEasy) | speaker 0 Speaker 0</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 34c78a98-ca08-75e1-32ab-2605cf9f3209</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hea6b3430gf95fg4693gbc04g87fdabada98a</span><span class='meta-item'><strong>Text UUID</strong>: b4d13208-043d-7e5e-64ec-da9b894d367d</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Difficulty Class UUID</strong>: 8d398021-34e0-40b9-b7b2-0445f38a4c0b</span><span class='meta-item'><strong>Difficulty Class Name</strong>: Act1_VeryEasy</span><span class='meta-item'><strong>Difficulty Class Value</strong>: 5</span><span class='meta-item'><strong>Exclude Companion Bonuses</strong>: False</span><span class='meta-item'><strong>Exclude Speaker Bonuses</strong>: False</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Persuasion</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-11' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-8'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-8' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-8' aria-expanded='false' tabindex='0' data-detail-target='details-8' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>8.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-8' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 1c0a122f-dd0e-afe8-e377-5fee183ed6c4</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-8' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-41'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-41' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-41' aria-expanded='false' tabindex='0' data-detail-target='details-41' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>41.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>You speak to me? The monsters only scream.</span></span></span></span><div class='node-detail-panel' id='details-41' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: a6c6b42e-3901-b8fe-c7a9-4005ec839653</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: he66033b1g0039g4d0cgb636gba51fe99631b</span><span class='meta-item'><strong>Text UUID</strong>: d6bea82e-5c9a-67d0-91fe-61cb65c78d3b</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 14</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: a6c6b42e-3901-b8fe-c7a9-4005ec839653</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5.57s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 6dc4b982-bd42-2bed-f714-1276e2f6cfba</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Creatures/Ox/OX_Rig/_Construction/Ox_Rig_CINE_Idle_01.GR2</span></div></section></div></div></div><div class='node-branch' id='branch-41' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-4'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-4' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>4.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-65'>Node 65</a></span></span></span></span><div class='node-detail-panel' id='details-4' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 1095a5a4-6ffe-7e85-fc22-c39be0415e59</span><span class='meta-item'><strong>Jump Target</strong>: Node 65 (ff3bc3f3-7fc3-383e-22ca-1cda8d209014)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-36'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-36' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-36' aria-expanded='false' tabindex='0' data-detail-target='details-36' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>36.</span><span class='dialog'>Failure</span></span></span></span><div class='node-detail-panel' id='details-36' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 9a737708-9914-f557-bc2e-d0f1f6219c99</span></div></section></div></div></div><div class='node-branch' id='branch-36' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-39'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-39' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>39.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-58'>Node 58</a></span></span></span></span><div class='node-detail-panel' id='details-39' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: a3906383-05d6-0821-c77b-e5e6b54149f3</span><span class='meta-item'><strong>Jump Target</strong>: Node 58 (ea22a6fb-f2b9-3d1a-8ddb-bc8e3df54a38)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-34'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-34' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-34' aria-expanded='false' tabindex='0' data-detail-target='details-34' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>34.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Intimidation, Charisma, SkillCheck) DC 5 target=0 (Speaker 0)</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token rule'>Berserker</span><span class='preview-token check'>Barbarian</span></span></span></span><div class='node-detail-panel' id='details-34' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line rule-line'><div class='signal-heading'><span class='signal-label'>ruletag</span><span class='signal-scope'>type rule</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='A supplimentary Berserker tag for more primal lines.'>Berserker</span> <span class='asset-id'>{ac3449f7-c09b-4bc0-8634-fcff97d49279}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='They call you a savage, an animal. They don&#x27;t know what it&#x27;s like to need to fight, tooth and claw, just to survive. You do. '>Barbarian</span> <span class='asset-id'>{02913f9a-f696-40cf-acdf-32032afab32c}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line roll-line'><div class='signal-heading'><span class='signal-label'>roll</span></div><div class='signal-body'>Intimidation, Charisma, SkillCheck | dc=5 (Act1_VeryEasy) | speaker 0 Speaker 0</div></div></section><section class='section'><h3>Text</h3><div class='text-block'><h3>Variant 1</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='A supplimentary Berserker tag for more primal lines.'><code>Berserker</code></li></ul><div class='text-line'><b>BACK DOWN, BEAST.</b></div><div class='line-meta'><code>hf580eb93g93f6g45beg8b40g490070b78074</code> | <code>cddb2139-5b14-95ba-154a-153052df739d</code> | stub</div></div><div class='text-block'><h3>Variant 2</h3><div class='text-line'>Back down. <b>Or else.</b></div><div class='line-meta'><code>h5c8919c8g8389g49b8g93e5gbd81a4138438</code> | <code>463d5076-40d8-4a4e-b704-c8e6d563a13f</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 9363a4c1-e463-3b45-6165-381a616e99de</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text 1 Handle</strong>: hf580eb93g93f6g45beg8b40g490070b78074</span><span class='meta-item'><strong>Text 1 UUID</strong>: cddb2139-5b14-95ba-154a-153052df739d</span><span class='meta-item'><strong>Text 2 Handle</strong>: h5c8919c8g8389g49b8g93e5gbd81a4138438</span><span class='meta-item'><strong>Text 2 UUID</strong>: 463d5076-40d8-4a4e-b704-c8e6d563a13f</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Difficulty Class UUID</strong>: 8d398021-34e0-40b9-b7b2-0445f38a4c0b</span><span class='meta-item'><strong>Difficulty Class Name</strong>: Act1_VeryEasy</span><span class='meta-item'><strong>Difficulty Class Value</strong>: 5</span><span class='meta-item'><strong>Exclude Companion Bonuses</strong>: False</span><span class='meta-item'><strong>Exclude Speaker Bonuses</strong>: False</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Intimidation</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-34' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-63'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-63' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-63' aria-expanded='false' tabindex='0' data-detail-target='details-63' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>63.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-63' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: f7bdcba9-596e-605d-f604-721bd191972f</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-63' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-29'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-29' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>29.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-52'>Node 52</a></span></span></span></span><div class='node-detail-panel' id='details-29' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 83008d9b-0487-374c-d572-a85181671181</span><span class='meta-item'><strong>Jump Target</strong>: Node 52 (c8fe40e0-a4bb-5a9e-c21c-aed42b8eaaaa)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-10'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-10' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-10' aria-expanded='false' tabindex='0' data-detail-target='details-10' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>10.</span><span class='dialog'>Failure</span></span></span></span><div class='node-detail-panel' id='details-10' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 22fe6f2d-3b62-8e27-4918-dc65d2003168</span></div></section></div></div></div><div class='node-branch' id='branch-10' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-57'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-57' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>57.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-17'>Node 17</a></span></span></span></span><div class='node-detail-panel' id='details-57' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: e835f906-9c55-1562-f49e-b47b32b29961</span><span class='meta-item'><strong>Jump Target</strong>: Node 17 (593bfdfb-b3d2-41a9-aa42-95f53a193192)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-62'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-62' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>62.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'><i>Defend yourself.</i></span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>FactionHostileToPlayerGroupAfterDialog</span></span></span></span><div class='node-detail-panel' id='details-62' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='FactionHostileToPlayerGroupAfterDialogdescription'>FactionHostileToPlayerGroupAfterDialog</span> <span class='asset-id'>{d73ce44b-1b9a-2e02-f29a-d8e9e68c7edc}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: f69ca4b0-4247-e433-17db-493ff550743c</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h37700d2bg48a0g47e6g8a30g847e795c6beb</span><span class='meta-item'><strong>Text UUID</strong>: 8748443d-a276-9aaa-12eb-2850e8d54fb7</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-16'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-16' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>16.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*The creature turns a piece of cud around its mouth, chewing contentedly.*</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Just a chilling cow. </span></span><span class='preview-inline'><span class='preview-token check'>PLA_Tavern_State_OxPacified</span><span class='preview-token check'>1ae9dcd5-ff2b-db0a-44dc-ca2314c9bb33_AnimalHandlingSuccess</span><span class='preview-token check'>!Speak with Animals</span></span></span></span><div class='node-detail-panel' id='details-16' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker -666 Narrator</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Node is narration and should not have FaceFX applied'>Narration</span> <span class='asset-id'>{4cb0fac6-1396-46ff-8554-e64bc2635909}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='PLA_Tavern_State_OxPacifieddescription'>PLA_Tavern_State_OxPacified</span> <span class='asset-id'>{cc948928-15b4-2dd1-5fe4-11b5fa79d78f}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='1ae9dcd5-ff2b-db0a-44dc-ca2314c9bb33_AnimalHandlingSuccessdescription'>1ae9dcd5-ff2b-db0a-44dc-ca2314c9bb33_AnimalHandlingSuccess</span> <span class='asset-id'>{2ceaf519-8d48-429c-ee32-8a8d3488cc42}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Speak with Animals ability'>Speak with Animals</span> <span class='asset-id'>{dc860a81-f3c2-4c1a-ab90-e7583324845c}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 53e5fda1-fcf3-091e-a211-71225a1a1c8b</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: hb7b55059gc664g4ddcg886dg06cd46b20b22</span><span class='meta-item'><strong>Text UUID</strong>: 4a7b2880-4c62-8700-e0db-4f475de42d75</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 1</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 53e5fda1-fcf3-091e-a211-71225a1a1c8b</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: bd045d97-6c98-f0b9-a89a-9b7e74fd6eaf</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_General_Mule/Ox_Rig_SCENE_DEN_EatingInFeeder_01_LOOP.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [3.71s-8.71s] | @ 3.71s | speaker 1 | Thinking (4)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [3.71s-8.71s] | @ 3.97s | peanut slot 2 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [3.71s-8.71s] | @ 4.32s | peanut slot 1 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [3.71s-8.71s] | @ 4.39s | peanut slot 0 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-25'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-25' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>25.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>*Sniff.*</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token tag'>SFX_Only</span><span class='preview-token check'>PLA_Tavern_State_OxPacified</span><span class='preview-token check'>!Speak with Animals</span></span></span></span><div class='node-detail-panel' id='details-25' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|For dialogue nodes that are only SFX, no voice|'>SFX_Only</span> <span class='asset-id'>{450f4137-1a60-45e3-90cf-de9e182f3078}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='PLA_Tavern_State_OxPacifieddescription'>PLA_Tavern_State_OxPacified</span> <span class='asset-id'>{cc948928-15b4-2dd1-5fe4-11b5fa79d78f}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Speak with Animals ability'>Speak with Animals</span> <span class='asset-id'>{dc860a81-f3c2-4c1a-ab90-e7583324845c}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 7841e242-0e4c-40bf-9df8-fb270b3ded45</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h559121d0g743eg4c8bg96cfgceb4b2baafb9</span><span class='meta-item'><strong>Text UUID</strong>: 4af43cd0-7bd7-a34a-f394-adeb81865c33</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 3</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 7841e242-0e4c-40bf-9df8-fb270b3ded45</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: b262df9e-1be5-68be-a8ee-4e6de0f5b525</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Creatures/Ox/OX_Rig/_Construction/Ox_Rig_CINE_Idle_Deep_Breathing_01.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [11.52s-16.52s] | @ 11.73s | peanut slot 1 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [11.52s-16.52s] | @ 11.95s | peanut slot 2 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [11.52s-16.52s] | @ 12.33s | peanut slot 0 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [16.52s-19.17s] | @ 16.52s | speaker 1 | Thinking (4)</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-48'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-48' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-48' aria-expanded='true' tabindex='0' data-detail-target='details-48' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>48.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>*Grunt!*</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Front hoof clawing at the ground, ready to charge.</span></span><span class='preview-inline'><span class='preview-token tag'>SFX_Only</span><span class='preview-token check'>!PLA_Tavern_State_OxPacified</span><span class='preview-token check'>!Speak with Animals</span></span></span></span><div class='node-detail-panel' id='details-48' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|For dialogue nodes that are only SFX, no voice|'>SFX_Only</span> <span class='asset-id'>{450f4137-1a60-45e3-90cf-de9e182f3078}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='PLA_Tavern_State_OxPacifieddescription'>PLA_Tavern_State_OxPacified</span> <span class='asset-id'>{cc948928-15b4-2dd1-5fe4-11b5fa79d78f}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Speak with Animals ability'>Speak with Animals</span> <span class='asset-id'>{dc860a81-f3c2-4c1a-ab90-e7583324845c}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: bd7061b8-500d-78d9-641a-8620c45a4126</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h66b8564bg0cf0g4425g8781ge3ec3e867d96</span><span class='meta-item'><strong>Text UUID</strong>: 0c1b34a0-e7df-9819-b695-afb935350f03</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 5</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: bd7061b8-500d-78d9-641a-8620c45a4126</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 739b6be7-6724-8b23-c8b3-263ee8f5b697</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_AttackOnDen_Mule2/Ox_Rig_SCENE_DEN_Bellow_01.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [19.17s-24.17s] | @ 19.17s | speaker 1 | Thinking (4)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [19.17s-24.17s] | @ 19.72s | peanut slot 2 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [19.17s-24.17s] | @ 19.83s | peanut slot 1 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [19.17s-24.17s] | @ 20.02s | peanut slot 0 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-48'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-56'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-56' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-56' aria-expanded='false' tabindex='0' data-detail-target='details-56' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>56.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*The ox tenses, horns lowered in your direction.*</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Ready to charge</span></span></span></span><div class='node-detail-panel' id='details-56' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker -666 Narrator</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Node is narration and should not have FaceFX applied'>Narration</span> <span class='asset-id'>{4cb0fac6-1396-46ff-8554-e64bc2635909}</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: e5060e2b-1024-80cf-42ba-7f988d1a9256</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: h442fbe44gab45g447bgae94g6c7c11d8796d</span><span class='meta-item'><strong>Text UUID</strong>: 191e0fc8-e827-cc3a-32e4-904457761974</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 8</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: e5060e2b-1024-80cf-42ba-7f988d1a9256</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5.35s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: dfaf0aac-8c8e-2fec-e38e-1b243d48a3e4</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_Tavern_OxAlive/Ox_Rig_SCENE_PLA_Enraged_Charging_01.GR2</span></div></section></div></div></div><div class='node-branch' id='branch-56' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-1'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-1' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-1' aria-expanded='false' tabindex='0' data-detail-target='details-1' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>1.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'><i>Back away.</i></span></span></span></span><div class='node-detail-panel' id='details-1' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 0328e776-67c9-78a3-4f0e-f36fecc1695b</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h8576f786g6d63g4685gbfb2g9c6127eb2cde</span><span class='meta-item'><strong>Text UUID</strong>: 9ef5df6a-74c8-6d83-3233-ad2c313df7ee</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-1' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-38'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-38' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>38.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>*Bellow!*</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Charges.</span></span><span class='preview-inline'><span class='preview-token tag'>SFX_Only</span><span class='preview-token set'>FactionHostileToPlayerGroupAfterDialog</span></span></span></span><div class='node-detail-panel' id='details-38' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|For dialogue nodes that are only SFX, no voice|'>SFX_Only</span> <span class='asset-id'>{450f4137-1a60-45e3-90cf-de9e182f3078}</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='FactionHostileToPlayerGroupAfterDialogdescription'>FactionHostileToPlayerGroupAfterDialog</span> <span class='asset-id'>{d73ce44b-1b9a-2e02-f29a-d8e9e68c7edc}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 9e082e23-df7a-4825-4dab-bb48b3158440</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h4286c135gb895g48f6g9b8ag91835d71d450</span><span class='meta-item'><strong>Text UUID</strong>: db3348ba-479b-8831-56aa-ca83a9e3e0c5</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 20</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 9e082e23-df7a-4825-4dab-bb48b3158440</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.19s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: dfaf0aac-8c8e-2fec-e38e-1b243d48a3e4</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_Tavern_OxAlive/Ox_Rig_SCENE_PLA_Enraged_Charging_01.GR2</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-12'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-12' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-12' aria-expanded='false' tabindex='0' data-detail-target='details-12' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>12.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (AnimalHandling, Wisdom, SkillCheck) DC 10 target=0 (Speaker 0)</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!PLA_OxAlive_State_AnimalHandlingFailed</span></span></span></span><div class='node-detail-panel' id='details-12' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='PLA_OxAlive_State_AnimalHandlingFaileddescription'>PLA_OxAlive_State_AnimalHandlingFailed</span> <span class='asset-id'>{05bb6c6d-4517-7bee-8ba6-308722a3883b}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line roll-line'><div class='signal-heading'><span class='signal-label'>roll</span></div><div class='signal-body'>AnimalHandling, Wisdom, SkillCheck | dc=10 (Act1_Medium) | speaker 0 Speaker 0</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 4185961d-40ec-6d21-5710-9902ef782fa5</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h83d1f350ge515g4c1dgb5bcgde3ba4f591e1</span><span class='meta-item'><strong>Text UUID</strong>: 7da365a5-a68c-06b4-0775-afb0e1117167</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Wisdom</span><span class='meta-item'><strong>Difficulty Class UUID</strong>: fa621d38-6f83-4e42-a55c-6aa651a75d46</span><span class='meta-item'><strong>Difficulty Class Name</strong>: Act1_Medium</span><span class='meta-item'><strong>Difficulty Class Value</strong>: 10</span><span class='meta-item'><strong>Exclude Companion Bonuses</strong>: False</span><span class='meta-item'><strong>Exclude Speaker Bonuses</strong>: False</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: AnimalHandling</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-12' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-31'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-31' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-31' aria-expanded='false' tabindex='0' data-detail-target='details-31' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>31.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-31' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 8a2dae62-f8d7-f225-7937-e6b2c56a237e</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-31' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-53'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-53' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-53' aria-expanded='false' tabindex='0' data-detail-target='details-53' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>53.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*His hide twitches, every muscle primed to bolt. He&#x27;s <i>terrified</i>.*</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>1ae9dcd5-ff2b-db0a-44dc-ca2314c9bb33_AnimalHandlingSuccess</span></span></span></span><div class='node-detail-panel' id='details-53' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='1ae9dcd5-ff2b-db0a-44dc-ca2314c9bb33_AnimalHandlingSuccessdescription'>1ae9dcd5-ff2b-db0a-44dc-ca2314c9bb33_AnimalHandlingSuccess</span> <span class='asset-id'>{2ceaf519-8d48-429c-ee32-8a8d3488cc42}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: c95e9ce4-945a-65b0-7bfc-b16b09f2fd82</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: he9d09c78g43beg40c3gac7eg8d04c8292c6c</span><span class='meta-item'><strong>Text UUID</strong>: c416d380-372d-7090-30a2-e12b36ed28f4</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 9</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: c95e9ce4-945a-65b0-7bfc-b16b09f2fd82</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6.75s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 915f4adf-3ef1-45d1-5970-527174fb64bd</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_Tavern_OxAlive/Ox_Rig_SCENE_PLA_Calming_Down_01_IN.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: 6513e713-378f-9920-1337-f8fde687e96e</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_Tavern_OxAlive/Ox_Rig_SCENE_PLA_Calming_Down_01_LOOP.GR2</span></div></section></div></div></div><div class='node-branch' id='branch-53' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-33'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-33' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-33' aria-expanded='false' tabindex='0' data-detail-target='details-33' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>33.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Persuasion, Charisma, SkillCheck) DC 10 target=0 (Speaker 0)</span></span></span></span><div class='node-detail-panel' id='details-33' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line roll-line'><div class='signal-heading'><span class='signal-label'>roll</span></div><div class='signal-body'>Persuasion, Charisma, SkillCheck | dc=10 (Act1_Medium) | speaker 0 Speaker 0</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 8e3a7a10-4504-f9eb-c1ce-5bec5d8e8c60</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h53240a1fga539g4f19gb6e4g66bb13b88bb5</span><span class='meta-item'><strong>Text UUID</strong>: 4142bd99-d326-08ce-da9d-ab8c7d3fab0c</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Difficulty Class UUID</strong>: fa621d38-6f83-4e42-a55c-6aa651a75d46</span><span class='meta-item'><strong>Difficulty Class Name</strong>: Act1_Medium</span><span class='meta-item'><strong>Difficulty Class Value</strong>: 10</span><span class='meta-item'><strong>Exclude Companion Bonuses</strong>: False</span><span class='meta-item'><strong>Exclude Speaker Bonuses</strong>: False</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Persuasion</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-33' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-24'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-24' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-24' aria-expanded='false' tabindex='0' data-detail-target='details-24' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>24.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-24' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 75104de7-b034-0500-765d-bcfd31ef4621</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-24' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-43'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-43' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-43' aria-expanded='false' tabindex='0' data-detail-target='details-43' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>43.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*The ox calms, his tail swishing a satisfied arc.*</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>PLA_Tavern_Ox_HasMet</span><span class='preview-token set'>PLA_Tavern_State_OxPacified</span><span class='preview-token set'>PLA_Tavern_Event_CancelOxHostility</span></span></span></span><div class='node-detail-panel' id='details-43' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker -666 Narrator</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Node is narration and should not have FaceFX applied'>Narration</span> <span class='asset-id'>{4cb0fac6-1396-46ff-8554-e64bc2635909}</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='PLA_Tavern_Ox_HasMetdescription'>PLA_Tavern_Ox_HasMet</span> <span class='asset-id'>{6b67ca4c-981d-f905-2809-15791ff00efb}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='PLA_Tavern_State_OxPacifieddescription'>PLA_Tavern_State_OxPacified</span> <span class='asset-id'>{cc948928-15b4-2dd1-5fe4-11b5fa79d78f}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='Cancels any hostility from the ox towards the players.'>PLA_Tavern_Event_CancelOxHostility</span> <span class='asset-id'>{0254f6f1-88f7-4250-aa58-f9022b2cba40}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: aa392c2c-f931-bfec-b635-7c78d984d5aa</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: h52726958ge67bg4ed7ga8abgdd7804c9c538</span><span class='meta-item'><strong>Text UUID</strong>: 95c4688a-afe3-992b-8183-e2cedf1b9f31</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 18</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: aa392c2c-f931-bfec-b635-7c78d984d5aa</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 6dc4b982-bd42-2bed-f714-1276e2f6cfba</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Creatures/Ox/OX_Rig/_Construction/Ox_Rig_CINE_Idle_01.GR2</span></div></section></div></div></div><div class='node-branch' id='branch-43' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-14'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-14' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>14.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>*Moo.*</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token tag'>SFX_Only</span></span></span></span><div class='node-detail-panel' id='details-14' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|For dialogue nodes that are only SFX, no voice|'>SFX_Only</span> <span class='asset-id'>{450f4137-1a60-45e3-90cf-de9e182f3078}</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 48c7f833-6102-d147-f014-2d76f6f129a8</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h232c6946ge21fg44c7g928cg553f12638d57</span><span class='meta-item'><strong>Text UUID</strong>: cb83dfad-f44b-bd3c-cdc8-ef66004e403b</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 24</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 48c7f833-6102-d147-f014-2d76f6f129a8</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.74s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: e8e2aa7a-6cda-6fbe-128e-40e8aba599b1</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/DEN/DEN_General_Mule/Ox_Rig_SCENE_DEN_Moo_01.GR2</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-15'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-15' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-15' aria-expanded='false' tabindex='0' data-detail-target='details-15' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>15.</span><span class='dialog'>Failure</span></span></span></span><div class='node-detail-panel' id='details-15' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 5260f6ce-ec2e-dbca-dfec-dc75e909218d</span></div></section></div></div></div><div class='node-branch' id='branch-15' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-50'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-50' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-50' aria-expanded='false' tabindex='0' data-detail-target='details-50' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>50.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*You manage only to agitate him more.*</span></span></span></span><div class='node-detail-panel' id='details-50' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: c2efd93f-5090-e7f0-ec94-6315be7e4bb6</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: h860b81c7g5b4dg4fedg9226g10ff0d0abc92</span><span class='meta-item'><strong>Text UUID</strong>: 5d7c05f7-69ef-95c7-1e9a-08b51e688d11</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 11</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: c2efd93f-5090-e7f0-ec94-6315be7e4bb6</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.47s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: dfaf0aac-8c8e-2fec-e38e-1b243d48a3e4</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_Tavern_OxAlive/Ox_Rig_SCENE_PLA_Enraged_Charging_01.GR2</span></div></section></div></div></div><div class='node-branch' id='branch-50' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-28'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-28' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>28.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*His glassy eyes roll, wild with fear, as he begins to charge.*</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>CHARGE</span></span><span class='preview-inline'><span class='preview-token set'>FactionHostileToPlayerGroupAfterDialog</span></span></span></span><div class='node-detail-panel' id='details-28' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker -666 Narrator</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Node is narration and should not have FaceFX applied'>Narration</span> <span class='asset-id'>{4cb0fac6-1396-46ff-8554-e64bc2635909}</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='FactionHostileToPlayerGroupAfterDialogdescription'>FactionHostileToPlayerGroupAfterDialog</span> <span class='asset-id'>{d73ce44b-1b9a-2e02-f29a-d8e9e68c7edc}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 8158eac1-01a1-14be-06ec-15c191e2717d</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: hb39f4f44gf1d0g4f4dg98eag38db2c13a176</span><span class='meta-item'><strong>Text UUID</strong>: 00708e68-7e51-5275-ba9b-c26d09251ee6</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 21</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 8158eac1-01a1-14be-06ec-15c191e2717d</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6.31s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: b262df9e-1be5-68be-a8ee-4e6de0f5b525</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Creatures/Ox/OX_Rig/_Construction/Ox_Rig_CINE_Idle_Deep_Breathing_01.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: dfaf0aac-8c8e-2fec-e38e-1b243d48a3e4</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_Tavern_OxAlive/Ox_Rig_SCENE_PLA_Enraged_Charging_01.GR2</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-54'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-54' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-54' aria-expanded='false' tabindex='0' data-detail-target='details-54' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>54.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Intimidation, Charisma, SkillCheck) DC 10 target=0 (Speaker 0)</span></span></span></span><div class='node-detail-panel' id='details-54' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line roll-line'><div class='signal-heading'><span class='signal-label'>roll</span></div><div class='signal-body'>Intimidation, Charisma, SkillCheck | dc=10 (Act1_Medium) | speaker 0 Speaker 0</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: d213a35b-68e5-8de6-6f34-fbb7908c7667</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hfb9eef1bg52d1g4488g9936gc93e4f684522</span><span class='meta-item'><strong>Text UUID</strong>: 3a20c73d-c77a-b3f7-00f4-6b5b0f13d3ee</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Difficulty Class UUID</strong>: fa621d38-6f83-4e42-a55c-6aa651a75d46</span><span class='meta-item'><strong>Difficulty Class Name</strong>: Act1_Medium</span><span class='meta-item'><strong>Difficulty Class Value</strong>: 10</span><span class='meta-item'><strong>Exclude Companion Bonuses</strong>: False</span><span class='meta-item'><strong>Exclude Speaker Bonuses</strong>: False</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Intimidation</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-54' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-40'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-40' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-40' aria-expanded='false' tabindex='0' data-detail-target='details-40' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>40.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-40' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: a6a7520e-3638-b6ca-c3e5-af082fe4f801</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-40' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-35'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-35' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-35' aria-expanded='false' tabindex='0' data-detail-target='details-35' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>35.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*He huffs and, after a moment, appears to relax.*</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>PLA_Tavern_Ox_HasMet</span><span class='preview-token set'>PLA_Tavern_State_OxPacified</span><span class='preview-token set'>PLA_Tavern_Event_CancelOxHostility</span></span></span></span><div class='node-detail-panel' id='details-35' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker -666 Narrator</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Node is narration and should not have FaceFX applied'>Narration</span> <span class='asset-id'>{4cb0fac6-1396-46ff-8554-e64bc2635909}</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='PLA_Tavern_Ox_HasMetdescription'>PLA_Tavern_Ox_HasMet</span> <span class='asset-id'>{6b67ca4c-981d-f905-2809-15791ff00efb}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='PLA_Tavern_State_OxPacifieddescription'>PLA_Tavern_State_OxPacified</span> <span class='asset-id'>{cc948928-15b4-2dd1-5fe4-11b5fa79d78f}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='Cancels any hostility from the ox towards the players.'>PLA_Tavern_Event_CancelOxHostility</span> <span class='asset-id'>{0254f6f1-88f7-4250-aa58-f9022b2cba40}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 99675150-f9c7-b15b-a5c6-38e654f0a785</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: h45785600gf801g488eg8617g07048a377cd4</span><span class='meta-item'><strong>Text UUID</strong>: 780c42ba-d39d-39a8-d551-d670e911e033</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 17</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 99675150-f9c7-b15b-a5c6-38e654f0a785</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 1d56ae80-38c6-8392-275e-493661bfea22</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_Tavern_OxAlive/Ox_Rig_SCENE_PLA_Frightened.GR2</span></div></section></div></div></div><div class='node-branch' id='branch-35' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-14'>Node 14</a> <span class='repeat-speaker speaker-label npc'>(Speaker 0)</span> <span class='dialog'>*Moo.*</span></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='repeat'>See <a href='#node-15'>Node 15</a> <span class='dialog'>Failure</span></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-47'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-47' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-47' aria-expanded='false' tabindex='0' data-detail-target='details-47' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>47.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Performance, Charisma, SkillCheck) DC 5 target=0 (Speaker 0)</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token rule'>Berserker</span><span class='preview-token check'>Barbarian</span></span></span></span><div class='node-detail-panel' id='details-47' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line rule-line'><div class='signal-heading'><span class='signal-label'>ruletag</span><span class='signal-scope'>type rule</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='A supplimentary Berserker tag for more primal lines.'>Berserker</span> <span class='asset-id'>{ac3449f7-c09b-4bc0-8634-fcff97d49279}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='They call you a savage, an animal. They don&#x27;t know what it&#x27;s like to need to fight, tooth and claw, just to survive. You do. '>Barbarian</span> <span class='asset-id'>{02913f9a-f696-40cf-acdf-32032afab32c}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line roll-line'><div class='signal-heading'><span class='signal-label'>roll</span></div><div class='signal-body'>Performance, Charisma, SkillCheck | dc=5 (Act1_VeryEasy) | speaker 0 Speaker 0</div></div></section><section class='section'><h3>Text</h3><div class='text-block'><h3>Variant 1</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='A supplimentary Berserker tag for more primal lines.'><code>Berserker</code></li></ul><div class='text-line'><b><i>Stare down the beast.</i></b></div><div class='line-meta'><code>h19ac48b6g7d86g4646gbcb6g74ba9d3e7eee</code> | <code>2f397eff-df26-4019-89ef-967ec0c51843</code> | stub</div></div><div class='text-block'><h3>Variant 2</h3><div class='text-line'><i>Stare him down, as you have so many beasts in the wild.</i></div><div class='line-meta'><code>h47039087g15e6g4963gb1fbgf973619ea50a</code> | <code>873b75ee-c18a-9afa-d9dd-52f0efdeb8a0</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: b91335ee-86af-799f-56ae-3c6466dd48bc</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h19ac48b6g7d86g4646gbcb6g74ba9d3e7eee</span><span class='meta-item'><strong>Text 1 UUID</strong>: 2f397eff-df26-4019-89ef-967ec0c51843</span><span class='meta-item'><strong>Text 2 Handle</strong>: h47039087g15e6g4963gb1fbgf973619ea50a</span><span class='meta-item'><strong>Text 2 UUID</strong>: 873b75ee-c18a-9afa-d9dd-52f0efdeb8a0</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Difficulty Class UUID</strong>: 8d398021-34e0-40b9-b7b2-0445f38a4c0b</span><span class='meta-item'><strong>Difficulty Class Name</strong>: Act1_VeryEasy</span><span class='meta-item'><strong>Difficulty Class Value</strong>: 5</span><span class='meta-item'><strong>Exclude Companion Bonuses</strong>: False</span><span class='meta-item'><strong>Exclude Speaker Bonuses</strong>: False</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Performance</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-47' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-40'>Node 40</a> <span class='dialog'>Success</span></div></li><li class='node-item'><div class='repeat'>See <a href='#node-15'>Node 15</a> <span class='dialog'>Failure</span></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-3'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-3' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-3' aria-expanded='false' tabindex='0' data-detail-target='details-3' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>3.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Performance, Charisma, SkillCheck) DC 5 target=0 (Speaker 0)</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token rule'>Druid</span><span class='preview-token rule'>Ranger</span></span></span></span><div class='node-detail-panel' id='details-3' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line rule-line'><div class='signal-heading'><span class='signal-label'>ruletag</span><span class='signal-scope'>type rule</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='A priest of the Old Faith, wielding the powers of nature and adopting animal forms.'>Druid</span> <span class='asset-id'>{44ac4317-4d38-4d28-80e2-94024c6e42f0}</span></li><li class='signal-item'><span class='asset-name' title='A warrior who uses martial prowess and nature magic to combat threats on the edges of civilization.'>Ranger</span> <span class='asset-id'>{37a733c1-a862-4157-b92a-9cff46232c6a}</span></li></ul></div><div class='signal-line roll-line'><div class='signal-heading'><span class='signal-label'>roll</span></div><div class='signal-body'>Performance, Charisma, SkillCheck | dc=5 (Act1_VeryEasy) | speaker 0 Speaker 0</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 065343d4-f402-9dbc-ffac-6757ff9a8dcf</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: ha3bc6ddeg2e78g4f5cg8577g911c22b15a5f</span><span class='meta-item'><strong>Text UUID</strong>: 5438b8aa-5763-4e44-720f-ba60ce3eddab</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Difficulty Class UUID</strong>: 8d398021-34e0-40b9-b7b2-0445f38a4c0b</span><span class='meta-item'><strong>Difficulty Class Name</strong>: Act1_VeryEasy</span><span class='meta-item'><strong>Difficulty Class Value</strong>: 5</span><span class='meta-item'><strong>Exclude Companion Bonuses</strong>: False</span><span class='meta-item'><strong>Exclude Speaker Bonuses</strong>: False</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Performance</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-3' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-24'>Node 24</a> <span class='dialog'>Success</span></div></li><li class='node-item'><div class='repeat'>See <a href='#node-15'>Node 15</a> <span class='dialog'>Failure</span></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-7'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-7' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-7' aria-expanded='false' tabindex='0' data-detail-target='details-7' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>7.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'><i>Attack first.</i></span></span></span></span><div class='node-detail-panel' id='details-7' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 1b6ab9b4-8411-94eb-01bf-150d50932705</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h3765fab3g241fg4914g8b1eg5e021f284e24</span><span class='meta-item'><strong>Text UUID</strong>: 1d22f25a-2ebb-bd09-bb41-69f99147e5bc</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-7' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-44'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-44' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>44.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-28'>Node 28</a></span></span></span></span><div class='node-detail-panel' id='details-44' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: adb92ed9-23a9-387b-92bc-477f12734e68</span><span class='meta-item'><strong>Jump Target</strong>: Node 28 (8158eac1-01a1-14be-06ec-15c191e2717d)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-30'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-30' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-30' aria-expanded='false' tabindex='0' data-detail-target='details-30' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>30.</span><span class='dialog'>Failure</span></span></span></span><div class='node-detail-panel' id='details-30' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 84d51883-6843-f8f4-c2aa-822fcef3620b</span></div></section></div></div></div><div class='node-branch' id='branch-30' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-23'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-23' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>23.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*You gather nothing from his intense stare.*</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Ox charges.</span></span><span class='preview-inline'><span class='preview-token set'>PLA_OxAlive_State_AnimalHandlingFailed</span></span></span></span><div class='node-detail-panel' id='details-23' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='PLA_OxAlive_State_AnimalHandlingFaileddescription'>PLA_OxAlive_State_AnimalHandlingFailed</span> <span class='asset-id'>{05bb6c6d-4517-7bee-8ba6-308722a3883b}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 74d7fe7a-6262-76a1-2eb6-26daa1b065ef</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: h146ba09eg7474g4ab4gac16gfd5e835fd8bd</span><span class='meta-item'><strong>Text UUID</strong>: 9f878ae8-5fa6-2461-2051-a140fddd94bb</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 22</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 74d7fe7a-6262-76a1-2eb6-26daa1b065ef</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 2.72s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 6513e713-378f-9920-1337-f8fde687e96e</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_Tavern_OxAlive/Ox_Rig_SCENE_PLA_Calming_Down_01_LOOP.GR2</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-20'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-20' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>20.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'><i>Defend yourself.</i></span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>FactionHostileToPlayerGroupAfterDialog</span></span></span></span><div class='node-detail-panel' id='details-20' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='FactionHostileToPlayerGroupAfterDialogdescription'>FactionHostileToPlayerGroupAfterDialog</span> <span class='asset-id'>{d73ce44b-1b9a-2e02-f29a-d8e9e68c7edc}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 61408171-7ec5-981b-594b-429c00753929</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h7b4ccffag5524g488fga6ccg2fb9d7d4b315</span><span class='meta-item'><strong>Text UUID</strong>: 5b4a11bb-ee76-19c5-133a-2577b4013c04</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul>
+        
+      </div>
+    </section>
+  </div>
+  <div class="tree-scrollbar-proxy" hidden>
+    <div class="tree-scrollbar-proxy-inner"></div>
+  </div>
+  <script>
+    function getNodeDetailPanel(shell) {
+      if (!shell) {
+        return null;
+      }
+      const content = shell.querySelector(":scope > .node-row > .node-content");
+      if (!content) {
+        return null;
+      }
+      return Array.from(content.children).find((child) => child.classList && child.classList.contains("node-detail-panel")) || null;
+    }
+    function getNodeDetailToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-detail-target]");
+    }
+    function getNodeBranchToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-branch-target]");
+    }
+    function getNodeBranchMarker(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .tree-toggle-marker[data-branch-target]");
+    }
+    const jumpHighlightTimers = new WeakMap();
+    const nodeSummaryClickTimers = new WeakMap();
+    const NODE_DETAIL_DOUBLE_CLICK_MS = 160;
+    const SUPPORTS_UNTIL_FOUND = document.documentElement.classList.contains("supports-until-found");
+    const treeShell = document.querySelector(".tree-shell");
+    const treeShellInner = treeShell ? treeShell.querySelector(".tree-shell-inner") : null;
+    const treeScrollbarProxy = document.querySelector(".tree-scrollbar-proxy");
+    const treeScrollbarProxyInner = treeScrollbarProxy
+      ? treeScrollbarProxy.querySelector(".tree-scrollbar-proxy-inner")
+      : null;
+    let syncingTreeScroll = false;
+    let syncingProxyScroll = false;
+    if (!SUPPORTS_UNTIL_FOUND) {
+      document.querySelectorAll("[hidden='until-found']").forEach((element) => {
+        element.setAttribute("hidden", "");
+      });
+    }
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+    function hideCollapsible(target) {
+      if (!target) {
+        return;
+      }
+      if (SUPPORTS_UNTIL_FOUND) {
+        target.setAttribute("hidden", "until-found");
+        return;
+      }
+      target.setAttribute("hidden", "");
+    }
+    function setToggleButtonState(button, active) {
+      if (!button) {
+        return;
+      }
+      button.classList.toggle("is-active", active);
+      const hideLabel = button.dataset.hideLabel;
+      const showLabel = button.dataset.showLabel;
+      if (hideLabel && showLabel) {
+        button.textContent = active ? showLabel : hideLabel;
+      }
+    }
+    function syncAllDetailsToggle() {
+      const button = document.querySelector("button[data-toggle-details='all']");
+      if (!button) {
+        return;
+      }
+      const panels = Array.from(document.querySelectorAll(".node-detail-panel"));
+      const allOpen = panels.length > 0 && panels.every((panel) => !panel.hasAttribute("hidden"));
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function syncAllBranchesToggle() {
+      const button = document.querySelector("button[data-toggle-branches='all']");
+      if (!button) {
+        return;
+      }
+      const branchMarkers = Array.from(document.querySelectorAll(".tree-toggle-marker[data-branch-target]"));
+      const allOpen = branchMarkers.length > 0 && branchMarkers.every((marker) => marker.dataset.branchExpanded === "true");
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function updateTreeScrollbarProxy() {
+      if (!treeShell || !treeShellInner || !treeScrollbarProxy || !treeScrollbarProxyInner) {
+        return;
+      }
+      const contentWidth = treeShellInner.scrollWidth;
+      const viewportWidth = treeShell.clientWidth;
+      const needsProxy = contentWidth > viewportWidth + 1;
+      if (!needsProxy) {
+        treeScrollbarProxy.hidden = true;
+        return;
+      }
+      const rect = treeShell.getBoundingClientRect();
+      treeScrollbarProxy.hidden = false;
+      treeScrollbarProxy.style.left = `${Math.max(0, rect.left)}px`;
+      treeScrollbarProxy.style.width = `${Math.max(0, rect.width)}px`;
+      treeScrollbarProxyInner.style.width = `${contentWidth}px`;
+      if (!syncingTreeScroll && Math.abs(treeScrollbarProxy.scrollLeft - treeShell.scrollLeft) > 1) {
+        syncingProxyScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingProxyScroll = false;
+      }
+    }
+    function resetTreeScrollToStart() {
+      document.querySelectorAll(".tree-shell").forEach((shell) => {
+        shell.scrollLeft = 0;
+      });
+      if (treeScrollbarProxy) {
+        treeScrollbarProxy.scrollLeft = 0;
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setBranchOpen(control, openState, syncState = true) {
+      if (!control) {
+        return;
+      }
+      const targetId = control.dataset.branchTarget;
+      const target = targetId ? document.getElementById(targetId) : null;
+      if (!target) {
+        return;
+      }
+      const shell = control.closest(".node-shell");
+      const marker = shell ? getNodeBranchMarker(shell) : null;
+      const summary = shell ? getNodeBranchToggle(shell) : null;
+      if (openState) {
+        target.removeAttribute("hidden");
+      } else {
+        hideCollapsible(target);
+      }
+      if (marker) {
+        marker.dataset.branchExpanded = openState ? "true" : "false";
+        marker.textContent = openState ? "-" : "+";
+      }
+      if (summary) {
+        summary.setAttribute("aria-expanded", openState ? "true" : "false");
+      }
+      if (syncState) {
+        syncAllBranchesToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setDetailOpen(shell, openState, syncState = true) {
+      const panel = getNodeDetailPanel(shell);
+      const toggle = getNodeDetailToggle(shell);
+      if (!panel) {
+        return;
+      }
+      if (openState) {
+        panel.removeAttribute("hidden");
+      } else {
+        hideCollapsible(panel);
+      }
+      if (toggle) {
+        toggle.dataset.detailExpanded = openState ? "true" : "false";
+      }
+      if (syncState) {
+        syncAllDetailsToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setAllBranches(openState) {
+      document.querySelectorAll(".tree-toggle-marker[data-branch-target]").forEach((marker) => { setBranchOpen(marker, openState, false); });
+      syncAllBranchesToggle();
+    }
+    function setAllNodeDetails(openState) {
+      document.querySelectorAll(".node-shell").forEach((shell) => {
+        if (getNodeDetailPanel(shell)) {
+          setDetailOpen(shell, openState, false);
+        }
+      });
+      syncAllDetailsToggle();
+    }
+    function openParents(target) {
+      let current = target;
+      while (current) {
+        if (current.classList && current.classList.contains("node-branch")) {
+          const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${current.id}"]`);
+          setBranchOpen(marker, true);
+        }
+        current = current.parentElement;
+      }
+    }
+    function highlightJumpTarget(target) {
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      if (!shell) {
+        return;
+      }
+      const existingTimer = jumpHighlightTimers.get(shell);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+      shell.classList.add("jump-highlight");
+      const timeoutId = window.setTimeout(() => {
+        shell.classList.remove("jump-highlight");
+        jumpHighlightTimers.delete(shell);
+      }, 5000);
+      jumpHighlightTimers.set(shell, timeoutId);
+    }
+    function getStickyScrollOffset() {
+      const toolbar = document.querySelector(".toolbar");
+      if (!toolbar) {
+        return 8;
+      }
+      return Math.ceil(toolbar.getBoundingClientRect().height) + 8;
+    }
+    function scrollNodeTargetIntoView(target) {
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      const scrollTarget = shell || target;
+      if (!scrollTarget) {
+        return;
+      }
+      const offset = getStickyScrollOffset();
+      const top = window.scrollY + scrollTarget.getBoundingClientRect().top - offset;
+      window.scrollTo({ top: Math.max(0, top), behavior: "auto" });
+    }
+    function revealAndFocusNodeTarget(target, href = "") {
+      if (!target) {
+        return;
+      }
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      openParents(shell || target);
+      if (href) {
+        history.replaceState(null, "", href);
+      }
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollNodeTargetIntoView(target);
+          highlightJumpTarget(target);
+          updateTreeScrollbarProxy();
+        });
+      });
+    }
+    if (treeShell && treeScrollbarProxy) {
+      treeShell.addEventListener("scroll", () => {
+        if (syncingProxyScroll) {
+          return;
+        }
+        syncingTreeScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingTreeScroll = false;
+      });
+      treeScrollbarProxy.addEventListener("scroll", () => {
+        if (syncingTreeScroll) {
+          return;
+        }
+        syncingProxyScroll = true;
+        treeShell.scrollLeft = treeScrollbarProxy.scrollLeft;
+        syncingProxyScroll = false;
+      });
+    }
+    document.addEventListener("click", (event) => {
+      const allBranchesButton = event.target.closest("button[data-toggle-branches='all']");
+      if (allBranchesButton) {
+        const isOpen = allBranchesButton.dataset.active === "true";
+        setAllBranches(!isOpen);
+        return;
+      }
+      const allDetailsButton = event.target.closest("button[data-toggle-details='all']");
+      if (allDetailsButton) {
+        const isOpen = allDetailsButton.dataset.active === "true";
+        setAllNodeDetails(!isOpen);
+        return;
+      }
+      const button = event.target.closest("button[data-toggle-class]");
+      if (button) {
+        const active = document.body.classList.toggle(button.dataset.toggleClass);
+        setToggleButtonState(button, active);
+        return;
+      }
+      const link = event.target.closest("a[href^='#node-']");
+      if (link) {
+        event.preventDefault();
+        const target = document.querySelector(link.getAttribute("href"));
+        if (target) {
+          revealAndFocusNodeTarget(target, link.getAttribute("href"));
+        }
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (summary) {
+        const branchTarget = summary.dataset.branchTarget;
+        const shell = summary.closest(".node-shell");
+        if (!shell) {
+          return;
+        }
+        if (!branchTarget) {
+          if (summary.dataset.detailTarget) {
+            const isOpen = summary.dataset.detailExpanded === "true";
+            setDetailOpen(shell, !isOpen);
+          }
+          return;
+        }
+        const existingTimer = nodeSummaryClickTimers.get(summary);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+          nodeSummaryClickTimers.delete(summary);
+          event.preventDefault();
+          const isOpen = summary.dataset.detailExpanded === "true";
+          setDetailOpen(shell, !isOpen);
+          return;
+        }
+        const timerId = window.setTimeout(() => {
+          nodeSummaryClickTimers.delete(summary);
+          const isOpen = summary.getAttribute("aria-expanded") === "true";
+          setBranchOpen(summary, !isOpen);
+          if (isOpen) {
+            const panel = getNodeDetailPanel(shell);
+            if (panel && !panel.hasAttribute("hidden")) {
+              setDetailOpen(shell, false);
+            }
+          }
+        }, NODE_DETAIL_DOUBLE_CLICK_MS);
+        nodeSummaryClickTimers.set(summary, timerId);
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (!summary) {
+        return;
+      }
+      event.preventDefault();
+      const shell = summary.closest(".node-shell");
+      if (!shell) {
+        return;
+      }
+      if (summary.dataset.branchTarget) {
+        const isOpen = summary.getAttribute("aria-expanded") === "true";
+        setBranchOpen(summary, !isOpen);
+        if (isOpen) {
+          const panel = getNodeDetailPanel(shell);
+          if (panel && !panel.hasAttribute("hidden")) {
+            setDetailOpen(shell, false);
+          }
+        }
+        return;
+      }
+      if (summary.dataset.detailTarget) {
+        const isOpen = summary.dataset.detailExpanded === "true";
+        setDetailOpen(shell, !isOpen);
+      }
+    });
+    document.addEventListener("beforematch", (event) => {
+      const branch = event.target.closest(".node-branch");
+      if (branch && branch.id) {
+        const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${branch.id}"]`);
+        setBranchOpen(marker, true);
+      }
+      const panel = event.target.closest(".node-detail-panel");
+      if (panel) {
+        const shell = panel.closest(".node-shell");
+        if (shell) {
+          openParents(shell);
+          setDetailOpen(shell, true);
+        }
+      }
+    });
+    document.querySelectorAll("button[data-toggle-class]").forEach((button) => {
+      const active = document.body.classList.contains(button.dataset.toggleClass);
+      setToggleButtonState(button, active);
+    });
+    if (window.ResizeObserver && treeShell) {
+      const observer = new ResizeObserver(() => {
+        updateTreeScrollbarProxy();
+      });
+      observer.observe(treeShell);
+      if (treeShellInner) {
+        observer.observe(treeShellInner);
+      }
+    }
+    window.addEventListener("resize", updateTreeScrollbarProxy);
+    window.addEventListener("scroll", updateTreeScrollbarProxy, { passive: true });
+    window.addEventListener("pageshow", () => {
+      if (window.location.hash) {
+        updateTreeScrollbarProxy();
+        return;
+      }
+      resetTreeScrollToStart();
+      window.requestAnimationFrame(() => {
+        resetTreeScrollToStart();
+      });
+      window.setTimeout(() => {
+        resetTreeScrollToStart();
+      }, 0);
+    });
+    syncAllBranchesToggle();
+    document.querySelectorAll("button[data-toggle-details='all']").forEach((button) => {
+      const active = button.dataset.active === "true";
+      setToggleButtonState(button, active);
+    });
+    updateTreeScrollbarProxy();
+    if (window.location.hash) {
+      const target = document.querySelector(window.location.hash);
+      if (target) {
+        revealAndFocusNodeTarget(target, window.location.hash);
+      }
+    }
+  </script>
+  <script data-search-target-line>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const targetLine = params.get("line");
+      const targetHash = window.location.hash;
+
+      if (!targetLine || !targetHash) {
+        return;
+      }
+
+      const targetShell = document.querySelector(targetHash);
+      if (!targetShell) {
+        return;
+      }
+
+      if (typeof openParents === "function") {
+        openParents(targetShell);
+      }
+      if (typeof setDetailOpen === "function") {
+        setDetailOpen(targetShell, true);
+      }
+
+      const normalize = (value) =>
+        (value || "")
+          .toLowerCase()
+          .normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      const normalizedTargetLine = normalize(targetLine);
+      if (!normalizedTargetLine) {
+        return;
+      }
+
+      const lineElements = Array.from(targetShell.querySelectorAll(".text-line"));
+      const matchingLine = lineElements.find((element) => {
+        const lineText = normalize(element.textContent);
+        return (
+          lineText === normalizedTargetLine ||
+          lineText.includes(normalizedTargetLine) ||
+          normalizedTargetLine.includes(lineText)
+        );
+      });
+
+      if (!matchingLine) {
+        return;
+      }
+
+      matchingLine.classList.add("search-target-line");
+      requestAnimationFrame(() => {
+        matchingLine.scrollIntoView({ block: "center" });
+      });
+    })();
+  </script>
+</body>
+</html>

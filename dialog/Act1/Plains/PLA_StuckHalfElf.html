@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PLA_StuckHalfElf</title>
+  <script>
+    (function () {
+      const probe = document.createElement("div");
+      const supportsUntilFound = "onbeforematch" in probe;
+      document.documentElement.classList.add(
+        supportsUntilFound ? "supports-until-found" : "no-until-found"
+      );
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #182330;
+      --muted: #586477;
+      --line: #c7d2df;
+      --npc: #b91c1c;
+      --player: #15803d;
+      --system: #2563eb;
+      --rule: #2f6f44;
+      --tag: #0f766e;
+      --check: #7c3aed;
+      --set: #ea580c;
+      --roll: #6d28d9;
+      --approval: #0f766e;
+      --jump: #155eef;
+      --context: #475467;
+      --surface: #f3f6fa;
+      --surface-active: #e6edf5;
+      --surface-hover: #edf3f9;
+      --detail-surface: #e3ebf4;
+      --detail-border: #b4c2d4;
+      --focus: #90a4bc;
+      --highlight: #d9e5f5;
+      --scrollbar-proxy-bg: rgba(255, 255, 255, 0.94);
+      --mono: Consolas, "SFMono-Regular", Menlo, monospace;
+      --sans: Georgia, "Palatino Linotype", serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #fff;
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.35;
+      overflow-x: hidden;
+    }
+    a { color: var(--jump); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: none;
+      padding: 0;
+      border-radius: 0;
+    }
+    .page {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0.55rem 0.9rem 1.8rem;
+      overflow-x: hidden;
+    }
+    .hero {
+      margin-bottom: 0.55rem;
+    }
+    .hero h1 {
+      margin: 0 0 0.2rem;
+      font-size: 1.4rem;
+      line-height: 1.15;
+    }
+    .source {
+      color: var(--muted);
+      font-size: 0.9rem;
+      word-break: break-all;
+      margin-bottom: 0.2rem;
+    }
+    .source-label {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.3rem;
+    }
+    .summary-line {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 0.35rem;
+    }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.45rem;
+      margin-bottom: 0.45rem;
+      padding: 0.35rem 0;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      overflow: visible;
+    }
+    .toolbar-scroll {
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: calc(100% - 7rem);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+    }
+    .controls {
+      display: inline-flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0.45rem;
+      white-space: nowrap;
+      font-size: 0.9rem;
+      min-width: max-content;
+      overflow: visible;
+    }
+    .controls button,
+    .controls summary,
+    .speaker-map > summary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 1.85rem;
+      padding: 0.12rem 0.5rem;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: var(--surface);
+      color: var(--jump);
+      font: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      list-style: none;
+      user-select: none;
+    }
+    .controls button.is-active,
+    .controls details[open] > summary,
+    .speaker-map[open] > summary {
+      background: var(--surface-active);
+      border-color: var(--focus);
+    }
+    .controls button:hover,
+    .controls summary:hover,
+    .speaker-map > summary:hover {
+      background: var(--surface-hover);
+      text-decoration: none;
+    }
+    .controls summary:focus,
+    .controls button:focus,
+    .speaker-map > summary:focus {
+      outline: 1px solid var(--focus);
+      outline-offset: 1px;
+    }
+    .speaker-map {
+      flex: 0 0 auto;
+      position: relative;
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .speaker-map summary,
+    .meta-block summary {
+      cursor: pointer;
+      color: var(--jump);
+      list-style: none;
+    }
+    .speaker-map summary::-webkit-details-marker,
+    .meta-block summary::-webkit-details-marker {
+      display: none;
+    }
+    .speaker-map[open] ul {
+      display: block;
+    }
+    .speaker-map ul {
+      display: none;
+      list-style: none;
+      margin: 0.3rem 0 0;
+      padding: 0.45rem 0.6rem;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 0.2rem);
+      min-width: 20rem;
+      max-width: min(34rem, calc(100vw - 2rem));
+      max-height: 24rem;
+      overflow: auto;
+      background: #fbfcfe;
+      border: 1px solid var(--line);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+      z-index: 30;
+    }
+    .speaker-map li + li {
+      margin-top: 0.1rem;
+    }
+    .speaker-index {
+      display: inline-block;
+      min-width: 2rem;
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 600;
+    }
+    .speaker-name {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.25rem;
+    }
+    .inline-meta, .line-meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .tree-shell {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: visible;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-shell-inner {
+      width: max-content;
+      min-width: 100%;
+    }
+    .tree-scrollbar-proxy {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 1.1rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      background: var(--scrollbar-proxy-bg);
+      border-top: 1px solid var(--line);
+      z-index: 40;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-scrollbar-proxy[hidden] {
+      display: none;
+    }
+    .tree-scrollbar-proxy-inner {
+      height: 1px;
+    }
+    .orphan-section {
+      width: auto;
+      min-width: 0;
+      margin-top: 1rem;
+      padding-top: 0.55rem;
+      border-top: 1px dotted var(--line);
+    }
+    .orphan-section h2 {
+      margin: 0 0 0.15rem;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+    .orphan-note {
+      margin: 0 0 0.35rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .root-list, .child-list {
+      list-style: none;
+      margin: 0;
+      padding-left: 0;
+      width: auto;
+      min-width: 0;
+    }
+    .child-list {
+      margin-left: 1.1rem;
+      padding-left: 0.85rem;
+      border-left: 1px dotted var(--line);
+    }
+    .node-item {
+      margin: 0.18rem 0;
+    }
+    details.node {
+      margin: 0;
+    }
+    details.node:target > summary .node-line {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    .node-leaf:target {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 0;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    summary::-webkit-details-marker {
+      display: none;
+    }
+    details.node > summary::before {
+      content: "▸";
+      display: inline-block;
+      width: 0.9rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      vertical-align: top;
+      padding-top: 0.12rem;
+    }
+    details.node[open] > summary::before {
+      content: "▾";
+    }
+    details.node.no-children > summary::before {
+      content: "•";
+    }
+    .node-line {
+      display: inline;
+      padding: 0.06rem 0.18rem;
+    }
+    .node-leaf {
+      display: inline-block;
+      padding: 0.06rem 0.18rem;
+      border-radius: 6px;
+    }
+    details.node > summary::before {
+      content: "+";
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    details.node[open] > summary::before {
+      content: "-";
+    }
+    details.node.no-children > summary::before {
+      content: ".";
+    }
+    .node-number {
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 700;
+    }
+    .speaker-label {
+      font-weight: 700;
+      margin-left: 0.2rem;
+    }
+    .speaker-label.npc { color: var(--npc); }
+    .speaker-label.player { color: var(--player); }
+    .speaker-label.system { color: var(--system); }
+    .dialog {
+      color: var(--ink);
+      margin-left: 0.2rem;
+    }
+    .node-kind {
+      color: var(--system);
+      margin-left: 0.2rem;
+    }
+    .ruletag {
+      color: var(--rule);
+      margin-left: 0.35rem;
+    }
+    .tags {
+      color: var(--tag);
+      margin-left: 0.35rem;
+    }
+    .checkflag {
+      color: var(--check);
+      margin-left: 0.35rem;
+    }
+    .setflag {
+      color: var(--set);
+      margin-left: 0.35rem;
+    }
+    .rolls {
+      color: var(--roll);
+      margin-left: 0.35rem;
+    }
+    .approval {
+      color: var(--approval);
+      margin-left: 0.35rem;
+    }
+    .nodelink {
+      color: var(--jump);
+      margin-left: 0.35rem;
+    }
+    .context {
+      color: var(--context);
+      margin-left: 0.3rem;
+      cursor: help;
+    }
+    .end {
+      color: #8b1e1e;
+      margin-left: 0.35rem;
+    }
+    .node-shell:target,
+    .node-leaf:target {
+      background: none;
+      border-radius: 0;
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-shell {
+      display: block;
+    }
+    .node-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.32rem;
+      width: max-content;
+      min-width: 100%;
+      transition: background-color 0.18s ease;
+    }
+    .node-shell.jump-highlight > .node-row {
+      background: var(--highlight);
+    }
+    .node-content {
+      min-width: 0;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker,
+    .tree-spacer {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 0.95rem;
+      height: 0.95rem;
+      margin-top: 0.08rem;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker {
+      border: none;
+      background: none;
+      color: var(--muted);
+      padding: 0;
+      font: inherit;
+      font-weight: 800;
+      font-size: 1.18rem;
+      line-height: 1;
+      user-select: none;
+    }
+    .tree-spacer {
+      border: none;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .node-branch[hidden] {
+      display: none;
+    }
+    html.supports-until-found .node-branch[hidden='until-found'] {
+      display: block;
+    }
+    .repeat {
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+    .node-summary {
+      display: block;
+      cursor: default;
+    }
+    .node-summary.is-interactive {
+      cursor: pointer;
+    }
+    .node-summary.is-interactive:focus-visible {
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-main-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.35rem;
+    }
+    .node-main {
+      display: block;
+      flex: 1 1 auto;
+      min-width: 0;
+      white-space: normal;
+      line-height: 1.28;
+      overflow-wrap: anywhere;
+    }
+    .node-leaf {
+      display: block;
+      border-radius: 0;
+    }
+    .node-number {
+      font-weight: 600;
+    }
+    .speaker-label {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind,
+    .nodelink {
+      overflow-wrap: anywhere;
+    }
+    .nodelink,
+    .end {
+      margin-left: 0;
+    }
+    .node-previews {
+      display: block;
+      margin: 0.12rem 0 0 1.1rem;
+      font-size: 0.88rem;
+      white-space: normal;
+      line-height: 1.28;
+    }
+    .preview-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.12rem 0.45rem;
+    }
+    .preview-token {
+      display: inline;
+      overflow-wrap: anywhere;
+    }
+    .preview-token.tag {
+      color: var(--tag);
+    }
+    .preview-token.rule {
+      color: var(--rule);
+    }
+    .preview-token.check {
+      color: var(--check);
+    }
+    .preview-token.set {
+      color: var(--set);
+    }
+    .preview-note {
+      display: block;
+      margin-top: 0.08rem;
+      color: var(--context);
+      overflow-wrap: anywhere;
+      font-weight: 700;
+    }
+    .preview-note-label {
+      color: var(--context);
+      font-weight: 700;
+    }
+    .preview-note-value {
+      color: #4f463f;
+      font-weight: 600;
+    }
+    .signal-line {
+      display: block;
+      margin: 0.14rem 0 0.2rem;
+    }
+    .signal-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem;
+    }
+    .signal-label {
+      font-weight: 700;
+    }
+    .signal-scope {
+      color: var(--muted);
+    }
+    .tag-line, .tag-line .signal-label { color: var(--tag); }
+    .rule-line, .rule-line .signal-label { color: var(--rule); }
+    .checkflag-line, .checkflag-line .signal-label { color: var(--check); }
+    .setflag-line, .setflag-line .signal-label { color: var(--set); }
+    .roll-line, .roll-line .signal-label { color: var(--roll); }
+    .approval-line, .approval-line .signal-label { color: var(--approval); }
+    .context-line, .context-line .signal-label { color: var(--context); }
+    .context-line .signal-heading {
+      font-weight: 700;
+    }
+    .context-line .signal-item {
+      color: #4f463f;
+    }
+    .signal-values {
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .signal-list {
+      list-style: none;
+      margin: 0.06rem 0 0 0.9rem;
+      padding: 0;
+    }
+    .signal-item {
+      margin: 0.1rem 0;
+      overflow-wrap: anywhere;
+    }
+    .signal-item::before {
+      content: "- ";
+      color: var(--muted);
+    }
+    .signal-body {
+      display: block;
+      margin: 0.06rem 0 0 0.9rem;
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .asset-name {
+      color: var(--ink);
+    }
+    .asset-id {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.92em;
+      overflow-wrap: anywhere;
+    }
+    .asset-state {
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .node-detail-panel {
+      margin: 0.08rem 0 0.18rem 1.1rem;
+      padding: 0.35rem 0.5rem;
+      border: 1px solid var(--detail-border);
+      background: var(--detail-surface);
+      border-radius: 0;
+      display: block;
+      gap: 0;
+      max-width: none;
+    }
+    .node-detail-panel[hidden] {
+      display: none;
+    }
+    html.supports-until-found .node-detail-panel[hidden='until-found'] {
+      display: block;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: none;
+    }
+    .section {
+      margin: 0.16rem 0;
+      padding: 0;
+      background: none;
+      border: none;
+    }
+    .section h3 {
+      margin: 0 0 0.22rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .node-detail-panel > .section + .section {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-block + .text-block {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-line {
+      font-size: 0.96rem;
+      margin-bottom: 0.15rem;
+    }
+    .text-line {
+      margin: 0.08rem 0;
+      font-size: inherit;
+      overflow-wrap: anywhere;
+    }
+    .badge-row, .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .badge, .meta-item {
+      display: block;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+    }
+    .meta-items {
+      margin: 0.12rem 0 0 0.85rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+      white-space: normal;
+    }
+    .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .meta-item {
+      display: block;
+      margin: 0.06rem 0;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+      overflow-wrap: anywhere;
+    }
+    .meta-item strong {
+      color: var(--ink);
+    }
+    .badge.flags { color: var(--check); }
+    .badge.tags { color: var(--tag); }
+    .flag-groups {
+      display: block;
+      gap: 0;
+    }
+    .flag-group-type {
+      display: inline-block;
+      color: var(--muted);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.15rem;
+    }
+    .rule-tree, .rule-tree ul {
+      margin: 0;
+      padding-left: 1rem;
+    }
+    .body-hide-flags .section-flags,
+    .body-hide-rules .section-rules,
+    .body-hide-details .section-metadata,
+    .body-hide-context .preview-note,
+    .body-hide-context .context-line,
+    .body-hide-context .node-line .context {
+      display: none;
+    }
+    .body-hide-flags .node-line .checkflag,
+    .body-hide-flags .node-line .setflag,
+    .body-hide-rules .node-line .ruletag {
+      display: none;
+    }
+    .body-hide-flags .checkflag-line,
+    .body-hide-flags .setflag-line {
+      display: none;
+    }
+    .body-hide-flags .preview-token.check,
+    .body-hide-flags .preview-token.set {
+      display: none;
+    }
+    .body-hide-context .context-line {
+      display: none;
+    }
+    .body-hide-numbers .node-number {
+      display: none;
+    }
+    .missing, .cycle {
+      padding: 0.2rem 0.35rem;
+      color: #8b1e1e;
+      background: rgba(139, 30, 30, 0.08);
+      border-radius: 6px;
+      display: inline-block;
+    }
+    .missing, .cycle {
+      padding: 0;
+      background: none;
+      border-radius: 0;
+      display: block;
+      overflow-wrap: anywhere;
+    }
+    @media (max-width: 920px) {
+      .page {
+        padding: 0.45rem 0.5rem 0.9rem;
+      }
+      .tree-shell {
+        padding: 0;
+      }
+    }
+  </style>
+  <style data-search-target-highlight>
+    .node-shell:target {
+      outline: 3px solid #c68b00;
+      background: #fff7db;
+      scroll-margin-top: 1rem;
+    }
+    .text-line.search-target-line {
+      background: #fff0a6;
+      border-radius: 2px;
+      padding: 0 0.08rem;
+    }
+  </style>
+</head>
+  <body class="body-hide-numbers">
+  <div class="page">
+    <header class="hero">
+      <h1>PLA_StuckHalfElf</h1>
+      <div class="source"><span class="source-label">Start Dialog UUID:</span><strong><code>88c9f41a-cce8-fc12-8a36-1e9574be588d</code></strong></div><div class="source"><span class="source-label">Timeline File UUID:</span><strong><code>6b67da83-8e6e-18fc-fdb4-6700e87e9717</code></strong></div><div class="source"><span class="source-label">Dialog File UUID:</span><strong><code>49a45632-d6be-9cfb-c54f-bd9878e041a2</code></strong></div><div class="source"><span class="source-label">Dialog:</span>Mods\Gustav\Story\DialogsBinary\Act1\Plains\PLA_StuckHalfElf.lsf.lsx</div><div class="source"><span class="source-label">Timeline:</span>Public\Gustav\Timeline\Generated\PLA_StuckHalfElf.lsf.lsx</div><div class="source"><span class="source-label">Scene:</span>Public\Gustav\Timeline\Generated\PLA_StuckHalfElf_Scene.lsf.lsx</div>
+      <div class="summary-line">
+        category=Generic NPC Dialog | nodes=49 | roots=3
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-scroll">
+          <div class="controls">
+            <button type="button" data-toggle-branches="all" data-hide-label="Expand all" data-show-label="Collapse all" data-active="false">Expand all</button>
+            <button type="button" data-toggle-class="body-hide-flags" data-hide-label="Hide flags" data-show-label="Show flags">Hide flags</button>
+            <button type="button" data-toggle-details="all" data-hide-label="Show details" data-show-label="Hide details" data-active="false">Show details</button>
+            <button type="button" data-toggle-class="body-hide-context" data-hide-label="Hide notes" data-show-label="Show notes">Hide notes</button>
+            <button type="button" data-toggle-class="body-hide-numbers" data-hide-label="Hide node numbers" data-show-label="Show node numbers">Hide node numbers</button>
+          </div>
+        </div>
+        <details class="speaker-map">
+          <summary>Speakers</summary>
+          <ul><li><span class='speaker-index'>0</span><span class='speaker-name'>Speaker 0</span><span class='inline-meta'>list=5fcc3167-5a0c-41e7-b44c-d629d34370cb | mapping=b29dc25f-e673-771b-9e50-ed8b04025695</span></li><li><span class='speaker-index'>1</span><span class='speaker-name'>Player</span><span class='inline-meta'>GROUP_Players | list=e0d1ff71-04a8-4340-ae64-9684d846eb83 | mapping=43b66a41-f543-5caa-ff4b-5568e963bee2</span></li><li><span class='speaker-index'>2</span><span class='speaker-name'>Origin_Intro_Laezel</span><span class='inline-meta'>list=58a69333-40bf-8358-1d17-fff240d7fb12 | mapping=a4ef7252-d7ad-4379-9c6b-3e16baefc35a | Peanuts=True</span></li><li><span class='speaker-index'>3</span><span class='speaker-name'>ShadowheartIllusion</span><span class='inline-meta'>GROUP_ShadowheartIllusion | list=3ed74f06-3c60-42dc-83f6-f034cb47c679 | mapping=710dde20-c99f-4442-9bdd-47f7826cf38b | Peanuts=True</span></li><li><span class='speaker-index'>4</span><span class='speaker-name'>Origin_Intro_Karlach</span><span class='inline-meta'>list=2c76687d-93a2-477b-8b18-8a14b549304c | mapping=b0dd6ef1-9cbb-40f7-a3de-f1d98fd7d75b | Peanuts=True</span></li><li><span class='speaker-index'>5</span><span class='speaker-name'>Speaker 5</span><span class='inline-meta'>list=0de603c5-42e2-4811-9dad-f652de080eba | mapping=8741f4ad-a06f-40a4-9ee3-f46da32c3d1c | Peanuts=True</span></li><li><span class='speaker-index'>6</span><span class='speaker-name'>Astarion</span><span class='inline-meta'>GROUP_Act3_WYR_OrinsImpersonation_Astarion | list=c7c13742-bacd-460a-8f65-f864fe41f255 | mapping=a3f05332-9bd0-4460-b453-be74de398302 | Peanuts=True</span></li><li><span class='speaker-index'>7</span><span class='speaker-name'>Origin_Intro_Wyll</span><span class='inline-meta'>list=c774d764-4a17-48dc-b470-32ace9ce447d | mapping=2d8babd4-7e69-4035-aed4-dbbb5c6c85ee | Peanuts=True</span></li><li><span class='speaker-index'>8</span><span class='speaker-name'>Gale</span><span class='inline-meta'>GROUP_Act3_WYR_OrinsImpersonation_Gale | list=ad9af97d-75da-406a-ae13-7071c563f604 | mapping=a82a9119-2f81-4805-a902-748c883c875d | Peanuts=True</span></li></ul>
+        </details>
+      </div>
+    </header>
+    <section class="tree-shell">
+      <div class="tree-shell-inner">
+        <ul class="root-list"><li class='node-item'><div class='node-shell' id='node-25'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-25' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-25' aria-expanded='true' tabindex='0' data-detail-target='details-25' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>25.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>The fire - hurry! Get this thing off of me!</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Stuck under wooden beam</span></span><span class='preview-inline'><span class='preview-token check'>!PLA_StuckHalfElf_State_Failed</span></span></span></span><div class='node-detail-panel' id='details-25' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Character attempted to free the Stuck Half-Elf and failed.'>PLA_StuckHalfElf_State_Failed</span> <span class='asset-id'>{274d7b42-175b-bfb0-f697-fb98863aa89c}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 8def607f-cfd3-96cd-94e6-8301ff6e4dbf</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h323fec1ag2079g4c89ga3f4g39f4f3e901d3</span><span class='meta-item'><strong>Text UUID</strong>: 3243e23d-53aa-74ca-7655-e3be3483e7a1</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 1</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 8def607f-cfd3-96cd-94e6-8301ff6e4dbf</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 7.28s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 7f500cd2-e809-4267-949d-6c1fa719d207</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/SharedDev/Assets/Characters/_Anims/Dragonborn/_Female/DGB_F_Rig/_Construction/DGB_F_Rig_DFLT_CINE_CoverFaceRight_RHand_StandL_01.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [2.85s-7.41s] | @ 2.85s | peanut slot 0 | Disgust (128)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [2.85s-7.41s] | @ 2.85s | peanut slot 1 | Disgust (128)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [2.85s-7.41s] | @ 2.85s | peanut slot 2 | Disgust (128)</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [2.85s-7.41s] | @ 2.85s | speaker 0 | Disgust (128) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [2.85s-7.41s] | @ 2.85s | speaker 1 | Disgust (128)</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 1 [2.85s-7.41s] | @ 4.56s | speaker 1 | Disgust (128) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 2 [7.41s-9.71s] | @ 7.41s | speaker 0 | Fear (16) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 2 [7.41s-9.71s] | @ 7.41s | speaker 1 | Disgust (128)</span><span class='meta-item'><strong>Timeline Emotion 9</strong>: Shot 2 [7.41s-9.71s] | @ 8.29s | speaker 0 | Angry (8) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 10</strong>: Shot 3 [9.71s-10.13s] | @ 10.13s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-25'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-19'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-19' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-19' aria-expanded='false' tabindex='0' data-detail-target='details-19' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>19.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Strength) DC 10 [1] target=0 (Speaker 0)</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token rule'>Berserker</span><span class='preview-token check'>!PLA_StuckHalfElf_State_Failed</span><span class='preview-token check'>Barbarian</span></span></span></span><div class='node-detail-panel' id='details-19' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line rule-line'><div class='signal-heading'><span class='signal-label'>ruletag</span><span class='signal-scope'>type rule</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='A supplimentary Berserker tag for more primal lines.'>Berserker</span> <span class='asset-id'>{ac3449f7-c09b-4bc0-8634-fcff97d49279}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Character attempted to free the Stuck Half-Elf and failed.'>PLA_StuckHalfElf_State_Failed</span> <span class='asset-id'>{274d7b42-175b-bfb0-f697-fb98863aa89c}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='They call you a savage, an animal. They don&#x27;t know what it&#x27;s like to need to fight, tooth and claw, just to survive. You do. '>Barbarian</span> <span class='asset-id'>{02913f9a-f696-40cf-acdf-32032afab32c}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line roll-line'><div class='signal-heading'><span class='signal-label'>roll</span></div><div class='signal-body'>Strength | dc=10 (Act1_Medium) | advantage=1 | speaker 0 Speaker 0</div></div></section><section class='section'><h3>Text</h3><div class='text-block'><h3>Variant 1</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='A supplimentary Berserker tag for more primal lines.'><code>Berserker</code></li></ul><div class='text-line'><b><i>Grip the wreckage. FLING IT ASIDE.</i></b></div><div class='line-meta'><code>h79ada881g6781g41d1g8b3fgebd1294679d8</code> | <code>9cfa517e-033b-40d7-904a-dca51a1d784c</code> | stub</div></div><div class='text-block'><h3>Variant 2</h3><div class='text-line'><i>This wreckage is no challenge - cast it aside.</i></div><div class='line-meta'><code>h8087e026gbe08g4271g9becg87471410ba1a</code> | <code>b0d96a50-f25b-4a94-975c-027cda81cc59</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 705d89bc-8a69-fa83-ce68-b82741eec938</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h79ada881g6781g41d1g8b3fgebd1294679d8</span><span class='meta-item'><strong>Text 1 UUID</strong>: 9cfa517e-033b-40d7-904a-dca51a1d784c</span><span class='meta-item'><strong>Text 2 Handle</strong>: h8087e026gbe08g4271g9becg87471410ba1a</span><span class='meta-item'><strong>Text 2 UUID</strong>: b0d96a50-f25b-4a94-975c-027cda81cc59</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Strength</span><span class='meta-item'><strong>Advantage</strong>: 1</span><span class='meta-item'><strong>Difficulty Class UUID</strong>: fa621d38-6f83-4e42-a55c-6aa651a75d46</span><span class='meta-item'><strong>Difficulty Class Name</strong>: Act1_Medium</span><span class='meta-item'><strong>Difficulty Class Value</strong>: 10</span><span class='meta-item'><strong>Exclude Companion Bonuses</strong>: False</span><span class='meta-item'><strong>Exclude Speaker Bonuses</strong>: False</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Roll Type</strong>: RawAbility</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-19' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-23'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-23' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-23' aria-expanded='false' tabindex='0' data-detail-target='details-23' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>23.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-23' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 85cb7eeb-761f-1595-7446-514cab4bdb9c</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-23' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-33'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-33' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-33' aria-expanded='false' tabindex='0' data-detail-target='details-33' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>33.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'><i>Yes! </i>You did it!</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>The player grimaces and aggressively flips the beam right off Benryn. It falls away off-screen.</span></span><span class='preview-inline'><span class='preview-token set'>PLA_StuckHalfElf_Event_Free</span></span></span></span><div class='node-detail-panel' id='details-33' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='PLA_StuckDwarf_Event_Freedescription'>PLA_StuckHalfElf_Event_Free</span> <span class='asset-id'>{48093e85-4d7d-2ded-75f4-a29560e39f5c}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: aea3ea6e-d890-d765-f19a-0610b51af139</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h6f4ea703ge6f4g4773g9704gd7b9625de0a3</span><span class='meta-item'><strong>Text UUID</strong>: a1b55055-01ed-4dab-a2c0-2261d02f1d3f</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 7</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: aea3ea6e-d890-d765-f19a-0610b51af139</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 11.38s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 4</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: e6529442-9412-5ff4-fe73-3dda0aaa5155</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_StuckHalfElf/HEL_M_Rig_SCENE_PLA_LiftBeams_Success_BARB_BEN.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: 0af6d088-4862-4b93-9c29-0019ace0c615</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_StuckHalfElf/DWR_F/DWR_F_Rig_SCENE_PLA_LiftBeams_Success_BARB.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 3 [68.59s-70.79s] | @ 68.59s | speaker 0 | Fear (16)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 4 [70.79s-73.9s] | @ 71.32s | speaker 0 | Disgust (128) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 4 [70.79s-73.9s] | @ 72.77s | speaker 0 | Happy (2) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [73.9s-81.22s] | @ 73.9s | speaker 0 | Angry (8)</span></div></section></div></div></div><div class='node-branch' id='branch-33' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-3'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-3' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>3.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-31'>Node 31</a></span></span></span></span><div class='node-detail-panel' id='details-3' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 1edbf90a-9f23-bf95-6963-276beebb74cc</span><span class='meta-item'><strong>Jump Target</strong>: Node 31 (a580f547-24d7-831b-f7cf-871eff506648)</span><span class='meta-item'><strong>Jump Target Point</strong>: 2</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-40'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-40' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>40.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-42'>Node 42</a></span></span></span></span><div class='node-detail-panel' id='details-40' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: d78c85da-fce4-8fa3-1422-5429981b5556</span><span class='meta-item'><strong>Jump Target</strong>: Node 42 (e1e6519c-8821-87dc-d65c-d16ed1aa2e5a)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-38'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-38' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-38' aria-expanded='false' tabindex='0' data-detail-target='details-38' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>38.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Strength) DC 10 target=0 (Speaker 0)</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!PLA_StuckHalfElf_State_Failed</span><span class='preview-token check'>!Barbarian</span></span></span></span><div class='node-detail-panel' id='details-38' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Character attempted to free the Stuck Half-Elf and failed.'>PLA_StuckHalfElf_State_Failed</span> <span class='asset-id'>{274d7b42-175b-bfb0-f697-fb98863aa89c}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='They call you a savage, an animal. They don&#x27;t know what it&#x27;s like to need to fight, tooth and claw, just to survive. You do. '>Barbarian</span> <span class='asset-id'>{02913f9a-f696-40cf-acdf-32032afab32c}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line roll-line'><div class='signal-heading'><span class='signal-label'>roll</span></div><div class='signal-body'>Strength | dc=10 (Act1_Medium) | speaker 0 Speaker 0</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: cd80074e-804f-b3b3-d5f4-7bc63ae5f23a</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h1b1134bfgafbeg4f37gb813g79c001c2314a</span><span class='meta-item'><strong>Text UUID</strong>: 46c71bc2-2bad-2f53-58df-094257f11ee8</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Strength</span><span class='meta-item'><strong>Difficulty Class UUID</strong>: fa621d38-6f83-4e42-a55c-6aa651a75d46</span><span class='meta-item'><strong>Difficulty Class Name</strong>: Act1_Medium</span><span class='meta-item'><strong>Difficulty Class Value</strong>: 10</span><span class='meta-item'><strong>Exclude Companion Bonuses</strong>: False</span><span class='meta-item'><strong>Exclude Speaker Bonuses</strong>: False</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Roll Type</strong>: RawAbility</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-38' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-18'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-18' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-18' aria-expanded='false' tabindex='0' data-detail-target='details-18' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>18.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-18' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 70209e01-a4e7-f5ad-edf7-1574504503b0</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-18' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-31'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-31' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-31' aria-expanded='false' tabindex='0' data-detail-target='details-31' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>31.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Almost... there!</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Player lifts the beam a couple of inches. He rolls out from under the beam on &quot;There&quot;. Player drops it after he&#x27;s free.</span></span><span class='preview-inline'><span class='preview-token set'>PLA_StuckHalfElf_Event_Free</span></span></span></span><div class='node-detail-panel' id='details-31' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='PLA_StuckDwarf_Event_Freedescription'>PLA_StuckHalfElf_Event_Free</span> <span class='asset-id'>{48093e85-4d7d-2ded-75f4-a29560e39f5c}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: a580f547-24d7-831b-f7cf-871eff506648</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h2dd44bebgf095g4c52gb2d0gf2a783352a52</span><span class='meta-item'><strong>Text UUID</strong>: 8d4b8de4-cb00-762b-7c81-c2f6a898f277</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 6</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: a580f547-24d7-831b-f7cf-871eff506648</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 10.33s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: f1baddfd-7f1c-76c3-3529-bb66b5655b80</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_StuckHalfElf/HEL_M_Rig_SCENE_PLA_LiftBeams_Success_BEN.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: a7f851b4-3591-4a04-a3b2-0785e5b6eb81</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_StuckHalfElf/DWR_F/DWR_F_Rig_SCENE_PLA_LiftBeams_Success_PLYR.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 2 [53.35s-60.42s] | @ 60.27s | speaker 0 | Fear (16) | variation 1</span><span class='meta-item'><strong>Unmapped Attributes</strong>: ApprovalRatingID</span></div></section></div></div></div><div class='node-branch' id='branch-31' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-39'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-39' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-39' aria-expanded='false' tabindex='0' data-detail-target='details-39' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>39.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>(no line text)</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!PLA_StuckHalfElf_State_Door3Destroyed</span></span></span></span><div class='node-detail-panel' id='details-39' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Door 3 is destroyed; the Half-elf has an immediate route to safety and need not be escorted.'>PLA_StuckHalfElf_State_Door3Destroyed</span> <span class='asset-id'>{f7810ae8-56f1-4084-9aa7-45aee41fdf5f}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: d553ac4a-1cf8-ecfa-71cb-08958118a5a3</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span></div></section></div></div></div><div class='node-branch' id='branch-39' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-48'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-48' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>48.</span><span class='nodelink' title='Public/Gustav/Timeline/Generated/PLA_StuckHalfElf_TryJoinParty.lsf'>nested=PLA_StuckHalfElf_TryJoinParty <code>78248a7c-2182-3bae-bbd9-d57e2a9a29ec</code></span> <span class='end'>[End]</span></span></span></span><div class='node-detail-panel' id='details-48' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Nested Dialog</span><span class='meta-item'><strong>UUID</strong>: fcecc69b-efa3-5aa7-f6f6-e932bb705068</span><span class='meta-item'><strong>Nested Target</strong>: PLA_StuckHalfElf_TryJoinParty (78248a7c-2182-3bae-bbd9-d57e2a9a29ec)</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-45'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-45' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>45.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Thank you, thank you!</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span><span class='preview-inline'><span class='preview-token check'>PLA_StuckHalfElf_State_Door3Destroyed</span><span class='preview-token set'>PLA_StuckHalfElf_State_DoNotAddToParty</span><span class='preview-token set'>4d8b136f-7b2a-4d60-99be-a0eacf982894</span></span></span></span><div class='node-detail-panel' id='details-45' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Door 3 is destroyed; the Half-elf has an immediate route to safety and need not be escorted.'>PLA_StuckHalfElf_State_Door3Destroyed</span> <span class='asset-id'>{f7810ae8-56f1-4084-9aa7-45aee41fdf5f}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='PLA_StuckHalfElf_State_DoNotAddToPartydescription'>PLA_StuckHalfElf_State_DoNotAddToParty</span> <span class='asset-id'>{a95f92c5-1753-2b16-b105-a4b3cba09212}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Quest | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>4d8b136f-7b2a-4d60-99be-a0eacf982894</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: ec9556ef-bfbf-b28e-ac1c-30c35b2a1626</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h373b6a0egd307g43b9gae31gc85d50457797</span><span class='meta-item'><strong>Text UUID</strong>: 025fe431-05dd-cd9f-62eb-17862e7b0e57</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 14</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: ec9556ef-bfbf-b28e-ac1c-30c35b2a1626</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 8.18s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Stage Changes</strong>: End Pos (d70e66fe-5c21-49a2-925e-bc0920dd9835) @ 141s</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: a7f851b4-3591-4a04-a3b2-0785e5b6eb81</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_StuckHalfElf/DWR_F/DWR_F_Rig_SCENE_PLA_LiftBeams_Success_PLYR.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: 9d45c9e6-8eb8-4957-80bb-fb2a990c858a</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/Dwarves/_Female/DWR_F_Rig/_Construction/DWR_F_Rig_DFLT_CINE_Supine_ToStandL_01.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 2 [145.55s-149.18s] | @ 145.55s | speaker 0 | Fear (16)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 2 [145.55s-149.18s] | @ 147.36s | speaker 0 | Fear (16) | variation 1</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-42'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-42' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-42' aria-expanded='false' tabindex='0' data-detail-target='details-42' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>42.</span><span class='dialog'>Failure</span></span></span></span><div class='node-detail-panel' id='details-42' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: e1e6519c-8821-87dc-d65c-d16ed1aa2e5a</span></div></section></div></div></div><div class='node-branch' id='branch-42' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-47'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-47' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-47' aria-expanded='false' tabindex='0' data-detail-target='details-47' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>47.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='nodelink'>Alias to <a href='#node-37'>Node 37</a>, <a href='#node-32'>Node 32</a></span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>Barbarian</span><span class='preview-token set'>PLA_StuckHalfElf_State_OneFailed</span><span class='preview-token set'>PLA_StuckHalfElf_State_Failed</span></span></span></span><div class='node-detail-panel' id='details-47' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='They call you a savage, an animal. They don&#x27;t know what it&#x27;s like to need to fight, tooth and claw, just to survive. You do. '>Barbarian</span> <span class='asset-id'>{02913f9a-f696-40cf-acdf-32032afab32c}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='At least one player failed to help the Stuck Half-Elf'>PLA_StuckHalfElf_State_OneFailed</span> <span class='asset-id'>{adfb15af-33a3-541d-480b-5fed6f21684a}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Character attempted to free the Stuck Half-Elf and failed.'>PLA_StuckHalfElf_State_Failed</span> <span class='asset-id'>{274d7b42-175b-bfb0-f697-fb98863aa89c}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Alias</span><span class='meta-item'><strong>UUID</strong>: f007022a-eebe-74ca-8f3e-01c5226fea8f</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span></div></section></div></div></div><div class='node-branch' id='branch-47' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-37'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-37' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-37' aria-expanded='false' tabindex='0' data-detail-target='details-37' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>37.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Strength) DC 15 target=0 (Speaker 0)</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token rule'>Berserker</span><span class='preview-token check'>Barbarian</span></span></span></span><div class='node-detail-panel' id='details-37' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line rule-line'><div class='signal-heading'><span class='signal-label'>ruletag</span><span class='signal-scope'>type rule</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='A supplimentary Berserker tag for more primal lines.'>Berserker</span> <span class='asset-id'>{ac3449f7-c09b-4bc0-8634-fcff97d49279}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='They call you a savage, an animal. They don&#x27;t know what it&#x27;s like to need to fight, tooth and claw, just to survive. You do. '>Barbarian</span> <span class='asset-id'>{02913f9a-f696-40cf-acdf-32032afab32c}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line roll-line'><div class='signal-heading'><span class='signal-label'>roll</span></div><div class='signal-body'>Strength | dc=15 (Act1_Hard) | speaker 0 Speaker 0</div></div></section><section class='section'><h3>Text</h3><div class='text-block'><h3>Variant 1</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='A supplimentary Berserker tag for more primal lines.'><code>Berserker</code></li></ul><div class='text-line'><b><i>No. Harder. LIFT!</i></b></div><div class='line-meta'><code>h248743a0g6c52g4292gbbd0g400b3227ae75</code> | <code>163bf112-83ee-4f0b-8686-846a5ea886e4</code> | stub</div></div><div class='text-block'><h3>Variant 2</h3><div class='text-line'><i>You will not be beaten. Try harder - lift.</i></div><div class='line-meta'><code>he84c4de7g478bg49dcgabfdg827dfc6fa465</code> | <code>46ff86a4-9660-4672-aef0-1a4f1b56e3d7</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: bc36142c-5b3c-f487-9a62-433604d5ca40</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h248743a0g6c52g4292gbbd0g400b3227ae75</span><span class='meta-item'><strong>Text 1 UUID</strong>: 163bf112-83ee-4f0b-8686-846a5ea886e4</span><span class='meta-item'><strong>Text 2 Handle</strong>: he84c4de7g478bg49dcgabfdg827dfc6fa465</span><span class='meta-item'><strong>Text 2 UUID</strong>: 46ff86a4-9660-4672-aef0-1a4f1b56e3d7</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Strength</span><span class='meta-item'><strong>Difficulty Class UUID</strong>: 831e1fbe-428d-4f4d-bd17-4206d6efea35</span><span class='meta-item'><strong>Difficulty Class Name</strong>: Act1_Hard</span><span class='meta-item'><strong>Difficulty Class Value</strong>: 15</span><span class='meta-item'><strong>Exclude Companion Bonuses</strong>: False</span><span class='meta-item'><strong>Exclude Speaker Bonuses</strong>: False</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Roll Type</strong>: RawAbility</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-37' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-21'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-21' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-21' aria-expanded='false' tabindex='0' data-detail-target='details-21' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>21.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-21' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 7142415a-38cb-c1c4-5e85-30131447cfbf</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-21' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-14'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-14' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>14.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-33'>Node 33</a></span></span></span></span><div class='node-detail-panel' id='details-14' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 527478ba-9520-340a-c532-0b7be975302c</span><span class='meta-item'><strong>Jump Target</strong>: Node 33 (aea3ea6e-d890-d765-f19a-0610b51af139)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-16'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-16' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-16' aria-expanded='false' tabindex='0' data-detail-target='details-16' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>16.</span><span class='dialog'>Failure</span></span></span></span><div class='node-detail-panel' id='details-16' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 67ae83fa-73a5-d54a-45f1-4146160bdeb5</span></div></section></div></div></div><div class='node-branch' id='branch-16' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-26'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-26' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>26.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Careful, it&#x27;s unsteady - NOO!</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Barbarian player aggressively yanks at the wreckage, There&#x27;s creaking from overhead, then some more wreckage collapses on Benryn, killing him.</span></span><span class='preview-inline'><span class='preview-token set'>CharacterDieAfterDialog</span></span></span></span><div class='node-detail-panel' id='details-26' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='CharacterDieAfterDialogdescription'>CharacterDieAfterDialog</span> <span class='asset-id'>{fb62f715-13c3-c967-13f4-91f9231f8243}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 9101fbdc-c6b6-f7b0-ca62-d606cd2c4e62</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h337efe6cg1c9cg4048gaf1eg6a4027e26b2a</span><span class='meta-item'><strong>Text UUID</strong>: 89fe08f4-7336-4c69-81f7-ba6b77257769</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 13</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 9101fbdc-c6b6-f7b0-ca62-d606cd2c4e62</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 14.77s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 6</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 769550a4-2ad7-e341-ba4d-1522bd6f6c51</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_StuckHalfElf/HEL_M_Rig_SCENE_PLA_LiftBeams_Fail_Barb_BEN_v2.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: 2b9cacdd-59f5-450c-bc4e-cb9099c28e19</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_StuckHalfElf/DWR_F/DWR_F_Rig_SCENE_PLA_LiftBeams_Barb_Fail_V2_PLYR.GR2</span><span class='meta-item'><strong>Timeline Animation 3 Resource ID</strong>: 1efb6c9c-addc-6d8e-2e83-49fd1a0cee56</span><span class='meta-item'><strong>Timeline Animation 3 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_StuckHalfElf/HEL_M_Rig_SCENE_PLA_LiftBeams_Fail_BARB_BEN.GR2</span><span class='meta-item'><strong>Timeline Animation 4 Resource ID</strong>: 8b339fb0-196a-4259-8777-7edcd70a5785</span><span class='meta-item'><strong>Timeline Animation 4 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/Dwarves/_Female/DWR_F_Rig/_Construction/DWR_F_Rig_DFLT_CINE_StartledTakeFront_StandR_02.GR2</span><span class='meta-item'><strong>Timeline Animation 5 Resource ID</strong>: 9f69f4ba-49a3-46c5-abf6-8c54858923fc</span><span class='meta-item'><strong>Timeline Animation 5 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/Dwarves/_Female/DWR_F_Rig/_Construction/DWR_F_Rig_DFLT_CINE_StartledTakeFront_StandL_01.GR2</span><span class='meta-item'><strong>Timeline Animation 6 Resource ID</strong>: e255aad7-dfee-4f0e-a1d9-870a33845234</span><span class='meta-item'><strong>Timeline Animation 6 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/Dwarves/_Female/DWR_F_Rig/_Construction/DWR_F_Rig_DFLT_CINE_ArmCoverFace_StandR_02.GR2</span><span class='meta-item'><strong>Timeline Animation 7 Resource ID</strong>: 3419915c-4ac8-4a23-9858-0fcbb530f5c6</span><span class='meta-item'><strong>Timeline Animation 7 Resource File</strong>: Public/SharedDev/Assets/Characters/_Anims/Dragonborn/_Female/DGB_F_Rig/_Construction/DGB_F_Rig_DFLT_CINE_ArmCoverFace_StandL_01.GR2</span><span class='meta-item'><strong>Timeline Animation 8 Resource ID</strong>: 9491feed-9876-4cd3-b1ac-28f67da1cbbd</span><span class='meta-item'><strong>Timeline Animation 8 Resource File</strong>: Public/SharedDev/Assets/Characters/_Anims/Dragonborn/_Female/DGB_F_Rig/_Construction/DGB_F_Rig_DFLT_CINE_ArmCoverFace_StandL_02.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [126.23s-129.17s] | @ 128.16s | speaker 1 | Angry (8) | variation 24</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 3 [132.52s-133.95s] | @ 133.21s | speaker 1 | Angry (8) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 4 [133.95s-136.04s] | @ 134.16s | speaker 1 | Fear (16)</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 4 [133.95s-136.04s] | @ 135.74s | speaker 0 | Fear (16) | variation 25</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 6 [137.62s-141s] | @ 137.62s | peanut slot 0 | Pain (2048) | variation 24</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 6 [137.62s-141s] | @ 137.62s | peanut slot 1 | Pain (2048) | variation 24</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 6 [137.62s-141s] | @ 137.62s | peanut slot 2 | Pain (2048) | variation 24</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 6 [137.62s-141s] | @ 137.91s | speaker 1 | Pain (2048) | variation 24</span><span class='meta-item'><strong>Timeline Emotion 9</strong>: Shot 6 [137.62s-141s] | @ 140.05s | speaker 1 | Disgust (128) | variation 23</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-32'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-32' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>32.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-17'>Node 17</a></span></span></span></span><div class='node-detail-panel' id='details-32' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: a97c0563-4393-a0e2-58c8-998b791259dc</span><span class='meta-item'><strong>Jump Target</strong>: Node 17 (6a0ca766-add4-0891-44cb-36448f1b5b0c)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-20'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-20' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>20.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Damn... just go. I&#x27;m done for.</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>The beam doesn&#x27;t budge.</span></span><span class='preview-inline'><span class='preview-token set'>PLA_StuckHalfElf_State_OneFailed</span><span class='preview-token set'>PLA_StuckHalfElf_State_Failed</span></span></span></span><div class='node-detail-panel' id='details-20' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='At least one player failed to help the Stuck Half-Elf'>PLA_StuckHalfElf_State_OneFailed</span> <span class='asset-id'>{adfb15af-33a3-541d-480b-5fed6f21684a}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Character attempted to free the Stuck Half-Elf and failed.'>PLA_StuckHalfElf_State_Failed</span> <span class='asset-id'>{274d7b42-175b-bfb0-f697-fb98863aa89c}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 711bdc43-aa32-6fb0-0b5c-96f08d4ecd05</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h1c8cfbb3gba8fg44d0gac28ga8fdda4a6895</span><span class='meta-item'><strong>Text UUID</strong>: e84dafae-8389-87ef-ae77-8bfe5454764d</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 12</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 711bdc43-aa32-6fb0-0b5c-96f08d4ecd05</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 10.32s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 5</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: c38782cb-9aff-4a25-a1b5-f378513662ae</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_StuckHalfElf/DWR_F/DWR_F_Rig_SCENE_PLA_LiftBeams_Fail_PLYR.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 2 [116.58s-119.64s] | @ 116.58s | speaker 0 | Angry (8) | variation 24</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 2 [116.58s-119.64s] | @ 118.86s | speaker 0 | Fear (16) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 4 [122.06s-123.86s] | @ 123.86s | speaker 0 | Sad (32) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 5 [123.86s-126.23s] | @ 125.15s | speaker 0 | Dead (512)</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [126.23s-129.17s] | @ 126.23s | speaker 1 | Angry (8) | variation 1</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-11'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-11' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-11' aria-expanded='false' tabindex='0' data-detail-target='details-11' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>11.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Performance, Charisma, SkillCheck) DC 12 target=0 (Speaker 0)</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!PLA_StuckHalfElf_State_Failed</span><span class='preview-token check'>Bard</span></span></span></span><div class='node-detail-panel' id='details-11' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Character attempted to free the Stuck Half-Elf and failed.'>PLA_StuckHalfElf_State_Failed</span> <span class='asset-id'>{274d7b42-175b-bfb0-f697-fb98863aa89c}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='An inspiring magician whose power echoes the music of creation.'>Bard</span> <span class='asset-id'>{d93434bd-6b71-4789-b128-ee24156057cc}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line roll-line'><div class='signal-heading'><span class='signal-label'>roll</span></div><div class='signal-body'>Performance, Charisma, SkillCheck | dc=12 (Act1_Challenging) | speaker 0 Speaker 0</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 3c0f4e47-7e25-3f56-0637-a358775f2d46</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h854dbe6ag746dg4c44gaa45g1a48120473fb</span><span class='meta-item'><strong>Text UUID</strong>: 78fce58a-d9d3-4b9a-9839-9f80e97bb8a8</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Difficulty Class UUID</strong>: 5e7ff0e9-6c80-459c-a636-3a3e8417a61a</span><span class='meta-item'><strong>Difficulty Class Name</strong>: Act1_Challenging</span><span class='meta-item'><strong>Difficulty Class Value</strong>: 12</span><span class='meta-item'><strong>Exclude Companion Bonuses</strong>: False</span><span class='meta-item'><strong>Exclude Speaker Bonuses</strong>: False</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Performance</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-11' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-35'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-35' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-35' aria-expanded='false' tabindex='0' data-detail-target='details-35' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>35.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-35' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: b188ed9c-9968-e6d5-c095-2f1626d354ba</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-35' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-24'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-24' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-24' aria-expanded='false' tabindex='0' data-detail-target='details-24' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>24.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'>(no line text)</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>The bard player dramatically struggles (not really) with the fallen beam, trying several different heroic poses to shift it. </span></span></span></span><div class='node-detail-panel' id='details-24' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagCinematic</span><span class='meta-item'><strong>UUID</strong>: 86df074c-f883-2694-e58e-bb558c77458a</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 4</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 86df074c-f883-2694-e58e-bb558c77458a</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 17.4s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 4c8dd541-6683-68ec-f7f5-ab52e165ccc4</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_StuckHalfElf/HEL_M_Rig_SCENE_PLA_LiftBeams_Fail_Bard_Ben.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: 18375001-e9c2-4fb7-b179-cf06b09accd0</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_StuckHalfElf/DWR_F/DWR_F_Rig_SCENE_PLA_LiftBeams_Fail_Bard_PLYR.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [27.04s-32.76s] | @ 27.31s | peanut slot 0 | Angry (8) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [27.04s-32.76s] | @ 27.62s | peanut slot 1 | Angry (8) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [27.04s-32.76s] | @ 28.04s | peanut slot 2 | Angry (8) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [27.04s-32.76s] | @ 29.79s | speaker 1 | Pain (2048) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [27.04s-32.76s] | @ 30.14s | peanut slot 1 | Pain (2048) | variation 2 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 1 [27.04s-32.76s] | @ 30.3s | peanut slot 0 | Pain (2048) | variation 2 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 1 [27.04s-32.76s] | @ 30.62s | peanut slot 2 | Pain (2048) | variation 2 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 2 [32.76s-42.57s] | @ 33.08s | speaker 1 | Pain (2048) | variation 23</span><span class='meta-item'><strong>Timeline Emotion 9</strong>: Shot 2 [32.76s-42.57s] | @ 33.25s | peanut slot 2 | Pain (2048) | variation 23 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 10</strong>: Shot 2 [32.76s-42.57s] | @ 33.27s | peanut slot 0 | Pain (2048) | variation 23 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 11</strong>: Shot 2 [32.76s-42.57s] | @ 33.59s | peanut slot 1 | Pain (2048) | variation 23 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 12</strong>: Shot 2 [32.76s-42.57s] | @ 34.5s | speaker 1 | Fear (16) | variation 24</span><span class='meta-item'><strong>Timeline Emotion 13</strong>: Shot 2 [32.76s-42.57s] | @ 34.65s | peanut slot 0 | Fear (16) | variation 24 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 14</strong>: Shot 2 [32.76s-42.57s] | @ 34.7s | peanut slot 2 | Fear (16) | variation 24 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 15</strong>: Shot 2 [32.76s-42.57s] | @ 34.97s | peanut slot 1 | Fear (16) | variation 24 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 16</strong>: Shot 2 [32.76s-42.57s] | @ 36.11s | speaker 1 | Pain (2048) | variation 24</span><span class='meta-item'><strong>Timeline Emotion 17</strong>: Shot 2 [32.76s-42.57s] | @ 36.33s | peanut slot 0 | Pain (2048) | variation 24 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 18</strong>: Shot 2 [32.76s-42.57s] | @ 36.45s | peanut slot 1 | Pain (2048) | variation 24 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 19</strong>: Shot 2 [32.76s-42.57s] | @ 36.81s | peanut slot 2 | Pain (2048) | variation 24 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 20</strong>: Shot 2 [32.76s-42.57s] | @ 37.08s | speaker 1 | Sleeping (256) | variation 23</span><span class='meta-item'><strong>Timeline Emotion 21</strong>: Shot 2 [32.76s-42.57s] | @ 37.62s | peanut slot 1 | Sleeping (256) | variation 23 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 22</strong>: Shot 2 [32.76s-42.57s] | @ 37.66s | peanut slot 0 | Sleeping (256) | variation 23 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 23</strong>: Shot 2 [32.76s-42.57s] | @ 37.77s | peanut slot 2 | Sleeping (256) | variation 23 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 24</strong>: Shot 2 [32.76s-42.57s] | @ 38.53s | speaker 1 | Pain (2048) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 25</strong>: Shot 2 [32.76s-42.57s] | @ 38.76s | peanut slot 1 | Pain (2048) | variation 1 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 26</strong>: Shot 2 [32.76s-42.57s] | @ 39.06s | peanut slot 2 | Pain (2048) | variation 1 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 27</strong>: Shot 2 [32.76s-42.57s] | @ 39.26s | peanut slot 0 | Pain (2048) | variation 1 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 28</strong>: Shot 3 [42.57s-44.44s] | @ 42.77s | speaker 1 | Happy (2) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 29</strong>: Shot 3 [42.57s-44.44s] | @ 43.01s | peanut slot 2 | Happy (2) | variation 1 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 30</strong>: Shot 3 [42.57s-44.44s] | @ 43.15s | peanut slot 0 | Happy (2) | variation 1 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 31</strong>: Shot 3 [42.57s-44.44s] | @ 43.62s | peanut slot 1 | Happy (2) | variation 1 | mimicry</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-24' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-34'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-34' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-34' aria-expanded='false' tabindex='0' data-detail-target='details-34' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>34.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Oh gods, keep trying! My wife, Miri, she&#x27;ll need my help!</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span></span></span><div class='node-detail-panel' id='details-34' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: af20b191-a500-8840-5319-b770fdf50fd4</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h1fe0fbbeg798bg4c08gae97g282a5cde1fb0</span><span class='meta-item'><strong>Text UUID</strong>: 690e486c-2779-4514-8e44-c869fcf1bfb9</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 8</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: af20b191-a500-8840-5319-b770fdf50fd4</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 8.28s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 4c8dd541-6683-68ec-f7f5-ab52e165ccc4</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_StuckHalfElf/HEL_M_Rig_SCENE_PLA_LiftBeams_Fail_Bard_Ben.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [73.9s-81.22s] | @ 75.65s | speaker 0 | Fear (16) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [73.9s-81.22s] | @ 76.77s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [73.9s-81.22s] | @ 78.3s | speaker 0 | Fear (16) | variation 2</span></div></section></div></div></div><div class='node-branch' id='branch-34' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-22'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-22' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-22' aria-expanded='false' tabindex='0' data-detail-target='details-22' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>22.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Strength) DC 12 target=0 (Speaker 0)</span></span></span></span><div class='node-detail-panel' id='details-22' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line roll-line'><div class='signal-heading'><span class='signal-label'>roll</span></div><div class='signal-body'>Strength | dc=12 (Act1_Challenging) | speaker 0 Speaker 0</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 84d36e3b-59be-aa32-1509-a7bb79b3250b</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h5ba2f7e7g7c86g427egb627gc80f4b23e9b6</span><span class='meta-item'><strong>Text UUID</strong>: fbec2e6b-a0f3-49dd-9433-72633348920c</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Strength</span><span class='meta-item'><strong>Difficulty Class UUID</strong>: 5e7ff0e9-6c80-459c-a636-3a3e8417a61a</span><span class='meta-item'><strong>Difficulty Class Name</strong>: Act1_Challenging</span><span class='meta-item'><strong>Difficulty Class Value</strong>: 12</span><span class='meta-item'><strong>Exclude Companion Bonuses</strong>: False</span><span class='meta-item'><strong>Exclude Speaker Bonuses</strong>: False</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Roll Type</strong>: RawAbility</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-22' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-7'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-7' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>7.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-37'>Node 37</a></span></span></span></span><div class='node-detail-panel' id='details-7' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 2982595d-d5b9-a98d-c172-40b310cbb82a</span><span class='meta-item'><strong>Jump Target</strong>: Node 37 (bc36142c-5b3c-f487-9a62-433604d5ca40)</span><span class='meta-item'><strong>Jump Target Point</strong>: 2</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-30'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-30' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-30' aria-expanded='false' tabindex='0' data-detail-target='details-30' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>30.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Deception, Charisma, SkillCheck) DC 12 target=0 (Speaker 0)</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>Bard</span></span></span></span><div class='node-detail-panel' id='details-30' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='An inspiring magician whose power echoes the music of creation.'>Bard</span> <span class='asset-id'>{d93434bd-6b71-4789-b128-ee24156057cc}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line roll-line'><div class='signal-heading'><span class='signal-label'>roll</span></div><div class='signal-body'>Deception, Charisma, SkillCheck | dc=12 (Act1_Challenging) | speaker 0 Speaker 0</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 983041df-ee1e-e453-8d8a-9868aef91906</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h75de47a2gd25ag470fga82fg3a5f9b35dcae</span><span class='meta-item'><strong>Text UUID</strong>: 7f9c08ad-0bb0-4f27-88df-7d8e7fe9069d</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Difficulty Class UUID</strong>: 5e7ff0e9-6c80-459c-a636-3a3e8417a61a</span><span class='meta-item'><strong>Difficulty Class Name</strong>: Act1_Challenging</span><span class='meta-item'><strong>Difficulty Class Value</strong>: 12</span><span class='meta-item'><strong>Exclude Companion Bonuses</strong>: False</span><span class='meta-item'><strong>Exclude Speaker Bonuses</strong>: False</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Deception</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-30' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-13'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-13' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-13' aria-expanded='false' tabindex='0' data-detail-target='details-13' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>13.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-13' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 4a9130dd-08dc-34c8-213e-7ee5d09e7822</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-13' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-46'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-46' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-46' aria-expanded='false' tabindex='0' data-detail-target='details-46' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>46.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Miri... We fought. She left with the dowry. She must be nearby. Please, find her, try and help.</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span><span class='preview-inline'><span class='preview-token set'>PLA_StuckHalfElf_Knows_MentionedDowry</span></span></span></span><div class='node-detail-panel' id='details-46' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type User | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='PLA_StuckHalfElf_Knows_MentionedDowrydescription'>PLA_StuckHalfElf_Knows_MentionedDowry</span> <span class='asset-id'>{8cd5d88a-7c00-da42-9460-c38fcdfffade}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: ee3cc659-7a8c-bd6a-cd47-69d08922b24f</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h2f397ca3g4d6cg4531ga6fcg03ec896c1c81</span><span class='meta-item'><strong>Text UUID</strong>: b631cceb-d92f-484b-8d3a-428091f877e7</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 9</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: ee3cc659-7a8c-bd6a-cd47-69d08922b24f</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 13.43s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 4c8dd541-6683-68ec-f7f5-ab52e165ccc4</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_StuckHalfElf/HEL_M_Rig_SCENE_PLA_LiftBeams_Fail_Bard_Ben.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [82.18s-90.7s] | @ 84.19s | speaker 0 | Fear (16) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [82.18s-90.7s] | @ 87.55s | speaker 0 | Sad (32) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 2 [90.7s-95.61s] | @ 90.7s | speaker 0 | Sad (32) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [95.61s-96.24s] | @ 95.61s | speaker 0 | Angry (8)</span></div></section></div></div></div><div class='node-branch' id='branch-46' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-9'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-9' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>9.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Damn... just go. I&#x27;m done for.</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>The beam doesn&#x27;t budge.</span></span><span class='preview-inline'><span class='preview-token set'>PLA_StuckHalfElf_State_OneFailed</span><span class='preview-token set'>PLA_StuckHalfElf_State_Failed</span></span></span></span><div class='node-detail-panel' id='details-9' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='At least one player failed to help the Stuck Half-Elf'>PLA_StuckHalfElf_State_OneFailed</span> <span class='asset-id'>{adfb15af-33a3-541d-480b-5fed6f21684a}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Character attempted to free the Stuck Half-Elf and failed.'>PLA_StuckHalfElf_State_Failed</span> <span class='asset-id'>{274d7b42-175b-bfb0-f697-fb98863aa89c}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 2ef4cb88-e9fd-33ee-7aa4-68828c98b3b5</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h78f5592ag7de6g4b16g8891g0f4cb6f5f5fc</span><span class='meta-item'><strong>Text UUID</strong>: 9fa79a52-e02e-4d2f-a90b-fa58fa90283b</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 11</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 2ef4cb88-e9fd-33ee-7aa4-68828c98b3b5</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 9.97s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [105.94s-115.91s] | @ 108.49s | speaker 0 | Fear (16) | variation 24</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [105.94s-115.91s] | @ 108.93s | speaker 0 | Disgust (128) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [105.94s-115.91s] | @ 112.16s | speaker 0 | Disgust (128) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [105.94s-115.91s] | @ 115.48s | speaker 0 | Dead (512)</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [115.91s-116.58s] | @ 115.91s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-8'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-8' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-8' aria-expanded='false' tabindex='0' data-detail-target='details-8' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>8.</span><span class='dialog'>Failure</span></span></span></span><div class='node-detail-panel' id='details-8' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 2cf425d9-ed34-4ea3-416d-391f9943a3c7</span></div></section></div></div></div><div class='node-branch' id='branch-8' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-6'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-6' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-6' aria-expanded='false' tabindex='0' data-detail-target='details-6' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>6.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Miri... No. There&#x27;s no point. </span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span></span></span><div class='node-detail-panel' id='details-6' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 297e8afa-dc7e-7f4d-1121-f190ee9079ce</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hc33070d7g7504g4908g8f39g00267c3e2107</span><span class='meta-item'><strong>Text UUID</strong>: dd7bc84f-f0a8-4d06-8f3a-8a4581409f00</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 3</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 297e8afa-dc7e-7f4d-1121-f190ee9079ce</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6.58s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 4c8dd541-6683-68ec-f7f5-ab52e165ccc4</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_StuckHalfElf/HEL_M_Rig_SCENE_PLA_LiftBeams_Fail_Bard_Ben.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [20.46s-25.78s] | @ 20.46s | speaker 0 | Fear (16) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [20.46s-25.78s] | @ 22.39s | speaker 0 | Sad (32) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [27.04s-32.76s] | @ 27.04s | speaker 1 | Angry (8)</span></div></section></div></div></div><div class='node-branch' id='branch-6' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-9'>Node 9</a> <span class='repeat-speaker speaker-label npc'>(Speaker 0)</span> <span class='dialog'>Damn... just go. I&#x27;m done for.</span></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-36'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-36' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>36.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-17'>Node 17</a></span></span></span></span><div class='node-detail-panel' id='details-36' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: bc007ab7-b5d7-2595-174a-8d7360ec3c2b</span><span class='meta-item'><strong>Jump Target</strong>: Node 17 (6a0ca766-add4-0891-44cb-36448f1b5b0c)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-44'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-44' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-44' aria-expanded='false' tabindex='0' data-detail-target='details-44' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>44.</span><span class='dialog'>Failure</span></span></span></span><div class='node-detail-panel' id='details-44' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: e775dc30-e52c-ebaa-d6c1-52c956d85608</span></div></section></div></div></div><div class='node-branch' id='branch-44' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-43'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-43' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-43' aria-expanded='false' tabindex='0' data-detail-target='details-43' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>43.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='nodelink'>Alias to <a href='#node-28'>Node 28</a></span></span></span></span><div class='node-detail-panel' id='details-43' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Alias</span><span class='meta-item'><strong>UUID</strong>: e74dfac8-a0cd-9b2f-9f73-5a21d0e73ed1</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-43' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-28'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-28' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-28' aria-expanded='false' tabindex='0' data-detail-target='details-28' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>28.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Look, are you actually going to help or just piss about?</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span></span></span><div class='node-detail-panel' id='details-28' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 9675d134-8ad5-ced6-915d-fa5a6347bd00</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h827cdc17g6302g4b06g8d59g6c90766cd7f1</span><span class='meta-item'><strong>Text UUID</strong>: c108c623-8907-4c03-8f17-fdb8e37d01c0</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 5</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 9675d134-8ad5-ced6-915d-fa5a6347bd00</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 7.75s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 4c8dd541-6683-68ec-f7f5-ab52e165ccc4</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_StuckHalfElf/HEL_M_Rig_SCENE_PLA_LiftBeams_Fail_Bard_Ben.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [44.44s-50.12s] | @ 44.44s | speaker 0 | Angry (8) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 2 [50.12s-52.19s] | @ 52.19s | speaker 0 | Angry (8)</span></div></section></div></div></div><div class='node-branch' id='branch-28' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-4'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-4' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>4.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-9'>Node 9</a></span></span></span></span><div class='node-detail-panel' id='details-4' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 203bae5f-a3ea-0535-4675-7254125b4642</span><span class='meta-item'><strong>Jump Target</strong>: Node 9 (2ef4cb88-e9fd-33ee-7aa4-68828c98b3b5)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-27'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-27' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-27' aria-expanded='false' tabindex='0' data-detail-target='details-27' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>27.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Investigation, Intelligence, SkillCheck) DC 15 target=0 (Speaker 0)</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!PLA_StuckHalfElf_State_Failed</span></span></span></span><div class='node-detail-panel' id='details-27' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Character attempted to free the Stuck Half-Elf and failed.'>PLA_StuckHalfElf_State_Failed</span> <span class='asset-id'>{274d7b42-175b-bfb0-f697-fb98863aa89c}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line roll-line'><div class='signal-heading'><span class='signal-label'>roll</span></div><div class='signal-body'>Investigation, Intelligence, SkillCheck | dc=15 (Act1_Hard) | speaker 0 Speaker 0</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 94b38e0d-95ce-8cc3-6afa-411c4c1f518b</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h28faa038gf9cag4ff8g9e5cgc092ad512798</span><span class='meta-item'><strong>Text UUID</strong>: 68e049bb-d7f9-3b99-6383-9f1a4cb589f5</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Intelligence</span><span class='meta-item'><strong>Difficulty Class UUID</strong>: 831e1fbe-428d-4f4d-bd17-4206d6efea35</span><span class='meta-item'><strong>Difficulty Class Name</strong>: Act1_Hard</span><span class='meta-item'><strong>Difficulty Class Value</strong>: 15</span><span class='meta-item'><strong>Exclude Companion Bonuses</strong>: False</span><span class='meta-item'><strong>Exclude Speaker Bonuses</strong>: False</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Investigation</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-27' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-15'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-15' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-15' aria-expanded='false' tabindex='0' data-detail-target='details-15' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>15.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-15' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 58a2f27a-764a-af6c-a5f8-f626cecee3e1</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-15' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-1'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-1' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-1' aria-expanded='false' tabindex='0' data-detail-target='details-1' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>1.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>I think... that&#x27;s it!</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Player pushes against the beam. Benryn wriggles out and stands.</span></span><span class='preview-inline'><span class='preview-token set'>PLA_StuckHalfElf_Event_Free</span></span></span></span><div class='node-detail-panel' id='details-1' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='PLA_StuckDwarf_Event_Freedescription'>PLA_StuckHalfElf_Event_Free</span> <span class='asset-id'>{48093e85-4d7d-2ded-75f4-a29560e39f5c}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 00da991e-17e4-6412-ce8c-48bf979a6cea</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hc2fbe182gfc8fg4f5bg9714g94f6bb11f11e</span><span class='meta-item'><strong>Text UUID</strong>: 40f5f141-ffd5-f155-b481-03b569b94259</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 2</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 00da991e-17e4-6412-ce8c-48bf979a6cea</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 10.33s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: a7f851b4-3591-4a04-a3b2-0785e5b6eb81</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_StuckHalfElf/DWR_F/DWR_F_Rig_SCENE_PLA_LiftBeams_Success_PLYR.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: f1baddfd-7f1c-76c3-3529-bb66b5655b80</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_StuckHalfElf/HEL_M_Rig_SCENE_PLA_LiftBeams_Success_BEN.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 2 [11.26s-18.36s] | @ 18.21s | speaker 0 | Fear (16) | variation 1</span><span class='meta-item'><strong>Unmapped Attributes</strong>: ApprovalRatingID</span></div></section></div></div></div><div class='node-branch' id='branch-1' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-10'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-10' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>10.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-31'>Node 31</a></span></span></span></span><div class='node-detail-panel' id='details-10' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 2f3f58cc-b985-0db5-6eff-6d237c9f4565</span><span class='meta-item'><strong>Jump Target</strong>: Node 31 (a580f547-24d7-831b-f7cf-871eff506648)</span><span class='meta-item'><strong>Jump Target Point</strong>: 2</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-49'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-49' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-49' aria-expanded='false' tabindex='0' data-detail-target='details-49' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>49.</span><span class='dialog'>Failure</span></span></span></span><div class='node-detail-panel' id='details-49' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: fdec8098-b8cd-899e-f31a-83ba2259cbb1</span></div></section></div></div></div><div class='node-branch' id='branch-49' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-5'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-5' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>5.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Damn... just go. I&#x27;m done for.</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>The beam doesn&#x27;t budge.</span></span><span class='preview-inline'><span class='preview-token set'>PLA_StuckHalfElf_State_OneFailed</span><span class='preview-token set'>PLA_StuckHalfElf_State_Failed</span></span></span></span><div class='node-detail-panel' id='details-5' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='At least one player failed to help the Stuck Half-Elf'>PLA_StuckHalfElf_State_OneFailed</span> <span class='asset-id'>{adfb15af-33a3-541d-480b-5fed6f21684a}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Character attempted to free the Stuck Half-Elf and failed.'>PLA_StuckHalfElf_State_Failed</span> <span class='asset-id'>{274d7b42-175b-bfb0-f697-fb98863aa89c}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 27246c36-3918-8570-015e-3c5991691c3e</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hbef896d0g2980g4fa7g88e7g6941b8adfeb2</span><span class='meta-item'><strong>Text UUID</strong>: 66db83e9-6adc-8222-80d8-8b07b9996a4e</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 10</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 27246c36-3918-8570-015e-3c5991691c3e</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 10.33s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 5</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: c38782cb-9aff-4a25-a1b5-f378513662ae</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_StuckHalfElf/DWR_F/DWR_F_Rig_SCENE_PLA_LiftBeams_Fail_PLYR.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 3 [99.29s-101.92s] | @ 99.29s | speaker 0 | Fear (16) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 5 [103.51s-105.94s] | @ 103.53s | speaker 0 | Sad (32) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 5 [103.51s-105.94s] | @ 105.23s | speaker 0 | Dead (512)</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [105.94s-115.91s] | @ 105.94s | speaker 0 | Angry (8) | variation 24</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-17'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-17' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>17.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'><i>Leave.</i></span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>PLA_StuckHalfElf_State_Failed</span></span></span></span><div class='node-detail-panel' id='details-17' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Character attempted to free the Stuck Half-Elf and failed.'>PLA_StuckHalfElf_State_Failed</span> <span class='asset-id'>{274d7b42-175b-bfb0-f697-fb98863aa89c}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 6a0ca766-add4-0891-44cb-36448f1b5b0c</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h39358380gb2ccg4843gbb58g45ffa566d19a</span><span class='meta-item'><strong>Text UUID</strong>: c11fa8da-931f-f7d4-8c85-d23f2ec8c583</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Approval Rating</strong>: 418a3300-166b-49f6-978b-bb17997deee5</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-12'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-12' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-12' aria-expanded='true' tabindex='0' data-detail-target='details-12' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>12.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='nodelink'>Alias to <a href='#node-29'>Node 29</a>, <a href='#node-41'>Node 41</a></span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>PLA_StuckHalfElf_State_Failed</span><span class='preview-token check'>Barbarian</span></span></span></span><div class='node-detail-panel' id='details-12' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Character attempted to free the Stuck Half-Elf and failed.'>PLA_StuckHalfElf_State_Failed</span> <span class='asset-id'>{274d7b42-175b-bfb0-f697-fb98863aa89c}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='They call you a savage, an animal. They don&#x27;t know what it&#x27;s like to need to fight, tooth and claw, just to survive. You do. '>Barbarian</span> <span class='asset-id'>{02913f9a-f696-40cf-acdf-32032afab32c}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Alias</span><span class='meta-item'><strong>UUID</strong>: 41f35ae3-2e50-fe4c-7440-d20dcfbe650e</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Unmapped Attributes</strong>: Greeting, Root</span></div></section></div></div></div><div class='node-branch' id='branch-12'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-29'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-29' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>29.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-37'>Node 37</a></span></span></span></span><div class='node-detail-panel' id='details-29' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 980c386e-6253-bc46-965e-c601c45be158</span><span class='meta-item'><strong>Jump Target</strong>: Node 37 (bc36142c-5b3c-f487-9a62-433604d5ca40)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-41'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-41' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>41.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-17'>Node 17</a></span></span></span></span><div class='node-detail-panel' id='details-41' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: d7f27dc7-d19d-8c49-51bd-5f7251ea1b59</span><span class='meta-item'><strong>Jump Target</strong>: Node 17 (6a0ca766-add4-0891-44cb-36448f1b5b0c)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-2'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-2' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>2.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>*Cough!*</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Stuck under wooden beam</span></span><span class='preview-inline'><span class='preview-token check'>PLA_StuckHalfElf_State_Failed</span></span></span></span><div class='node-detail-panel' id='details-2' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Character attempted to free the Stuck Half-Elf and failed.'>PLA_StuckHalfElf_State_Failed</span> <span class='asset-id'>{274d7b42-175b-bfb0-f697-fb98863aa89c}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 086bdcba-9d99-f684-83e4-be0c2b8c3ca5</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h66b8f7dagc2bdg4da4gad84g1e73e636ae92</span><span class='meta-item'><strong>Text UUID</strong>: cdce75d6-193c-9e9c-b4af-ac87872c89e1</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 0</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 086bdcba-9d99-f684-83e4-be0c2b8c3ca5</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 2.85s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: f1baddfd-7f1c-76c3-3529-bb66b5655b80</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/PLA/PLA_StuckHalfElf/HEL_M_Rig_SCENE_PLA_LiftBeams_Success_BEN.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [0s-2.85s] | @ 0s | speaker 0 | Pain (2048) | variation 23</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li></ul>
+        
+      </div>
+    </section>
+  </div>
+  <div class="tree-scrollbar-proxy" hidden>
+    <div class="tree-scrollbar-proxy-inner"></div>
+  </div>
+  <script>
+    function getNodeDetailPanel(shell) {
+      if (!shell) {
+        return null;
+      }
+      const content = shell.querySelector(":scope > .node-row > .node-content");
+      if (!content) {
+        return null;
+      }
+      return Array.from(content.children).find((child) => child.classList && child.classList.contains("node-detail-panel")) || null;
+    }
+    function getNodeDetailToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-detail-target]");
+    }
+    function getNodeBranchToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-branch-target]");
+    }
+    function getNodeBranchMarker(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .tree-toggle-marker[data-branch-target]");
+    }
+    const jumpHighlightTimers = new WeakMap();
+    const nodeSummaryClickTimers = new WeakMap();
+    const NODE_DETAIL_DOUBLE_CLICK_MS = 160;
+    const SUPPORTS_UNTIL_FOUND = document.documentElement.classList.contains("supports-until-found");
+    const treeShell = document.querySelector(".tree-shell");
+    const treeShellInner = treeShell ? treeShell.querySelector(".tree-shell-inner") : null;
+    const treeScrollbarProxy = document.querySelector(".tree-scrollbar-proxy");
+    const treeScrollbarProxyInner = treeScrollbarProxy
+      ? treeScrollbarProxy.querySelector(".tree-scrollbar-proxy-inner")
+      : null;
+    let syncingTreeScroll = false;
+    let syncingProxyScroll = false;
+    if (!SUPPORTS_UNTIL_FOUND) {
+      document.querySelectorAll("[hidden='until-found']").forEach((element) => {
+        element.setAttribute("hidden", "");
+      });
+    }
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+    function hideCollapsible(target) {
+      if (!target) {
+        return;
+      }
+      if (SUPPORTS_UNTIL_FOUND) {
+        target.setAttribute("hidden", "until-found");
+        return;
+      }
+      target.setAttribute("hidden", "");
+    }
+    function setToggleButtonState(button, active) {
+      if (!button) {
+        return;
+      }
+      button.classList.toggle("is-active", active);
+      const hideLabel = button.dataset.hideLabel;
+      const showLabel = button.dataset.showLabel;
+      if (hideLabel && showLabel) {
+        button.textContent = active ? showLabel : hideLabel;
+      }
+    }
+    function syncAllDetailsToggle() {
+      const button = document.querySelector("button[data-toggle-details='all']");
+      if (!button) {
+        return;
+      }
+      const panels = Array.from(document.querySelectorAll(".node-detail-panel"));
+      const allOpen = panels.length > 0 && panels.every((panel) => !panel.hasAttribute("hidden"));
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function syncAllBranchesToggle() {
+      const button = document.querySelector("button[data-toggle-branches='all']");
+      if (!button) {
+        return;
+      }
+      const branchMarkers = Array.from(document.querySelectorAll(".tree-toggle-marker[data-branch-target]"));
+      const allOpen = branchMarkers.length > 0 && branchMarkers.every((marker) => marker.dataset.branchExpanded === "true");
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function updateTreeScrollbarProxy() {
+      if (!treeShell || !treeShellInner || !treeScrollbarProxy || !treeScrollbarProxyInner) {
+        return;
+      }
+      const contentWidth = treeShellInner.scrollWidth;
+      const viewportWidth = treeShell.clientWidth;
+      const needsProxy = contentWidth > viewportWidth + 1;
+      if (!needsProxy) {
+        treeScrollbarProxy.hidden = true;
+        return;
+      }
+      const rect = treeShell.getBoundingClientRect();
+      treeScrollbarProxy.hidden = false;
+      treeScrollbarProxy.style.left = `${Math.max(0, rect.left)}px`;
+      treeScrollbarProxy.style.width = `${Math.max(0, rect.width)}px`;
+      treeScrollbarProxyInner.style.width = `${contentWidth}px`;
+      if (!syncingTreeScroll && Math.abs(treeScrollbarProxy.scrollLeft - treeShell.scrollLeft) > 1) {
+        syncingProxyScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingProxyScroll = false;
+      }
+    }
+    function resetTreeScrollToStart() {
+      document.querySelectorAll(".tree-shell").forEach((shell) => {
+        shell.scrollLeft = 0;
+      });
+      if (treeScrollbarProxy) {
+        treeScrollbarProxy.scrollLeft = 0;
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setBranchOpen(control, openState, syncState = true) {
+      if (!control) {
+        return;
+      }
+      const targetId = control.dataset.branchTarget;
+      const target = targetId ? document.getElementById(targetId) : null;
+      if (!target) {
+        return;
+      }
+      const shell = control.closest(".node-shell");
+      const marker = shell ? getNodeBranchMarker(shell) : null;
+      const summary = shell ? getNodeBranchToggle(shell) : null;
+      if (openState) {
+        target.removeAttribute("hidden");
+      } else {
+        hideCollapsible(target);
+      }
+      if (marker) {
+        marker.dataset.branchExpanded = openState ? "true" : "false";
+        marker.textContent = openState ? "-" : "+";
+      }
+      if (summary) {
+        summary.setAttribute("aria-expanded", openState ? "true" : "false");
+      }
+      if (syncState) {
+        syncAllBranchesToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setDetailOpen(shell, openState, syncState = true) {
+      const panel = getNodeDetailPanel(shell);
+      const toggle = getNodeDetailToggle(shell);
+      if (!panel) {
+        return;
+      }
+      if (openState) {
+        panel.removeAttribute("hidden");
+      } else {
+        hideCollapsible(panel);
+      }
+      if (toggle) {
+        toggle.dataset.detailExpanded = openState ? "true" : "false";
+      }
+      if (syncState) {
+        syncAllDetailsToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setAllBranches(openState) {
+      document.querySelectorAll(".tree-toggle-marker[data-branch-target]").forEach((marker) => { setBranchOpen(marker, openState, false); });
+      syncAllBranchesToggle();
+    }
+    function setAllNodeDetails(openState) {
+      document.querySelectorAll(".node-shell").forEach((shell) => {
+        if (getNodeDetailPanel(shell)) {
+          setDetailOpen(shell, openState, false);
+        }
+      });
+      syncAllDetailsToggle();
+    }
+    function openParents(target) {
+      let current = target;
+      while (current) {
+        if (current.classList && current.classList.contains("node-branch")) {
+          const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${current.id}"]`);
+          setBranchOpen(marker, true);
+        }
+        current = current.parentElement;
+      }
+    }
+    function highlightJumpTarget(target) {
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      if (!shell) {
+        return;
+      }
+      const existingTimer = jumpHighlightTimers.get(shell);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+      shell.classList.add("jump-highlight");
+      const timeoutId = window.setTimeout(() => {
+        shell.classList.remove("jump-highlight");
+        jumpHighlightTimers.delete(shell);
+      }, 5000);
+      jumpHighlightTimers.set(shell, timeoutId);
+    }
+    function getStickyScrollOffset() {
+      const toolbar = document.querySelector(".toolbar");
+      if (!toolbar) {
+        return 8;
+      }
+      return Math.ceil(toolbar.getBoundingClientRect().height) + 8;
+    }
+    function scrollNodeTargetIntoView(target) {
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      const scrollTarget = shell || target;
+      if (!scrollTarget) {
+        return;
+      }
+      const offset = getStickyScrollOffset();
+      const top = window.scrollY + scrollTarget.getBoundingClientRect().top - offset;
+      window.scrollTo({ top: Math.max(0, top), behavior: "auto" });
+    }
+    function revealAndFocusNodeTarget(target, href = "") {
+      if (!target) {
+        return;
+      }
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      openParents(shell || target);
+      if (href) {
+        history.replaceState(null, "", href);
+      }
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollNodeTargetIntoView(target);
+          highlightJumpTarget(target);
+          updateTreeScrollbarProxy();
+        });
+      });
+    }
+    if (treeShell && treeScrollbarProxy) {
+      treeShell.addEventListener("scroll", () => {
+        if (syncingProxyScroll) {
+          return;
+        }
+        syncingTreeScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingTreeScroll = false;
+      });
+      treeScrollbarProxy.addEventListener("scroll", () => {
+        if (syncingTreeScroll) {
+          return;
+        }
+        syncingProxyScroll = true;
+        treeShell.scrollLeft = treeScrollbarProxy.scrollLeft;
+        syncingProxyScroll = false;
+      });
+    }
+    document.addEventListener("click", (event) => {
+      const allBranchesButton = event.target.closest("button[data-toggle-branches='all']");
+      if (allBranchesButton) {
+        const isOpen = allBranchesButton.dataset.active === "true";
+        setAllBranches(!isOpen);
+        return;
+      }
+      const allDetailsButton = event.target.closest("button[data-toggle-details='all']");
+      if (allDetailsButton) {
+        const isOpen = allDetailsButton.dataset.active === "true";
+        setAllNodeDetails(!isOpen);
+        return;
+      }
+      const button = event.target.closest("button[data-toggle-class]");
+      if (button) {
+        const active = document.body.classList.toggle(button.dataset.toggleClass);
+        setToggleButtonState(button, active);
+        return;
+      }
+      const link = event.target.closest("a[href^='#node-']");
+      if (link) {
+        event.preventDefault();
+        const target = document.querySelector(link.getAttribute("href"));
+        if (target) {
+          revealAndFocusNodeTarget(target, link.getAttribute("href"));
+        }
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (summary) {
+        const branchTarget = summary.dataset.branchTarget;
+        const shell = summary.closest(".node-shell");
+        if (!shell) {
+          return;
+        }
+        if (!branchTarget) {
+          if (summary.dataset.detailTarget) {
+            const isOpen = summary.dataset.detailExpanded === "true";
+            setDetailOpen(shell, !isOpen);
+          }
+          return;
+        }
+        const existingTimer = nodeSummaryClickTimers.get(summary);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+          nodeSummaryClickTimers.delete(summary);
+          event.preventDefault();
+          const isOpen = summary.dataset.detailExpanded === "true";
+          setDetailOpen(shell, !isOpen);
+          return;
+        }
+        const timerId = window.setTimeout(() => {
+          nodeSummaryClickTimers.delete(summary);
+          const isOpen = summary.getAttribute("aria-expanded") === "true";
+          setBranchOpen(summary, !isOpen);
+          if (isOpen) {
+            const panel = getNodeDetailPanel(shell);
+            if (panel && !panel.hasAttribute("hidden")) {
+              setDetailOpen(shell, false);
+            }
+          }
+        }, NODE_DETAIL_DOUBLE_CLICK_MS);
+        nodeSummaryClickTimers.set(summary, timerId);
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (!summary) {
+        return;
+      }
+      event.preventDefault();
+      const shell = summary.closest(".node-shell");
+      if (!shell) {
+        return;
+      }
+      if (summary.dataset.branchTarget) {
+        const isOpen = summary.getAttribute("aria-expanded") === "true";
+        setBranchOpen(summary, !isOpen);
+        if (isOpen) {
+          const panel = getNodeDetailPanel(shell);
+          if (panel && !panel.hasAttribute("hidden")) {
+            setDetailOpen(shell, false);
+          }
+        }
+        return;
+      }
+      if (summary.dataset.detailTarget) {
+        const isOpen = summary.dataset.detailExpanded === "true";
+        setDetailOpen(shell, !isOpen);
+      }
+    });
+    document.addEventListener("beforematch", (event) => {
+      const branch = event.target.closest(".node-branch");
+      if (branch && branch.id) {
+        const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${branch.id}"]`);
+        setBranchOpen(marker, true);
+      }
+      const panel = event.target.closest(".node-detail-panel");
+      if (panel) {
+        const shell = panel.closest(".node-shell");
+        if (shell) {
+          openParents(shell);
+          setDetailOpen(shell, true);
+        }
+      }
+    });
+    document.querySelectorAll("button[data-toggle-class]").forEach((button) => {
+      const active = document.body.classList.contains(button.dataset.toggleClass);
+      setToggleButtonState(button, active);
+    });
+    if (window.ResizeObserver && treeShell) {
+      const observer = new ResizeObserver(() => {
+        updateTreeScrollbarProxy();
+      });
+      observer.observe(treeShell);
+      if (treeShellInner) {
+        observer.observe(treeShellInner);
+      }
+    }
+    window.addEventListener("resize", updateTreeScrollbarProxy);
+    window.addEventListener("scroll", updateTreeScrollbarProxy, { passive: true });
+    window.addEventListener("pageshow", () => {
+      if (window.location.hash) {
+        updateTreeScrollbarProxy();
+        return;
+      }
+      resetTreeScrollToStart();
+      window.requestAnimationFrame(() => {
+        resetTreeScrollToStart();
+      });
+      window.setTimeout(() => {
+        resetTreeScrollToStart();
+      }, 0);
+    });
+    syncAllBranchesToggle();
+    document.querySelectorAll("button[data-toggle-details='all']").forEach((button) => {
+      const active = button.dataset.active === "true";
+      setToggleButtonState(button, active);
+    });
+    updateTreeScrollbarProxy();
+    if (window.location.hash) {
+      const target = document.querySelector(window.location.hash);
+      if (target) {
+        revealAndFocusNodeTarget(target, window.location.hash);
+      }
+    }
+  </script>
+  <script data-search-target-line>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const targetLine = params.get("line");
+      const targetHash = window.location.hash;
+
+      if (!targetLine || !targetHash) {
+        return;
+      }
+
+      const targetShell = document.querySelector(targetHash);
+      if (!targetShell) {
+        return;
+      }
+
+      if (typeof openParents === "function") {
+        openParents(targetShell);
+      }
+      if (typeof setDetailOpen === "function") {
+        setDetailOpen(targetShell, true);
+      }
+
+      const normalize = (value) =>
+        (value || "")
+          .toLowerCase()
+          .normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      const normalizedTargetLine = normalize(targetLine);
+      if (!normalizedTargetLine) {
+        return;
+      }
+
+      const lineElements = Array.from(targetShell.querySelectorAll(".text-line"));
+      const matchingLine = lineElements.find((element) => {
+        const lineText = normalize(element.textContent);
+        return (
+          lineText === normalizedTargetLine ||
+          lineText.includes(normalizedTargetLine) ||
+          normalizedTargetLine.includes(lineText)
+        );
+      });
+
+      if (!matchingLine) {
+        return;
+      }
+
+      matchingLine.classList.add("search-target-line");
+      requestAnimationFrame(() => {
+        matchingLine.scrollIntoView({ block: "center" });
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DEN_DissectedDrow_Dead</title>
+  <script>
+    (function () {
+      const probe = document.createElement("div");
+      const supportsUntilFound = "onbeforematch" in probe;
+      document.documentElement.classList.add(
+        supportsUntilFound ? "supports-until-found" : "no-until-found"
+      );
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #182330;
+      --muted: #586477;
+      --line: #c7d2df;
+      --npc: #b91c1c;
+      --player: #15803d;
+      --system: #2563eb;
+      --rule: #2f6f44;
+      --tag: #0f766e;
+      --check: #7c3aed;
+      --set: #ea580c;
+      --roll: #6d28d9;
+      --approval: #0f766e;
+      --jump: #155eef;
+      --context: #475467;
+      --surface: #f3f6fa;
+      --surface-active: #e6edf5;
+      --surface-hover: #edf3f9;
+      --detail-surface: #e3ebf4;
+      --detail-border: #b4c2d4;
+      --focus: #90a4bc;
+      --highlight: #d9e5f5;
+      --scrollbar-proxy-bg: rgba(255, 255, 255, 0.94);
+      --mono: Consolas, "SFMono-Regular", Menlo, monospace;
+      --sans: Georgia, "Palatino Linotype", serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #fff;
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.35;
+      overflow-x: hidden;
+    }
+    a { color: var(--jump); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: none;
+      padding: 0;
+      border-radius: 0;
+    }
+    .page {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0.55rem 0.9rem 1.8rem;
+      overflow-x: hidden;
+    }
+    .hero {
+      margin-bottom: 0.55rem;
+    }
+    .hero h1 {
+      margin: 0 0 0.2rem;
+      font-size: 1.4rem;
+      line-height: 1.15;
+    }
+    .source {
+      color: var(--muted);
+      font-size: 0.9rem;
+      word-break: break-all;
+      margin-bottom: 0.2rem;
+    }
+    .source-label {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.3rem;
+    }
+    .summary-line {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 0.35rem;
+    }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.45rem;
+      margin-bottom: 0.45rem;
+      padding: 0.35rem 0;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      overflow: visible;
+    }
+    .toolbar-scroll {
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: calc(100% - 7rem);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+    }
+    .controls {
+      display: inline-flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0.45rem;
+      white-space: nowrap;
+      font-size: 0.9rem;
+      min-width: max-content;
+      overflow: visible;
+    }
+    .controls button,
+    .controls summary,
+    .speaker-map > summary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 1.85rem;
+      padding: 0.12rem 0.5rem;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: var(--surface);
+      color: var(--jump);
+      font: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      list-style: none;
+      user-select: none;
+    }
+    .controls button.is-active,
+    .controls details[open] > summary,
+    .speaker-map[open] > summary {
+      background: var(--surface-active);
+      border-color: var(--focus);
+    }
+    .controls button:hover,
+    .controls summary:hover,
+    .speaker-map > summary:hover {
+      background: var(--surface-hover);
+      text-decoration: none;
+    }
+    .controls summary:focus,
+    .controls button:focus,
+    .speaker-map > summary:focus {
+      outline: 1px solid var(--focus);
+      outline-offset: 1px;
+    }
+    .speaker-map {
+      flex: 0 0 auto;
+      position: relative;
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .speaker-map summary,
+    .meta-block summary {
+      cursor: pointer;
+      color: var(--jump);
+      list-style: none;
+    }
+    .speaker-map summary::-webkit-details-marker,
+    .meta-block summary::-webkit-details-marker {
+      display: none;
+    }
+    .speaker-map[open] ul {
+      display: block;
+    }
+    .speaker-map ul {
+      display: none;
+      list-style: none;
+      margin: 0.3rem 0 0;
+      padding: 0.45rem 0.6rem;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 0.2rem);
+      min-width: 20rem;
+      max-width: min(34rem, calc(100vw - 2rem));
+      max-height: 24rem;
+      overflow: auto;
+      background: #fbfcfe;
+      border: 1px solid var(--line);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+      z-index: 30;
+    }
+    .speaker-map li + li {
+      margin-top: 0.1rem;
+    }
+    .speaker-index {
+      display: inline-block;
+      min-width: 2rem;
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 600;
+    }
+    .speaker-name {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.25rem;
+    }
+    .inline-meta, .line-meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .tree-shell {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: visible;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-shell-inner {
+      width: max-content;
+      min-width: 100%;
+    }
+    .tree-scrollbar-proxy {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 1.1rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      background: var(--scrollbar-proxy-bg);
+      border-top: 1px solid var(--line);
+      z-index: 40;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-scrollbar-proxy[hidden] {
+      display: none;
+    }
+    .tree-scrollbar-proxy-inner {
+      height: 1px;
+    }
+    .orphan-section {
+      width: auto;
+      min-width: 0;
+      margin-top: 1rem;
+      padding-top: 0.55rem;
+      border-top: 1px dotted var(--line);
+    }
+    .orphan-section h2 {
+      margin: 0 0 0.15rem;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+    .orphan-note {
+      margin: 0 0 0.35rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .root-list, .child-list {
+      list-style: none;
+      margin: 0;
+      padding-left: 0;
+      width: auto;
+      min-width: 0;
+    }
+    .child-list {
+      margin-left: 1.1rem;
+      padding-left: 0.85rem;
+      border-left: 1px dotted var(--line);
+    }
+    .node-item {
+      margin: 0.18rem 0;
+    }
+    details.node {
+      margin: 0;
+    }
+    details.node:target > summary .node-line {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    .node-leaf:target {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 0;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    summary::-webkit-details-marker {
+      display: none;
+    }
+    details.node > summary::before {
+      content: "▸";
+      display: inline-block;
+      width: 0.9rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      vertical-align: top;
+      padding-top: 0.12rem;
+    }
+    details.node[open] > summary::before {
+      content: "▾";
+    }
+    details.node.no-children > summary::before {
+      content: "•";
+    }
+    .node-line {
+      display: inline;
+      padding: 0.06rem 0.18rem;
+    }
+    .node-leaf {
+      display: inline-block;
+      padding: 0.06rem 0.18rem;
+      border-radius: 6px;
+    }
+    details.node > summary::before {
+      content: "+";
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    details.node[open] > summary::before {
+      content: "-";
+    }
+    details.node.no-children > summary::before {
+      content: ".";
+    }
+    .node-number {
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 700;
+    }
+    .speaker-label {
+      font-weight: 700;
+      margin-left: 0.2rem;
+    }
+    .speaker-label.npc { color: var(--npc); }
+    .speaker-label.player { color: var(--player); }
+    .speaker-label.system { color: var(--system); }
+    .dialog {
+      color: var(--ink);
+      margin-left: 0.2rem;
+    }
+    .node-kind {
+      color: var(--system);
+      margin-left: 0.2rem;
+    }
+    .ruletag {
+      color: var(--rule);
+      margin-left: 0.35rem;
+    }
+    .tags {
+      color: var(--tag);
+      margin-left: 0.35rem;
+    }
+    .checkflag {
+      color: var(--check);
+      margin-left: 0.35rem;
+    }
+    .setflag {
+      color: var(--set);
+      margin-left: 0.35rem;
+    }
+    .rolls {
+      color: var(--roll);
+      margin-left: 0.35rem;
+    }
+    .approval {
+      color: var(--approval);
+      margin-left: 0.35rem;
+    }
+    .nodelink {
+      color: var(--jump);
+      margin-left: 0.35rem;
+    }
+    .context {
+      color: var(--context);
+      margin-left: 0.3rem;
+      cursor: help;
+    }
+    .end {
+      color: #8b1e1e;
+      margin-left: 0.35rem;
+    }
+    .node-shell:target,
+    .node-leaf:target {
+      background: none;
+      border-radius: 0;
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-shell {
+      display: block;
+    }
+    .node-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.32rem;
+      width: max-content;
+      min-width: 100%;
+      transition: background-color 0.18s ease;
+    }
+    .node-shell.jump-highlight > .node-row {
+      background: var(--highlight);
+    }
+    .node-content {
+      min-width: 0;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker,
+    .tree-spacer {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 0.95rem;
+      height: 0.95rem;
+      margin-top: 0.08rem;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker {
+      border: none;
+      background: none;
+      color: var(--muted);
+      padding: 0;
+      font: inherit;
+      font-weight: 800;
+      font-size: 1.18rem;
+      line-height: 1;
+      user-select: none;
+    }
+    .tree-spacer {
+      border: none;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .node-branch[hidden] {
+      display: none;
+    }
+    html.supports-until-found .node-branch[hidden='until-found'] {
+      display: block;
+    }
+    .repeat {
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+    .node-summary {
+      display: block;
+      cursor: default;
+    }
+    .node-summary.is-interactive {
+      cursor: pointer;
+    }
+    .node-summary.is-interactive:focus-visible {
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-main-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.35rem;
+    }
+    .node-main {
+      display: block;
+      flex: 1 1 auto;
+      min-width: 0;
+      white-space: normal;
+      line-height: 1.28;
+      overflow-wrap: anywhere;
+    }
+    .node-leaf {
+      display: block;
+      border-radius: 0;
+    }
+    .node-number {
+      font-weight: 600;
+    }
+    .speaker-label {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind,
+    .nodelink {
+      overflow-wrap: anywhere;
+    }
+    .nodelink,
+    .end {
+      margin-left: 0;
+    }
+    .node-previews {
+      display: block;
+      margin: 0.12rem 0 0 1.1rem;
+      font-size: 0.88rem;
+      white-space: normal;
+      line-height: 1.28;
+    }
+    .preview-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.12rem 0.45rem;
+    }
+    .preview-token {
+      display: inline;
+      overflow-wrap: anywhere;
+    }
+    .preview-token.tag {
+      color: var(--tag);
+    }
+    .preview-token.rule {
+      color: var(--rule);
+    }
+    .preview-token.check {
+      color: var(--check);
+    }
+    .preview-token.set {
+      color: var(--set);
+    }
+    .preview-note {
+      display: block;
+      margin-top: 0.08rem;
+      color: var(--context);
+      overflow-wrap: anywhere;
+      font-weight: 700;
+    }
+    .preview-note-label {
+      color: var(--context);
+      font-weight: 700;
+    }
+    .preview-note-value {
+      color: #4f463f;
+      font-weight: 600;
+    }
+    .signal-line {
+      display: block;
+      margin: 0.14rem 0 0.2rem;
+    }
+    .signal-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem;
+    }
+    .signal-label {
+      font-weight: 700;
+    }
+    .signal-scope {
+      color: var(--muted);
+    }
+    .tag-line, .tag-line .signal-label { color: var(--tag); }
+    .rule-line, .rule-line .signal-label { color: var(--rule); }
+    .checkflag-line, .checkflag-line .signal-label { color: var(--check); }
+    .setflag-line, .setflag-line .signal-label { color: var(--set); }
+    .roll-line, .roll-line .signal-label { color: var(--roll); }
+    .approval-line, .approval-line .signal-label { color: var(--approval); }
+    .context-line, .context-line .signal-label { color: var(--context); }
+    .context-line .signal-heading {
+      font-weight: 700;
+    }
+    .context-line .signal-item {
+      color: #4f463f;
+    }
+    .signal-values {
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .signal-list {
+      list-style: none;
+      margin: 0.06rem 0 0 0.9rem;
+      padding: 0;
+    }
+    .signal-item {
+      margin: 0.1rem 0;
+      overflow-wrap: anywhere;
+    }
+    .signal-item::before {
+      content: "- ";
+      color: var(--muted);
+    }
+    .signal-body {
+      display: block;
+      margin: 0.06rem 0 0 0.9rem;
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .asset-name {
+      color: var(--ink);
+    }
+    .asset-id {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.92em;
+      overflow-wrap: anywhere;
+    }
+    .asset-state {
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .node-detail-panel {
+      margin: 0.08rem 0 0.18rem 1.1rem;
+      padding: 0.35rem 0.5rem;
+      border: 1px solid var(--detail-border);
+      background: var(--detail-surface);
+      border-radius: 0;
+      display: block;
+      gap: 0;
+      max-width: none;
+    }
+    .node-detail-panel[hidden] {
+      display: none;
+    }
+    html.supports-until-found .node-detail-panel[hidden='until-found'] {
+      display: block;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: none;
+    }
+    .section {
+      margin: 0.16rem 0;
+      padding: 0;
+      background: none;
+      border: none;
+    }
+    .section h3 {
+      margin: 0 0 0.22rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .node-detail-panel > .section + .section {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-block + .text-block {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-line {
+      font-size: 0.96rem;
+      margin-bottom: 0.15rem;
+    }
+    .text-line {
+      margin: 0.08rem 0;
+      font-size: inherit;
+      overflow-wrap: anywhere;
+    }
+    .badge-row, .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .badge, .meta-item {
+      display: block;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+    }
+    .meta-items {
+      margin: 0.12rem 0 0 0.85rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+      white-space: normal;
+    }
+    .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .meta-item {
+      display: block;
+      margin: 0.06rem 0;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+      overflow-wrap: anywhere;
+    }
+    .meta-item strong {
+      color: var(--ink);
+    }
+    .badge.flags { color: var(--check); }
+    .badge.tags { color: var(--tag); }
+    .flag-groups {
+      display: block;
+      gap: 0;
+    }
+    .flag-group-type {
+      display: inline-block;
+      color: var(--muted);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.15rem;
+    }
+    .rule-tree, .rule-tree ul {
+      margin: 0;
+      padding-left: 1rem;
+    }
+    .body-hide-flags .section-flags,
+    .body-hide-rules .section-rules,
+    .body-hide-details .section-metadata,
+    .body-hide-context .preview-note,
+    .body-hide-context .context-line,
+    .body-hide-context .node-line .context {
+      display: none;
+    }
+    .body-hide-flags .node-line .checkflag,
+    .body-hide-flags .node-line .setflag,
+    .body-hide-rules .node-line .ruletag {
+      display: none;
+    }
+    .body-hide-flags .checkflag-line,
+    .body-hide-flags .setflag-line {
+      display: none;
+    }
+    .body-hide-flags .preview-token.check,
+    .body-hide-flags .preview-token.set {
+      display: none;
+    }
+    .body-hide-context .context-line {
+      display: none;
+    }
+    .body-hide-numbers .node-number {
+      display: none;
+    }
+    .missing, .cycle {
+      padding: 0.2rem 0.35rem;
+      color: #8b1e1e;
+      background: rgba(139, 30, 30, 0.08);
+      border-radius: 6px;
+      display: inline-block;
+    }
+    .missing, .cycle {
+      padding: 0;
+      background: none;
+      border-radius: 0;
+      display: block;
+      overflow-wrap: anywhere;
+    }
+    @media (max-width: 920px) {
+      .page {
+        padding: 0.45rem 0.5rem 0.9rem;
+      }
+      .tree-shell {
+        padding: 0;
+      }
+    }
+  </style>
+  <style data-search-target-highlight>
+    .node-shell:target {
+      outline: 3px solid #c68b00;
+      background: #fff7db;
+      scroll-margin-top: 1rem;
+    }
+    .text-line.search-target-line {
+      background: #fff0a6;
+      border-radius: 2px;
+      padding: 0 0.08rem;
+    }
+  </style>
+</head>
+  <body class="body-hide-numbers">
+  <div class="page">
+    <header class="hero">
+      <h1>DEN_DissectedDrow_Dead</h1>
+      <div class="source"><span class="source-label">Start Dialog UUID:</span><strong><code>8dffcf93-b16d-98d6-1ba6-1f6dc9b86342</code></strong></div><div class="source"><span class="source-label">Timeline File UUID:</span><strong><code>2d4d8bb9-3a6f-42bb-3a7e-2795b55356c6</code></strong></div><div class="source"><span class="source-label">Dialog File UUID:</span><strong><code>eed15588-78a5-2145-2dfd-eb133000e302</code></strong></div><div class="source"><span class="source-label">Dialog:</span>Mods\Gustav\Story\DialogsBinary\Act1\DEN\DEN_SpeakWithDead\DEN_DissectedDrow_Dead.lsf.lsx</div><div class="source"><span class="source-label">Timeline:</span>Public\Gustav\Timeline\Generated\DEN_DissectedDrow_Dead.lsf.lsx</div><div class="source"><span class="source-label">Scene:</span>Public\Gustav\Timeline\Generated\DEN_DissectedDrow_Dead_Scene.lsf.lsx</div>
+      <div class="summary-line">
+        category=Generic NPC Dialog | nodes=37 | roots=6
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-scroll">
+          <div class="controls">
+            <button type="button" data-toggle-branches="all" data-hide-label="Expand all" data-show-label="Collapse all" data-active="false">Expand all</button>
+            <button type="button" data-toggle-class="body-hide-flags" data-hide-label="Hide flags" data-show-label="Show flags">Hide flags</button>
+            <button type="button" data-toggle-details="all" data-hide-label="Show details" data-show-label="Hide details" data-active="false">Show details</button>
+            <button type="button" data-toggle-class="body-hide-context" data-hide-label="Hide notes" data-show-label="Show notes">Hide notes</button>
+            <button type="button" data-toggle-class="body-hide-numbers" data-hide-label="Hide node numbers" data-show-label="Show node numbers">Hide node numbers</button>
+          </div>
+        </div>
+        <details class="speaker-map">
+          <summary>Speakers</summary>
+          <ul><li><span class='speaker-index'>0</span><span class='speaker-name'>Speaker 0</span><span class='inline-meta'>list=0cb0cdde-16f8-440d-b73a-ceb385183ea9 | mapping=431ba144-882d-6b76-a498-08a186b09547 | Speaker Tags Index=72de9ad8-bd70-4b1f-be9d-2551c5bd8837</span></li><li><span class='speaker-index'>1</span><span class='speaker-name'>Player</span><span class='inline-meta'>GROUP_Players | list=e0d1ff71-04a8-4340-ae64-9684d846eb83 | mapping=00812e57-765c-641a-3f05-1a5f7dd117ae</span></li></ul>
+        </details>
+      </div>
+    </header>
+    <section class="tree-shell">
+      <div class="tree-shell-inner">
+        <ul class="root-list"><li class='node-item'><div class='node-shell' id='node-29'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-29' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>29.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*The corpse seems willing to speak - but not to its killer.*</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>GLO_SpeakWithDead_State_Killer</span><span class='preview-token check'>!DEN_DissectedDrow_State_OnSlab</span></span></span></span><div class='node-detail-panel' id='details-29' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on players in speak-with-dead dialogs in case the dead person considers that player (co-)responsible for their demise'>GLO_SpeakWithDead_State_Killer</span> <span class='asset-id'>{7827d93e-1619-402e-b9ec-3ec5d762b6ea}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Dissected Drow is on slab'>DEN_DissectedDrow_State_OnSlab</span> <span class='asset-id'>{484984e1-8bcd-4d23-b694-602bcf2079e6}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: c781aed9-5ebf-0796-961c-e9d5fa209892</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: h869ddb05g1682g45fcg8849g7a66d585312e</span><span class='meta-item'><strong>Text UUID</strong>: 80704e13-73b7-4ff8-a9f5-356aa65d52ab</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 2</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: c781aed9-5ebf-0796-961c-e9d5fa209892</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 5c7078aa-0615-4073-a74a-e86a3c3d8d96</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Shared\Public\SharedDev\Content\Assets\Characters\Halflings\[PAK]_Male_Body\_merged.lsf.lsx</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: 7d346acc-46ed-462b-9e51-71c60b419824</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Public/SharedDev/Assets/Characters/_Anims/_Creatures/Brewer/BREWER_Rig/_Construction/BREWER_Rig_CINE_Deathpose_01.GR2</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: 9caf0fad-81da-4469-9e61-2c1e17393d18</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine_patch6\Public\Engine\Timeline\MaterialGroups\9caf0fad-81da-4469-9e61-2c1e17393d18.lsf.lsx</span><span class='meta-item'><strong>Timeline Material 1 Material Resource ID</strong>: bbf6c0b3-36ef-3543-4953-91969f46652b</span><span class='meta-item'><strong>Timeline Material 1 Material Resource Name</strong>: VFX_OverlayMaterial_Cinematic_SwD_EyeFX_01</span><span class='meta-item'><strong>Timeline Material 1 Material VFX File</strong>: Public\Shared\Assets\Materials\Effects\Model\VFX_Model_MaterialTrack_Visualiser_01.lsf</span><span class='meta-item'><strong>Timeline Material 2 Group ID</strong>: 9d90987e-feba-443e-bb65-97eb3867abe0</span><span class='meta-item'><strong>Timeline Material 2 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\9d90987e-feba-443e-bb65-97eb3867abe0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [12s-17.95s] | @ 12s | speaker 0 | Dead (512)</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode, exclusive</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-20'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-20' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>20.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*The corpse seems willing to speak - but not to its killer.*</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>GLO_SpeakWithDead_State_Killer</span><span class='preview-token check'>DEN_DissectedDrow_State_OnSlab</span></span></span></span><div class='node-detail-panel' id='details-20' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on players in speak-with-dead dialogs in case the dead person considers that player (co-)responsible for their demise'>GLO_SpeakWithDead_State_Killer</span> <span class='asset-id'>{7827d93e-1619-402e-b9ec-3ec5d762b6ea}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Dissected Drow is on slab'>DEN_DissectedDrow_State_OnSlab</span> <span class='asset-id'>{484984e1-8bcd-4d23-b694-602bcf2079e6}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: a477b8aa-da17-04d9-9908-f998b7a281ef</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: h528cfb5eg9f53g4b78g9388gcdf13866dd82</span><span class='meta-item'><strong>Text UUID</strong>: 800656a8-ed1a-0637-dd9a-45446d6e0161</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 0</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: a477b8aa-da17-04d9-9908-f998b7a281ef</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Stage Changes</strong>: on slab (8a7e37c4-25d8-48e7-94a6-c3fe24b37351)</span><span class='meta-item'><strong>Timeline Location Changes</strong>: DEN_DissectedDrow_Dead_SceneTrigger [WLD_Main_A] (085c18be-5e11-4e56-a116-ae3c3b5c09d4)</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 5c7078aa-0615-4073-a74a-e86a3c3d8d96</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Shared\Public\SharedDev\Content\Assets\Characters\Halflings\[PAK]_Male_Body\_merged.lsf.lsx</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: 7d346acc-46ed-462b-9e51-71c60b419824</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Public/SharedDev/Assets/Characters/_Anims/_Creatures/Brewer/BREWER_Rig/_Construction/BREWER_Rig_CINE_Deathpose_01.GR2</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: 9caf0fad-81da-4469-9e61-2c1e17393d18</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine_patch6\Public\Engine\Timeline\MaterialGroups\9caf0fad-81da-4469-9e61-2c1e17393d18.lsf.lsx</span><span class='meta-item'><strong>Timeline Material 1 Material Resource ID</strong>: bbf6c0b3-36ef-3543-4953-91969f46652b</span><span class='meta-item'><strong>Timeline Material 1 Material Resource Name</strong>: VFX_OverlayMaterial_Cinematic_SwD_EyeFX_01</span><span class='meta-item'><strong>Timeline Material 1 Material VFX File</strong>: Public\Shared\Assets\Materials\Effects\Model\VFX_Model_MaterialTrack_Visualiser_01.lsf</span><span class='meta-item'><strong>Timeline Material 2 Group ID</strong>: 9d90987e-feba-443e-bb65-97eb3867abe0</span><span class='meta-item'><strong>Timeline Material 2 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\9d90987e-feba-443e-bb65-97eb3867abe0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [0s-6s] | @ 0s | speaker 0 | Dead (512)</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode, exclusive</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-30'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-30' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>30.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*The corpse does not stir. It will answer no more questions.*</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>GLO_SpeakWithDead_State_QuestionsLimitReached</span><span class='preview-token check'>!DEN_DissectedDrow_State_OnSlab</span></span></span></span><div class='node-detail-panel' id='details-30' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead if five questions were asked'>GLO_SpeakWithDead_State_QuestionsLimitReached</span> <span class='asset-id'>{01c40268-4a8d-4787-8566-77e01ff04762}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='Dissected Drow is on slab'>DEN_DissectedDrow_State_OnSlab</span> <span class='asset-id'>{484984e1-8bcd-4d23-b694-602bcf2079e6}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: cebb7743-db6e-afbc-02c5-98125be1b5c7</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: h7de0943fg426fg4667gb5c6g99776c79d979</span><span class='meta-item'><strong>Text UUID</strong>: b2e356bb-a140-46c9-c478-26768d22ba74</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 1</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: cebb7743-db6e-afbc-02c5-98125be1b5c7</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 7d346acc-46ed-462b-9e51-71c60b419824</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/SharedDev/Assets/Characters/_Anims/_Creatures/Brewer/BREWER_Rig/_Construction/BREWER_Rig_CINE_Deathpose_01.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: 5c7078aa-0615-4073-a74a-e86a3c3d8d96</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Shared\Public\SharedDev\Content\Assets\Characters\Halflings\[PAK]_Male_Body\_merged.lsf.lsx</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: 9d90987e-feba-443e-bb65-97eb3867abe0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\9d90987e-feba-443e-bb65-97eb3867abe0.lsf</span><span class='meta-item'><strong>Timeline Material 2 Group ID</strong>: 9caf0fad-81da-4469-9e61-2c1e17393d18</span><span class='meta-item'><strong>Timeline Material 2 Group File</strong>: Engine_patch6\Public\Engine\Timeline\MaterialGroups\9caf0fad-81da-4469-9e61-2c1e17393d18.lsf.lsx</span><span class='meta-item'><strong>Timeline Material 2 Material Resource ID</strong>: bbf6c0b3-36ef-3543-4953-91969f46652b</span><span class='meta-item'><strong>Timeline Material 2 Material Resource Name</strong>: VFX_OverlayMaterial_Cinematic_SwD_EyeFX_01</span><span class='meta-item'><strong>Timeline Material 2 Material VFX File</strong>: Public\Shared\Assets\Materials\Effects\Model\VFX_Model_MaterialTrack_Visualiser_01.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [6s-12s] | @ 6s | speaker 0 | Dead (512)</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-22'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-22' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>22.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*The corpse does not stir. It will answer no more questions.*</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>GLO_SpeakWithDead_State_QuestionsLimitReached</span><span class='preview-token check'>DEN_DissectedDrow_State_OnSlab</span></span></span></span><div class='node-detail-panel' id='details-22' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead if five questions were asked'>GLO_SpeakWithDead_State_QuestionsLimitReached</span> <span class='asset-id'>{01c40268-4a8d-4787-8566-77e01ff04762}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='Dissected Drow is on slab'>DEN_DissectedDrow_State_OnSlab</span> <span class='asset-id'>{484984e1-8bcd-4d23-b694-602bcf2079e6}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: a93db39c-1120-4e66-4e99-fb641d4f56d9</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: h87d77124g2b80g4e40g97ddg1647c784c897</span><span class='meta-item'><strong>Text UUID</strong>: 1263a5a8-82cd-45d2-899a-817b76657451</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 4</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: a93db39c-1120-4e66-4e99-fb641d4f56d9</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Stage Changes</strong>: on slab (8a7e37c4-25d8-48e7-94a6-c3fe24b37351) @ 28s</span><span class='meta-item'><strong>Timeline Location Changes</strong>: DEN_DissectedDrow_Dead_SceneTrigger [WLD_Main_A] (085c18be-5e11-4e56-a116-ae3c3b5c09d4) @ 28s</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 7d346acc-46ed-462b-9e51-71c60b419824</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/SharedDev/Assets/Characters/_Anims/_Creatures/Brewer/BREWER_Rig/_Construction/BREWER_Rig_CINE_Deathpose_01.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: 5c7078aa-0615-4073-a74a-e86a3c3d8d96</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Shared\Public\SharedDev\Content\Assets\Characters\Halflings\[PAK]_Male_Body\_merged.lsf.lsx</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: 9d90987e-feba-443e-bb65-97eb3867abe0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\9d90987e-feba-443e-bb65-97eb3867abe0.lsf</span><span class='meta-item'><strong>Timeline Material 2 Group ID</strong>: 9caf0fad-81da-4469-9e61-2c1e17393d18</span><span class='meta-item'><strong>Timeline Material 2 Group File</strong>: Engine_patch6\Public\Engine\Timeline\MaterialGroups\9caf0fad-81da-4469-9e61-2c1e17393d18.lsf.lsx</span><span class='meta-item'><strong>Timeline Material 2 Material Resource ID</strong>: bbf6c0b3-36ef-3543-4953-91969f46652b</span><span class='meta-item'><strong>Timeline Material 2 Material Resource Name</strong>: VFX_OverlayMaterial_Cinematic_SwD_EyeFX_01</span><span class='meta-item'><strong>Timeline Material 2 Material VFX File</strong>: Public\Shared\Assets\Materials\Effects\Model\VFX_Model_MaterialTrack_Visualiser_01.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [28s-34s] | @ 28s | speaker 0 | Dead (512)</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-26'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-26' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-26' aria-expanded='true' tabindex='0' data-detail-target='details-26' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>26.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*The corpse regards you lifelessly.*</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Character is not lying on the slab.</span></span><span class='preview-inline'><span class='preview-token check'>!GLO_SpeakWithDead_State_QuestionsLimitReached</span><span class='preview-token check'>!DEN_DissectedDrow_State_OnSlab</span></span></span></span><div class='node-detail-panel' id='details-26' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead if five questions were asked'>GLO_SpeakWithDead_State_QuestionsLimitReached</span> <span class='asset-id'>{01c40268-4a8d-4787-8566-77e01ff04762}</span> <span class='asset-state'>= False</span></li><li class='signal-item'><span class='asset-name' title='Dissected Drow is on slab'>DEN_DissectedDrow_State_OnSlab</span> <span class='asset-id'>{484984e1-8bcd-4d23-b694-602bcf2079e6}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: b8c5ffd0-3960-f5f5-5220-0d29471d481f</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: heb8c723dgd1f7g4f58g91bcg9ea9f9003e72</span><span class='meta-item'><strong>Text UUID</strong>: 55356991-0bda-45de-a632-b478c7c13615</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 3</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: b8c5ffd0-3960-f5f5-5220-0d29471d481f</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 10s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 8732bd80-90a7-4ffa-947f-026803f3f24e</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/SharedDev/Assets/Characters/_Anims/_Creatures/Doppelganger/DOPPEL_Rig/_Construction/DOPPEL_Rig_CINE_SpeakWithDead_Corpse_02_Start.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: 5c7078aa-0615-4073-a74a-e86a3c3d8d96</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Shared\Public\SharedDev\Content\Assets\Characters\Halflings\[PAK]_Male_Body\_merged.lsf.lsx</span><span class='meta-item'><strong>Timeline Animation 3 Resource ID</strong>: ed7959f9-b350-4de5-b3f5-7f3e3f945c8c</span><span class='meta-item'><strong>Timeline Animation 3 Resource File</strong>: Shared\Public\SharedDev\Content\Assets\Characters\Halflings\[PAK]_Male_Body\_merged.lsf.lsx</span><span class='meta-item'><strong>Timeline Animation 4 Resource ID</strong>: 4253f698-00c8-48fc-8060-aa8dbabe77fb</span><span class='meta-item'><strong>Timeline Animation 4 Resource File</strong>: Public/SharedDev/Assets/Characters/_Anims/_Creatures/Doppelganger/DOPPEL_Rig/_Construction/DOPPEL_Rig_CINE_SpeakWithDead_Corpse_02_Loop.GR2</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: 9caf0fad-81da-4469-9e61-2c1e17393d18</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine_patch6\Public\Engine\Timeline\MaterialGroups\9caf0fad-81da-4469-9e61-2c1e17393d18.lsf.lsx</span><span class='meta-item'><strong>Timeline Material 1 Material Resource ID</strong>: bbf6c0b3-36ef-3543-4953-91969f46652b</span><span class='meta-item'><strong>Timeline Material 1 Material Resource Name</strong>: VFX_OverlayMaterial_Cinematic_SwD_EyeFX_01</span><span class='meta-item'><strong>Timeline Material 1 Material VFX File</strong>: Public\Shared\Assets\Materials\Effects\Model\VFX_Model_MaterialTrack_Visualiser_01.lsf</span><span class='meta-item'><strong>Timeline Material 2 Group ID</strong>: 9d90987e-feba-443e-bb65-97eb3867abe0</span><span class='meta-item'><strong>Timeline Material 2 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\9d90987e-feba-443e-bb65-97eb3867abe0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [18s-23.5s] | @ 18s | speaker 0 | Dead (512)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 2 [23.5s-26.9s] | @ 25s | speaker 0 | Fear (16) | variation 23</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 3 [26.9s-28s] | @ 27.5s | speaker 0 | Fear (16)</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-26'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-10'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-10' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>10.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-35'>Node 35</a></span></span></span></span><div class='node-detail-panel' id='details-10' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 5590b608-973e-0be7-f605-550bc5b01784</span><span class='meta-item'><strong>Jump Target</strong>: Node 35 (e8c386dc-fed1-4cfb-16ac-2ddb787d95a5)</span><span class='meta-item'><strong>Jump Target Point</strong>: 2</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-35'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-35' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-35' aria-expanded='true' tabindex='0' data-detail-target='details-35' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>35.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*The corpse regards you lifelessly.*</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Character is lying on the slab.</span></span><span class='preview-inline'><span class='preview-token check'>!GLO_SpeakWithDead_State_QuestionsLimitReached</span><span class='preview-token check'>DEN_DissectedDrow_State_OnSlab</span></span></span></span><div class='node-detail-panel' id='details-35' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead if five questions were asked'>GLO_SpeakWithDead_State_QuestionsLimitReached</span> <span class='asset-id'>{01c40268-4a8d-4787-8566-77e01ff04762}</span> <span class='asset-state'>= False</span></li><li class='signal-item'><span class='asset-name' title='Dissected Drow is on slab'>DEN_DissectedDrow_State_OnSlab</span> <span class='asset-id'>{484984e1-8bcd-4d23-b694-602bcf2079e6}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: e8c386dc-fed1-4cfb-16ac-2ddb787d95a5</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: hac36d280gbccdg40cag8805g9d95c91fbc71</span><span class='meta-item'><strong>Text UUID</strong>: 8a815449-b608-c496-94be-c0c85a7993f2</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 5</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: e8c386dc-fed1-4cfb-16ac-2ddb787d95a5</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 10s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Timeline Stage Changes</strong>: on slab (8a7e37c4-25d8-48e7-94a6-c3fe24b37351) @ 34s</span><span class='meta-item'><strong>Timeline Location Changes</strong>: DEN_DissectedDrow_Dead_SceneTrigger [WLD_Main_A] (085c18be-5e11-4e56-a116-ae3c3b5c09d4) @ 34s</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 8732bd80-90a7-4ffa-947f-026803f3f24e</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/SharedDev/Assets/Characters/_Anims/_Creatures/Doppelganger/DOPPEL_Rig/_Construction/DOPPEL_Rig_CINE_SpeakWithDead_Corpse_02_Start.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: 5c7078aa-0615-4073-a74a-e86a3c3d8d96</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Shared\Public\SharedDev\Content\Assets\Characters\Halflings\[PAK]_Male_Body\_merged.lsf.lsx</span><span class='meta-item'><strong>Timeline Animation 3 Resource ID</strong>: 4253f698-00c8-48fc-8060-aa8dbabe77fb</span><span class='meta-item'><strong>Timeline Animation 3 Resource File</strong>: Public/SharedDev/Assets/Characters/_Anims/_Creatures/Doppelganger/DOPPEL_Rig/_Construction/DOPPEL_Rig_CINE_SpeakWithDead_Corpse_02_Loop.GR2</span><span class='meta-item'><strong>Timeline Animation 4 Resource ID</strong>: ed7959f9-b350-4de5-b3f5-7f3e3f945c8c</span><span class='meta-item'><strong>Timeline Animation 4 Resource File</strong>: Shared\Public\SharedDev\Content\Assets\Characters\Halflings\[PAK]_Male_Body\_merged.lsf.lsx</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: 9d90987e-feba-443e-bb65-97eb3867abe0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\9d90987e-feba-443e-bb65-97eb3867abe0.lsf</span><span class='meta-item'><strong>Timeline Material 2 Group ID</strong>: 9caf0fad-81da-4469-9e61-2c1e17393d18</span><span class='meta-item'><strong>Timeline Material 2 Group File</strong>: Engine_patch6\Public\Engine\Timeline\MaterialGroups\9caf0fad-81da-4469-9e61-2c1e17393d18.lsf.lsx</span><span class='meta-item'><strong>Timeline Material 2 Material Resource ID</strong>: bbf6c0b3-36ef-3543-4953-91969f46652b</span><span class='meta-item'><strong>Timeline Material 2 Material Resource Name</strong>: VFX_OverlayMaterial_Cinematic_SwD_EyeFX_01</span><span class='meta-item'><strong>Timeline Material 2 Material VFX File</strong>: Public\Shared\Assets\Materials\Effects\Model\VFX_Model_MaterialTrack_Visualiser_01.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [34s-39.5s] | @ 34s | speaker 0 | Dead (512)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [34s-39.5s] | @ 34s | speaker 1 | Sad (32)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [34s-39.5s] | @ 34.31s | peanut slot 1 | Sad (32) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [34s-39.5s] | @ 34.33s | peanut slot 2 | Sad (32) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [34s-39.5s] | @ 34.53s | peanut slot 0 | Sad (32) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 2 [39.5s-42.9s] | @ 41s | speaker 0 | Fear (16) | variation 23</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 3 [42.9s-44s] | @ 43.5s | speaker 0 | Fear (16)</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-35'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-13'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-13' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-13' aria-expanded='false' tabindex='0' data-detail-target='details-13' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>13.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Who are you?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token rule'>Drow</span><span class='preview-token check'>!GLO_SpeakWithDead_State_QuestionsLimitReached</span><span class='preview-token set'>GLO_SpeakWithDead_Event_QuestionAsked</span></span></span></span><div class='node-detail-panel' id='details-13' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line rule-line'><div class='signal-heading'><span class='signal-label'>ruletag</span><span class='signal-scope'>type rule</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Drow, shapeshifted or not|'>Drow</span> <span class='asset-id'>{676e854b-d74b-44f3-8363-3ef27164a54d}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead if five questions were asked'>GLO_SpeakWithDead_State_QuestionsLimitReached</span> <span class='asset-id'>{01c40268-4a8d-4787-8566-77e01ff04762}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead for each question the player can ask'>GLO_SpeakWithDead_Event_QuestionAsked</span> <span class='asset-id'>{9984cd59-2fad-46cb-bf61-96af6034fbea}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section'><h3>Text</h3><div class='text-block'><h3>Variant 1</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='|Drow, shapeshifted or not|'><code>Drow</code></li></ul><div class='text-line'>Who are you?</div><div class='line-meta'><code>h847d30f2ge07fg4bd0gba42gb984c28ef40a</code> | <code>134c2953-7213-db20-5408-c946e689a9f7</code> | stub</div></div><div class='text-block'><h3>Variant 2</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='|Drow, shapeshifted or not|'><code>Drow</code></li></ul><div class='text-line'>Your name and House. Now.</div><div class='line-meta'><code>hb093934dg44c1g4cfbg90d9g2437270d0fea</code> | <code>bd8f5ab3-c9d3-1e44-9850-cdb020483a2b</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 71293e90-967d-aa50-42d1-ec8c0699e905</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h847d30f2ge07fg4bd0gba42gb984c28ef40a</span><span class='meta-item'><strong>Text 1 UUID</strong>: 134c2953-7213-db20-5408-c946e689a9f7</span><span class='meta-item'><strong>Text 2 Handle</strong>: hb093934dg44c1g4cfbg90d9g2437270d0fea</span><span class='meta-item'><strong>Text 2 UUID</strong>: bd8f5ab3-c9d3-1e44-9850-cdb020483a2b</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-13' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-16'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-16' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-16' aria-expanded='false' tabindex='0' data-detail-target='details-16' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>16.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Ned&#x27;Cirannis... of the Absolute...</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>Den_DissectedDrow_Dead_AskedName</span></span></span></span><div class='node-detail-panel' id='details-16' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Den_DissectedDrow_Dead_AskedNamedescription'>Den_DissectedDrow_Dead_AskedName</span> <span class='asset-id'>{333e452b-6313-da5d-fa67-393a59dc4b2e}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 86b68428-cc7b-eb71-6e28-7120c18505db</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: ha88bd3edg6337g4b48g9cb7gd4838ce36c73</span><span class='meta-item'><strong>Text UUID</strong>: d733c3c9-870d-6791-2961-fc63d28b93b7</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 8</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 86b68428-cc7b-eb71-6e28-7120c18505db</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 9.83s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: 9d90987e-feba-443e-bb65-97eb3867abe0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\9d90987e-feba-443e-bb65-97eb3867abe0.lsf</span><span class='meta-item'><strong>Timeline Material 2 Group ID</strong>: 9caf0fad-81da-4469-9e61-2c1e17393d18</span><span class='meta-item'><strong>Timeline Material 2 Group File</strong>: Engine_patch6\Public\Engine\Timeline\MaterialGroups\9caf0fad-81da-4469-9e61-2c1e17393d18.lsf.lsx</span><span class='meta-item'><strong>Timeline Material 2 Material Resource ID</strong>: bbf6c0b3-36ef-3543-4953-91969f46652b</span><span class='meta-item'><strong>Timeline Material 2 Material Resource Name</strong>: VFX_OverlayMaterial_Cinematic_SwD_EyeFX_01</span><span class='meta-item'><strong>Timeline Material 2 Material VFX File</strong>: Public\Shared\Assets\Materials\Effects\Model\VFX_Model_MaterialTrack_Visualiser_01.lsf</span></div></section></div></div></div><div class='node-branch' id='branch-16' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-7'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-7' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>7.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>(no line text)</span></span></span></span><div class='node-detail-panel' id='details-7' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 454b0d85-f877-29a2-2918-7b045bbcaed0</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Unmapped Attributes</strong>: transitionmode</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-18'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-18' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-18' aria-expanded='false' tabindex='0' data-detail-target='details-18' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>18.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>There is no House of the Absolute.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token rule'>Drow</span><span class='preview-token check'>Den_DissectedDrow_Dead_AskedName</span><span class='preview-token check'>!GLO_SpeakWithDead_State_QuestionsLimitReached</span><span class='preview-token set'>GLO_SpeakWithDead_Event_QuestionAsked</span></span></span></span><div class='node-detail-panel' id='details-18' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line rule-line'><div class='signal-heading'><span class='signal-label'>ruletag</span><span class='signal-scope'>type rule</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Drow, shapeshifted or not|'>Drow</span> <span class='asset-id'>{676e854b-d74b-44f3-8363-3ef27164a54d}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Den_DissectedDrow_Dead_AskedNamedescription'>Den_DissectedDrow_Dead_AskedName</span> <span class='asset-id'>{333e452b-6313-da5d-fa67-393a59dc4b2e}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead if five questions were asked'>GLO_SpeakWithDead_State_QuestionsLimitReached</span> <span class='asset-id'>{01c40268-4a8d-4787-8566-77e01ff04762}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead for each question the player can ask'>GLO_SpeakWithDead_Event_QuestionAsked</span> <span class='asset-id'>{9984cd59-2fad-46cb-bf61-96af6034fbea}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 9656c9a1-4417-e2cb-84d4-2b27703e0516</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h6ea9eef3g1767g4776g8680gb76407ce63f2</span><span class='meta-item'><strong>Text UUID</strong>: c4f56c4a-e587-db7f-d618-336b881e4bb4</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-18' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-17'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-17' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-17' aria-expanded='false' tabindex='0' data-detail-target='details-17' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>17.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>No houses... all equal in Her love...</span></span></span></span><div class='node-detail-panel' id='details-17' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 90cf6b4b-452c-82a5-4cf9-771595ce0a75</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h7557338fg8e10g46d4g82aagdd2d8a4244ff</span><span class='meta-item'><strong>Text UUID</strong>: cbbf8672-160b-c197-3ce0-aad02207a090</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 13</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 90cf6b4b-452c-82a5-4cf9-771595ce0a75</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 8.24s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: 9caf0fad-81da-4469-9e61-2c1e17393d18</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine_patch6\Public\Engine\Timeline\MaterialGroups\9caf0fad-81da-4469-9e61-2c1e17393d18.lsf.lsx</span><span class='meta-item'><strong>Timeline Material 1 Material Resource ID</strong>: bbf6c0b3-36ef-3543-4953-91969f46652b</span><span class='meta-item'><strong>Timeline Material 1 Material Resource Name</strong>: VFX_OverlayMaterial_Cinematic_SwD_EyeFX_01</span><span class='meta-item'><strong>Timeline Material 1 Material VFX File</strong>: Public\Shared\Assets\Materials\Effects\Model\VFX_Model_MaterialTrack_Visualiser_01.lsf</span><span class='meta-item'><strong>Timeline Material 2 Group ID</strong>: 9d90987e-feba-443e-bb65-97eb3867abe0</span><span class='meta-item'><strong>Timeline Material 2 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\9d90987e-feba-443e-bb65-97eb3867abe0.lsf</span></div></section></div></div></div><div class='node-branch' id='branch-17' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-21'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-21' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>21.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>(no line text)</span></span></span></span><div class='node-detail-panel' id='details-21' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: a61d1857-7693-d5bb-d61c-5d0de49b9855</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Unmapped Attributes</strong>: transitionmode</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-23'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-23' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-23' aria-expanded='false' tabindex='0' data-detail-target='details-23' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>23.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Why would you serve? Drow are born to rule.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token rule'>Drow</span><span class='preview-token check'>Den_DissectedDrow_Dead_AskedName</span><span class='preview-token check'>!GLO_SpeakWithDead_State_QuestionsLimitReached</span><span class='preview-token set'>GLO_SpeakWithDead_Event_QuestionAsked</span></span></span></span><div class='node-detail-panel' id='details-23' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line rule-line'><div class='signal-heading'><span class='signal-label'>ruletag</span><span class='signal-scope'>type rule</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Drow, shapeshifted or not|'>Drow</span> <span class='asset-id'>{676e854b-d74b-44f3-8363-3ef27164a54d}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Den_DissectedDrow_Dead_AskedNamedescription'>Den_DissectedDrow_Dead_AskedName</span> <span class='asset-id'>{333e452b-6313-da5d-fa67-393a59dc4b2e}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead if five questions were asked'>GLO_SpeakWithDead_State_QuestionsLimitReached</span> <span class='asset-id'>{01c40268-4a8d-4787-8566-77e01ff04762}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead for each question the player can ask'>GLO_SpeakWithDead_Event_QuestionAsked</span> <span class='asset-id'>{9984cd59-2fad-46cb-bf61-96af6034fbea}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: af1cef2f-48cf-859b-2164-eeb5e8380cd1</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: ha050fafdgd776g4782gab10g53ac6fe1f32c</span><span class='meta-item'><strong>Text UUID</strong>: dce8cc6d-a2ba-5268-4799-cc01901ecc53</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-23' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-1'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-1' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-1' aria-expanded='false' tabindex='0' data-detail-target='details-1' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>1.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>We will... Absolute will rule all...</span></span></span></span><div class='node-detail-panel' id='details-1' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 10135367-23a7-d0f2-b69e-032361ac61bd</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h347b4d31g2054g4646ga8adg522ac0dbd861</span><span class='meta-item'><strong>Text UUID</strong>: 0e78b9c1-18df-d5a4-f0db-be39b87a1d82</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 7</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 10135367-23a7-d0f2-b69e-032361ac61bd</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 7.7s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: 9caf0fad-81da-4469-9e61-2c1e17393d18</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine_patch6\Public\Engine\Timeline\MaterialGroups\9caf0fad-81da-4469-9e61-2c1e17393d18.lsf.lsx</span><span class='meta-item'><strong>Timeline Material 1 Material Resource ID</strong>: bbf6c0b3-36ef-3543-4953-91969f46652b</span><span class='meta-item'><strong>Timeline Material 1 Material Resource Name</strong>: VFX_OverlayMaterial_Cinematic_SwD_EyeFX_01</span><span class='meta-item'><strong>Timeline Material 1 Material VFX File</strong>: Public\Shared\Assets\Materials\Effects\Model\VFX_Model_MaterialTrack_Visualiser_01.lsf</span><span class='meta-item'><strong>Timeline Material 2 Group ID</strong>: 9d90987e-feba-443e-bb65-97eb3867abe0</span><span class='meta-item'><strong>Timeline Material 2 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\9d90987e-feba-443e-bb65-97eb3867abe0.lsf</span></div></section></div></div></div><div class='node-branch' id='branch-1' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-6'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-6' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>6.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>(no line text)</span></span></span></span><div class='node-detail-panel' id='details-6' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 38bcb111-aabb-d82c-9c21-c44bb036573c</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Unmapped Attributes</strong>: transitionmode</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-32'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-32' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-32' aria-expanded='false' tabindex='0' data-detail-target='details-32' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>32.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>What happened to you?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!GLO_SpeakWithDead_State_QuestionsLimitReached</span><span class='preview-token set'>GLO_SpeakWithDead_Event_QuestionAsked</span></span></span></span><div class='node-detail-panel' id='details-32' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead if five questions were asked'>GLO_SpeakWithDead_State_QuestionsLimitReached</span> <span class='asset-id'>{01c40268-4a8d-4787-8566-77e01ff04762}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead for each question the player can ask'>GLO_SpeakWithDead_Event_QuestionAsked</span> <span class='asset-id'>{9984cd59-2fad-46cb-bf61-96af6034fbea}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: dd419ae7-e73c-3a8c-980e-5f9c97a6a5b3</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hb4135813g132eg495ag862dg5d21d7ec7cfb</span><span class='meta-item'><strong>Text UUID</strong>: 3eb31273-9676-07d0-4cc1-a7afc7ba9408</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-32' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-11'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-11' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-11' aria-expanded='false' tabindex='0' data-detail-target='details-11' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>11.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Scouting... found druids...</span></span></span></span><div class='node-detail-panel' id='details-11' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 5a5171db-a9f7-2330-b308-0492ca1b0136</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h42e05413g30b1g4c80g8290g82316251fcb6</span><span class='meta-item'><strong>Text UUID</strong>: 4c694764-05fd-cf9c-4a76-a7b06abf1e42</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 11</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 5a5171db-a9f7-2330-b308-0492ca1b0136</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 7.77s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: 9d90987e-feba-443e-bb65-97eb3867abe0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\9d90987e-feba-443e-bb65-97eb3867abe0.lsf</span><span class='meta-item'><strong>Timeline Material 2 Group ID</strong>: 9caf0fad-81da-4469-9e61-2c1e17393d18</span><span class='meta-item'><strong>Timeline Material 2 Group File</strong>: Engine_patch6\Public\Engine\Timeline\MaterialGroups\9caf0fad-81da-4469-9e61-2c1e17393d18.lsf.lsx</span><span class='meta-item'><strong>Timeline Material 2 Material Resource ID</strong>: bbf6c0b3-36ef-3543-4953-91969f46652b</span><span class='meta-item'><strong>Timeline Material 2 Material Resource Name</strong>: VFX_OverlayMaterial_Cinematic_SwD_EyeFX_01</span><span class='meta-item'><strong>Timeline Material 2 Material VFX File</strong>: Public\Shared\Assets\Materials\Effects\Model\VFX_Model_MaterialTrack_Visualiser_01.lsf</span></div></section></div></div></div><div class='node-branch' id='branch-11' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-2'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-2' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>2.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>(no line text)</span></span></span></span><div class='node-detail-panel' id='details-2' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 1f0c4696-a1f6-bcc2-884f-e3d796ac3db1</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Unmapped Attributes</strong>: transitionmode</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-4'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-4' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-4' aria-expanded='false' tabindex='0' data-detail-target='details-4' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>4.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Who killed you?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!GLO_SpeakWithDead_State_QuestionsLimitReached</span><span class='preview-token set'>GLO_SpeakWithDead_Event_QuestionAsked</span></span></span></span><div class='node-detail-panel' id='details-4' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead if five questions were asked'>GLO_SpeakWithDead_State_QuestionsLimitReached</span> <span class='asset-id'>{01c40268-4a8d-4787-8566-77e01ff04762}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead for each question the player can ask'>GLO_SpeakWithDead_Event_QuestionAsked</span> <span class='asset-id'>{9984cd59-2fad-46cb-bf61-96af6034fbea}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 2e377583-37db-d8b0-2367-16f17d5861ac</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h7283d75cgf885g4683gad54gbd194b557de6</span><span class='meta-item'><strong>Text UUID</strong>: 2c193aa7-430b-3a98-1d3a-63103292abb7</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-4' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-14'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-14' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-14' aria-expanded='false' tabindex='0' data-detail-target='details-14' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>14.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Druid... Bear...</span></span></span></span><div class='node-detail-panel' id='details-14' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 7610bbe1-0c9a-8cb6-d079-decc6fec99ad</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h79ac2c35gcc55g4750gb0feg7da6d1334bc2</span><span class='meta-item'><strong>Text UUID</strong>: 2c97a121-12a1-3207-ad83-2f3554bdc497</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 9</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 7610bbe1-0c9a-8cb6-d079-decc6fec99ad</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 7.99s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: 9caf0fad-81da-4469-9e61-2c1e17393d18</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine_patch6\Public\Engine\Timeline\MaterialGroups\9caf0fad-81da-4469-9e61-2c1e17393d18.lsf.lsx</span><span class='meta-item'><strong>Timeline Material 1 Material Resource ID</strong>: bbf6c0b3-36ef-3543-4953-91969f46652b</span><span class='meta-item'><strong>Timeline Material 1 Material Resource Name</strong>: VFX_OverlayMaterial_Cinematic_SwD_EyeFX_01</span><span class='meta-item'><strong>Timeline Material 1 Material VFX File</strong>: Public\Shared\Assets\Materials\Effects\Model\VFX_Model_MaterialTrack_Visualiser_01.lsf</span><span class='meta-item'><strong>Timeline Material 2 Group ID</strong>: 9d90987e-feba-443e-bb65-97eb3867abe0</span><span class='meta-item'><strong>Timeline Material 2 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\9d90987e-feba-443e-bb65-97eb3867abe0.lsf</span></div></section></div></div></div><div class='node-branch' id='branch-14' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-34'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-34' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>34.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>(no line text)</span></span></span></span><div class='node-detail-panel' id='details-34' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: df2c6fa6-e22f-9748-e36f-52401f95e70e</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Unmapped Attributes</strong>: transitionmode</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-33'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-33' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-33' aria-expanded='false' tabindex='0' data-detail-target='details-33' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>33.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>How many drow are out there?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!GLO_SpeakWithDead_State_QuestionsLimitReached</span><span class='preview-token set'>GLO_SpeakWithDead_Event_QuestionAsked</span></span></span></span><div class='node-detail-panel' id='details-33' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead if five questions were asked'>GLO_SpeakWithDead_State_QuestionsLimitReached</span> <span class='asset-id'>{01c40268-4a8d-4787-8566-77e01ff04762}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead for each question the player can ask'>GLO_SpeakWithDead_Event_QuestionAsked</span> <span class='asset-id'>{9984cd59-2fad-46cb-bf61-96af6034fbea}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: dd7c0def-6e31-c5a2-2568-94efefdb725b</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hd04b3a27g5bc7g48d5gb9d8gf32f3aa4a2d0</span><span class='meta-item'><strong>Text UUID</strong>: 7caaa05d-ddf3-e080-fc7b-b2cb88f8ff58</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-33' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-25'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-25' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-25' aria-expanded='false' tabindex='0' data-detail-target='details-25' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>25.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Minthara... back at camp...</span></span></span></span><div class='node-detail-panel' id='details-25' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: b2e499e0-380c-6d6d-8887-3bb18206f6b9</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h8c2d234dgdbedg449egb464g651b477334d1</span><span class='meta-item'><strong>Text UUID</strong>: 763452ca-6f05-0ee5-8777-a5ffbdd79460</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 6</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: b2e499e0-380c-6d6d-8887-3bb18206f6b9</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 7.67s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: 9d90987e-feba-443e-bb65-97eb3867abe0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\9d90987e-feba-443e-bb65-97eb3867abe0.lsf</span><span class='meta-item'><strong>Timeline Material 2 Group ID</strong>: 9caf0fad-81da-4469-9e61-2c1e17393d18</span><span class='meta-item'><strong>Timeline Material 2 Group File</strong>: Engine_patch6\Public\Engine\Timeline\MaterialGroups\9caf0fad-81da-4469-9e61-2c1e17393d18.lsf.lsx</span><span class='meta-item'><strong>Timeline Material 2 Material Resource ID</strong>: bbf6c0b3-36ef-3543-4953-91969f46652b</span><span class='meta-item'><strong>Timeline Material 2 Material Resource Name</strong>: VFX_OverlayMaterial_Cinematic_SwD_EyeFX_01</span><span class='meta-item'><strong>Timeline Material 2 Material VFX File</strong>: Public\Shared\Assets\Materials\Effects\Model\VFX_Model_MaterialTrack_Visualiser_01.lsf</span></div></section></div></div></div><div class='node-branch' id='branch-25' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-24'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-24' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>24.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>(no line text)</span></span></span></span><div class='node-detail-panel' id='details-24' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: b2853d78-9ac4-dc96-16fb-e2f0749a9c2d</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Unmapped Attributes</strong>: transitionmode</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-37'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-37' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-37' aria-expanded='false' tabindex='0' data-detail-target='details-37' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>37.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Where did you get your tadpole?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!GLO_SpeakWithDead_State_QuestionsLimitReached</span><span class='preview-token set'>Den_DissectedDrow_Dead_AskedTadpole</span><span class='preview-token set'>GLO_SpeakWithDead_Event_QuestionAsked</span></span></span></span><div class='node-detail-panel' id='details-37' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead if five questions were asked'>GLO_SpeakWithDead_State_QuestionsLimitReached</span> <span class='asset-id'>{01c40268-4a8d-4787-8566-77e01ff04762}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Den_DissectedDrow_Dead_AskedTadpoledescription'>Den_DissectedDrow_Dead_AskedTadpole</span> <span class='asset-id'>{fff6f469-7efc-a4c4-5c0d-af4075b2def3}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead for each question the player can ask'>GLO_SpeakWithDead_Event_QuestionAsked</span> <span class='asset-id'>{9984cd59-2fad-46cb-bf61-96af6034fbea}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: f4fe51c7-7ba9-a64a-e6b2-159319223eec</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hadeb801bg8e66g439agb1f4g2471ff4b8aa9</span><span class='meta-item'><strong>Text UUID</strong>: d2f94fe1-143e-5cc2-9986-289688822f98</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-37' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-36'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-36' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-36' aria-expanded='false' tabindex='0' data-detail-target='details-36' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>36.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*The corpse remains silent. It doesn&#x27;t understand the question.*</span></span></span></span><div class='node-detail-panel' id='details-36' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: f417ccda-1138-fe4e-0779-93f334a665f8</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: h3a65e478g5e3cg453fg8f17g02ac67807c18</span><span class='meta-item'><strong>Text UUID</strong>: 1ad8a5ea-9bc4-af2c-f296-f74f72936941</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 14</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: f417ccda-1138-fe4e-0779-93f334a665f8</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.87s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: 9d90987e-feba-443e-bb65-97eb3867abe0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\9d90987e-feba-443e-bb65-97eb3867abe0.lsf</span><span class='meta-item'><strong>Timeline Material 2 Group ID</strong>: 9caf0fad-81da-4469-9e61-2c1e17393d18</span><span class='meta-item'><strong>Timeline Material 2 Group File</strong>: Engine_patch6\Public\Engine\Timeline\MaterialGroups\9caf0fad-81da-4469-9e61-2c1e17393d18.lsf.lsx</span><span class='meta-item'><strong>Timeline Material 2 Material Resource ID</strong>: bbf6c0b3-36ef-3543-4953-91969f46652b</span><span class='meta-item'><strong>Timeline Material 2 Material Resource Name</strong>: VFX_OverlayMaterial_Cinematic_SwD_EyeFX_01</span><span class='meta-item'><strong>Timeline Material 2 Material VFX File</strong>: Public\Shared\Assets\Materials\Effects\Model\VFX_Model_MaterialTrack_Visualiser_01.lsf</span></div></section></div></div></div><div class='node-branch' id='branch-36' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-5'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-5' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>5.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>(no line text)</span></span></span></span><div class='node-detail-panel' id='details-5' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 342db5cd-4609-61e4-8d96-c47056a3508b</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Unmapped Attributes</strong>: transitionmode</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-3'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-3' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-3' aria-expanded='false' tabindex='0' data-detail-target='details-3' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>3.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Where did you start following the Absolute?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>Den_DissectedDrow_Dead_AskedTadpole</span><span class='preview-token check'>GLO_Absolute_Knows_Name</span><span class='preview-token check'>!GLO_SpeakWithDead_State_QuestionsLimitReached</span><span class='preview-token set'>GLO_SpeakWithDead_Event_QuestionAsked</span></span></span></span><div class='node-detail-panel' id='details-3' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Den_DissectedDrow_Dead_AskedTadpoledescription'>Den_DissectedDrow_Dead_AskedTadpole</span> <span class='asset-id'>{fff6f469-7efc-a4c4-5c0d-af4075b2def3}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player knows that there is a new god called the Absolute.'>GLO_Absolute_Knows_Name</span> <span class='asset-id'>{1b7fa14e-1a35-342a-5aa9-6342116578b6}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead if five questions were asked'>GLO_SpeakWithDead_State_QuestionsLimitReached</span> <span class='asset-id'>{01c40268-4a8d-4787-8566-77e01ff04762}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead for each question the player can ask'>GLO_SpeakWithDead_Event_QuestionAsked</span> <span class='asset-id'>{9984cd59-2fad-46cb-bf61-96af6034fbea}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 2a6835dc-620e-6cf3-476e-af3c94475455</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h8d2c17cfg0495g4e07ga8f5g49105b0aa01a</span><span class='meta-item'><strong>Text UUID</strong>: 5b506302-e30a-df74-1b5f-f34b88626a3b</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-3' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-9'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-9' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-9' aria-expanded='false' tabindex='0' data-detail-target='details-9' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>9.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Moonrise Towers... initiation...</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>GLO_Absolute_Knows_MoonriseTowers</span></span></span></span><div class='node-detail-panel' id='details-9' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player knows Moonrise Towers is somehow connected to the Cult of the Absolute'>GLO_Absolute_Knows_MoonriseTowers</span> <span class='asset-id'>{7253b35b-2ac8-ce7f-6181-689ef27536d9}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 4ff52d38-857d-96e1-8d52-695deba7a6fd</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h63ad5fa7gcf8dg41b9g94f5g467ad9a8f6e8</span><span class='meta-item'><strong>Text UUID</strong>: dc38a75f-e4c7-af00-8762-784363e6db65</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 12</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 4ff52d38-857d-96e1-8d52-695deba7a6fd</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 10.15s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: 9d90987e-feba-443e-bb65-97eb3867abe0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\9d90987e-feba-443e-bb65-97eb3867abe0.lsf</span><span class='meta-item'><strong>Timeline Material 2 Group ID</strong>: 9caf0fad-81da-4469-9e61-2c1e17393d18</span><span class='meta-item'><strong>Timeline Material 2 Group File</strong>: Engine_patch6\Public\Engine\Timeline\MaterialGroups\9caf0fad-81da-4469-9e61-2c1e17393d18.lsf.lsx</span><span class='meta-item'><strong>Timeline Material 2 Material Resource ID</strong>: bbf6c0b3-36ef-3543-4953-91969f46652b</span><span class='meta-item'><strong>Timeline Material 2 Material Resource Name</strong>: VFX_OverlayMaterial_Cinematic_SwD_EyeFX_01</span><span class='meta-item'><strong>Timeline Material 2 Material VFX File</strong>: Public\Shared\Assets\Materials\Effects\Model\VFX_Model_MaterialTrack_Visualiser_01.lsf</span></div></section></div></div></div><div class='node-branch' id='branch-9' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-31'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-31' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>31.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>(no line text)</span></span></span></span><div class='node-detail-panel' id='details-31' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: d6486cb0-5e56-7fbd-6432-68c85a4d422e</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Unmapped Attributes</strong>: transitionmode</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-28'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-28' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-28' aria-expanded='false' tabindex='0' data-detail-target='details-28' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>28.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Were you abducted by mind flayers?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>Den_DissectedDrow_Dead_AskedTadpole</span><span class='preview-token check'>GLO_Absolute_Knows_Name</span><span class='preview-token check'>!GLO_SpeakWithDead_State_QuestionsLimitReached</span><span class='preview-token set'>GLO_SpeakWithDead_Event_QuestionAsked</span></span></span></span><div class='node-detail-panel' id='details-28' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Den_DissectedDrow_Dead_AskedTadpoledescription'>Den_DissectedDrow_Dead_AskedTadpole</span> <span class='asset-id'>{fff6f469-7efc-a4c4-5c0d-af4075b2def3}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player knows that there is a new god called the Absolute.'>GLO_Absolute_Knows_Name</span> <span class='asset-id'>{1b7fa14e-1a35-342a-5aa9-6342116578b6}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead if five questions were asked'>GLO_SpeakWithDead_State_QuestionsLimitReached</span> <span class='asset-id'>{01c40268-4a8d-4787-8566-77e01ff04762}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead for each question the player can ask'>GLO_SpeakWithDead_Event_QuestionAsked</span> <span class='asset-id'>{9984cd59-2fad-46cb-bf61-96af6034fbea}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: c20de92a-ab51-efff-dbf3-325c77621c1c</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h6c2d2262g8516g432egbd16g2125a4a8a327</span><span class='meta-item'><strong>Text UUID</strong>: b27481e7-a550-eeb7-0d92-0f5dfb95d1c7</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-28' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-12'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-12' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-12' aria-expanded='false' tabindex='0' data-detail-target='details-12' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>12.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>No...</span></span></span></span><div class='node-detail-panel' id='details-12' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 61c0df7e-aeee-5efa-6358-829af657e083</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h84e8b8eeg350fg44c4gbbaegbc770de98bad</span><span class='meta-item'><strong>Text UUID</strong>: 5bf27b8f-a5fc-b2e4-c327-c0eb35f8e3a8</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 10</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 61c0df7e-aeee-5efa-6358-829af657e083</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.54s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: 9d90987e-feba-443e-bb65-97eb3867abe0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\9d90987e-feba-443e-bb65-97eb3867abe0.lsf</span><span class='meta-item'><strong>Timeline Material 2 Group ID</strong>: 9caf0fad-81da-4469-9e61-2c1e17393d18</span><span class='meta-item'><strong>Timeline Material 2 Group File</strong>: Engine_patch6\Public\Engine\Timeline\MaterialGroups\9caf0fad-81da-4469-9e61-2c1e17393d18.lsf.lsx</span><span class='meta-item'><strong>Timeline Material 2 Material Resource ID</strong>: bbf6c0b3-36ef-3543-4953-91969f46652b</span><span class='meta-item'><strong>Timeline Material 2 Material Resource Name</strong>: VFX_OverlayMaterial_Cinematic_SwD_EyeFX_01</span><span class='meta-item'><strong>Timeline Material 2 Material VFX File</strong>: Public\Shared\Assets\Materials\Effects\Model\VFX_Model_MaterialTrack_Visualiser_01.lsf</span></div></section></div></div></div><div class='node-branch' id='branch-12' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-19'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-19' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>19.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>(no line text)</span></span></span></span><div class='node-detail-panel' id='details-19' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: a164feea-9108-f802-6a06-d23ddb49fafe</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-15'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-15' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>15.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'><i>Leave.</i></span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!GLO_SpeakWithDead_State_QuestionsLimitReached</span></span></span></span><div class='node-detail-panel' id='details-15' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead if five questions were asked'>GLO_SpeakWithDead_State_QuestionsLimitReached</span> <span class='asset-id'>{01c40268-4a8d-4787-8566-77e01ff04762}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 778d513b-79e3-7721-4caf-e8a67ed3afb6</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hdcc8ffafg29f0g48bag94d6g15dec5a49472</span><span class='meta-item'><strong>Text UUID</strong>: 3c4ac305-bde7-dafa-0bee-a470d5fb051c</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: endnode</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-27'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-27' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>27.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*The spell&#x27;s power wanes. You can ask no more questions.*</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>GLO_SpeakWithDead_State_QuestionsLimitReached</span><span class='preview-token check'>!DEN_DissectedDrow_State_OnSlab</span></span></span></span><div class='node-detail-panel' id='details-27' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead if five questions were asked'>GLO_SpeakWithDead_State_QuestionsLimitReached</span> <span class='asset-id'>{01c40268-4a8d-4787-8566-77e01ff04762}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='Dissected Drow is on slab'>DEN_DissectedDrow_State_OnSlab</span> <span class='asset-id'>{484984e1-8bcd-4d23-b694-602bcf2079e6}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: b9a368f2-e9c4-c8de-6e19-e3d377bba1e7</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: h492a38d0ge902g4733ga176ga68a326db875</span><span class='meta-item'><strong>Text UUID</strong>: ce092465-4f9d-f6a6-8b09-4ffc250071c5</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 15</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: b9a368f2-e9c4-c8de-6e19-e3d377bba1e7</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 8s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 576fe8e9-ed63-4b84-800f-b1afc63c87d6</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Shared\Public\SharedDev\Content\Assets\Characters\Creatures\Doppelganger\[PAK]_Body_Cine\_merged.lsf.lsx</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: d48a00b7-0f2d-4fed-844e-0264cb05e3b8</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Shared\Public\SharedDev\Content\Assets\Characters\Halflings\[PAK]_Male_Body\_merged.lsf.lsx</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: 9caf0fad-81da-4469-9e61-2c1e17393d18</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine_patch6\Public\Engine\Timeline\MaterialGroups\9caf0fad-81da-4469-9e61-2c1e17393d18.lsf.lsx</span><span class='meta-item'><strong>Timeline Material 1 Material Resource ID</strong>: bbf6c0b3-36ef-3543-4953-91969f46652b</span><span class='meta-item'><strong>Timeline Material 1 Material Resource Name</strong>: VFX_OverlayMaterial_Cinematic_SwD_EyeFX_01</span><span class='meta-item'><strong>Timeline Material 1 Material VFX File</strong>: Public\Shared\Assets\Materials\Effects\Model\VFX_Model_MaterialTrack_Visualiser_01.lsf</span><span class='meta-item'><strong>Timeline Material 2 Group ID</strong>: 9d90987e-feba-443e-bb65-97eb3867abe0</span><span class='meta-item'><strong>Timeline Material 2 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\9d90987e-feba-443e-bb65-97eb3867abe0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [113.51s-115.76s] | @ 114.51s | speaker 0 | Dead (512)</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-8'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-8' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>8.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*The spell&#x27;s power wanes. You can ask no more questions.*</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>GLO_SpeakWithDead_State_QuestionsLimitReached</span><span class='preview-token check'>DEN_DissectedDrow_State_OnSlab</span></span></span></span><div class='node-detail-panel' id='details-8' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 0 Speaker 0</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on the target of the Speak With Dead if five questions were asked'>GLO_SpeakWithDead_State_QuestionsLimitReached</span> <span class='asset-id'>{01c40268-4a8d-4787-8566-77e01ff04762}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='Dissected Drow is on slab'>DEN_DissectedDrow_State_OnSlab</span> <span class='asset-id'>{484984e1-8bcd-4d23-b694-602bcf2079e6}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 4fbe1fc9-0ff6-c25d-698a-d81d6c2ead1d</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: hfc080218g3495g4d9bgae42gc5c105ae4f45</span><span class='meta-item'><strong>Text UUID</strong>: efd6acb4-7961-4681-9d2e-8163bd6fe1af</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 16</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 4fbe1fc9-0ff6-c25d-698a-d81d6c2ead1d</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 8s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: d48a00b7-0f2d-4fed-844e-0264cb05e3b8</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Shared\Public\SharedDev\Content\Assets\Characters\Halflings\[PAK]_Male_Body\_merged.lsf.lsx</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: 576fe8e9-ed63-4b84-800f-b1afc63c87d6</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Shared\Public\SharedDev\Content\Assets\Characters\Creatures\Doppelganger\[PAK]_Body_Cine\_merged.lsf.lsx</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: 9caf0fad-81da-4469-9e61-2c1e17393d18</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine_patch6\Public\Engine\Timeline\MaterialGroups\9caf0fad-81da-4469-9e61-2c1e17393d18.lsf.lsx</span><span class='meta-item'><strong>Timeline Material 1 Material Resource ID</strong>: bbf6c0b3-36ef-3543-4953-91969f46652b</span><span class='meta-item'><strong>Timeline Material 1 Material Resource Name</strong>: VFX_OverlayMaterial_Cinematic_SwD_EyeFX_01</span><span class='meta-item'><strong>Timeline Material 1 Material VFX File</strong>: Public\Shared\Assets\Materials\Effects\Model\VFX_Model_MaterialTrack_Visualiser_01.lsf</span><span class='meta-item'><strong>Timeline Material 2 Group ID</strong>: 9d90987e-feba-443e-bb65-97eb3867abe0</span><span class='meta-item'><strong>Timeline Material 2 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\9d90987e-feba-443e-bb65-97eb3867abe0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [121.51s-123.76s] | @ 122.51s | speaker 0 | Dead (512)</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul>
+        
+      </div>
+    </section>
+  </div>
+  <div class="tree-scrollbar-proxy" hidden>
+    <div class="tree-scrollbar-proxy-inner"></div>
+  </div>
+  <script>
+    function getNodeDetailPanel(shell) {
+      if (!shell) {
+        return null;
+      }
+      const content = shell.querySelector(":scope > .node-row > .node-content");
+      if (!content) {
+        return null;
+      }
+      return Array.from(content.children).find((child) => child.classList && child.classList.contains("node-detail-panel")) || null;
+    }
+    function getNodeDetailToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-detail-target]");
+    }
+    function getNodeBranchToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-branch-target]");
+    }
+    function getNodeBranchMarker(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .tree-toggle-marker[data-branch-target]");
+    }
+    const jumpHighlightTimers = new WeakMap();
+    const nodeSummaryClickTimers = new WeakMap();
+    const NODE_DETAIL_DOUBLE_CLICK_MS = 160;
+    const SUPPORTS_UNTIL_FOUND = document.documentElement.classList.contains("supports-until-found");
+    const treeShell = document.querySelector(".tree-shell");
+    const treeShellInner = treeShell ? treeShell.querySelector(".tree-shell-inner") : null;
+    const treeScrollbarProxy = document.querySelector(".tree-scrollbar-proxy");
+    const treeScrollbarProxyInner = treeScrollbarProxy
+      ? treeScrollbarProxy.querySelector(".tree-scrollbar-proxy-inner")
+      : null;
+    let syncingTreeScroll = false;
+    let syncingProxyScroll = false;
+    if (!SUPPORTS_UNTIL_FOUND) {
+      document.querySelectorAll("[hidden='until-found']").forEach((element) => {
+        element.setAttribute("hidden", "");
+      });
+    }
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+    function hideCollapsible(target) {
+      if (!target) {
+        return;
+      }
+      if (SUPPORTS_UNTIL_FOUND) {
+        target.setAttribute("hidden", "until-found");
+        return;
+      }
+      target.setAttribute("hidden", "");
+    }
+    function setToggleButtonState(button, active) {
+      if (!button) {
+        return;
+      }
+      button.classList.toggle("is-active", active);
+      const hideLabel = button.dataset.hideLabel;
+      const showLabel = button.dataset.showLabel;
+      if (hideLabel && showLabel) {
+        button.textContent = active ? showLabel : hideLabel;
+      }
+    }
+    function syncAllDetailsToggle() {
+      const button = document.querySelector("button[data-toggle-details='all']");
+      if (!button) {
+        return;
+      }
+      const panels = Array.from(document.querySelectorAll(".node-detail-panel"));
+      const allOpen = panels.length > 0 && panels.every((panel) => !panel.hasAttribute("hidden"));
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function syncAllBranchesToggle() {
+      const button = document.querySelector("button[data-toggle-branches='all']");
+      if (!button) {
+        return;
+      }
+      const branchMarkers = Array.from(document.querySelectorAll(".tree-toggle-marker[data-branch-target]"));
+      const allOpen = branchMarkers.length > 0 && branchMarkers.every((marker) => marker.dataset.branchExpanded === "true");
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function updateTreeScrollbarProxy() {
+      if (!treeShell || !treeShellInner || !treeScrollbarProxy || !treeScrollbarProxyInner) {
+        return;
+      }
+      const contentWidth = treeShellInner.scrollWidth;
+      const viewportWidth = treeShell.clientWidth;
+      const needsProxy = contentWidth > viewportWidth + 1;
+      if (!needsProxy) {
+        treeScrollbarProxy.hidden = true;
+        return;
+      }
+      const rect = treeShell.getBoundingClientRect();
+      treeScrollbarProxy.hidden = false;
+      treeScrollbarProxy.style.left = `${Math.max(0, rect.left)}px`;
+      treeScrollbarProxy.style.width = `${Math.max(0, rect.width)}px`;
+      treeScrollbarProxyInner.style.width = `${contentWidth}px`;
+      if (!syncingTreeScroll && Math.abs(treeScrollbarProxy.scrollLeft - treeShell.scrollLeft) > 1) {
+        syncingProxyScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingProxyScroll = false;
+      }
+    }
+    function resetTreeScrollToStart() {
+      document.querySelectorAll(".tree-shell").forEach((shell) => {
+        shell.scrollLeft = 0;
+      });
+      if (treeScrollbarProxy) {
+        treeScrollbarProxy.scrollLeft = 0;
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setBranchOpen(control, openState, syncState = true) {
+      if (!control) {
+        return;
+      }
+      const targetId = control.dataset.branchTarget;
+      const target = targetId ? document.getElementById(targetId) : null;
+      if (!target) {
+        return;
+      }
+      const shell = control.closest(".node-shell");
+      const marker = shell ? getNodeBranchMarker(shell) : null;
+      const summary = shell ? getNodeBranchToggle(shell) : null;
+      if (openState) {
+        target.removeAttribute("hidden");
+      } else {
+        hideCollapsible(target);
+      }
+      if (marker) {
+        marker.dataset.branchExpanded = openState ? "true" : "false";
+        marker.textContent = openState ? "-" : "+";
+      }
+      if (summary) {
+        summary.setAttribute("aria-expanded", openState ? "true" : "false");
+      }
+      if (syncState) {
+        syncAllBranchesToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setDetailOpen(shell, openState, syncState = true) {
+      const panel = getNodeDetailPanel(shell);
+      const toggle = getNodeDetailToggle(shell);
+      if (!panel) {
+        return;
+      }
+      if (openState) {
+        panel.removeAttribute("hidden");
+      } else {
+        hideCollapsible(panel);
+      }
+      if (toggle) {
+        toggle.dataset.detailExpanded = openState ? "true" : "false";
+      }
+      if (syncState) {
+        syncAllDetailsToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setAllBranches(openState) {
+      document.querySelectorAll(".tree-toggle-marker[data-branch-target]").forEach((marker) => { setBranchOpen(marker, openState, false); });
+      syncAllBranchesToggle();
+    }
+    function setAllNodeDetails(openState) {
+      document.querySelectorAll(".node-shell").forEach((shell) => {
+        if (getNodeDetailPanel(shell)) {
+          setDetailOpen(shell, openState, false);
+        }
+      });
+      syncAllDetailsToggle();
+    }
+    function openParents(target) {
+      let current = target;
+      while (current) {
+        if (current.classList && current.classList.contains("node-branch")) {
+          const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${current.id}"]`);
+          setBranchOpen(marker, true);
+        }
+        current = current.parentElement;
+      }
+    }
+    function highlightJumpTarget(target) {
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      if (!shell) {
+        return;
+      }
+      const existingTimer = jumpHighlightTimers.get(shell);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+      shell.classList.add("jump-highlight");
+      const timeoutId = window.setTimeout(() => {
+        shell.classList.remove("jump-highlight");
+        jumpHighlightTimers.delete(shell);
+      }, 5000);
+      jumpHighlightTimers.set(shell, timeoutId);
+    }
+    function getStickyScrollOffset() {
+      const toolbar = document.querySelector(".toolbar");
+      if (!toolbar) {
+        return 8;
+      }
+      return Math.ceil(toolbar.getBoundingClientRect().height) + 8;
+    }
+    function scrollNodeTargetIntoView(target) {
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      const scrollTarget = shell || target;
+      if (!scrollTarget) {
+        return;
+      }
+      const offset = getStickyScrollOffset();
+      const top = window.scrollY + scrollTarget.getBoundingClientRect().top - offset;
+      window.scrollTo({ top: Math.max(0, top), behavior: "auto" });
+    }
+    function revealAndFocusNodeTarget(target, href = "") {
+      if (!target) {
+        return;
+      }
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      openParents(shell || target);
+      if (href) {
+        history.replaceState(null, "", href);
+      }
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollNodeTargetIntoView(target);
+          highlightJumpTarget(target);
+          updateTreeScrollbarProxy();
+        });
+      });
+    }
+    if (treeShell && treeScrollbarProxy) {
+      treeShell.addEventListener("scroll", () => {
+        if (syncingProxyScroll) {
+          return;
+        }
+        syncingTreeScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingTreeScroll = false;
+      });
+      treeScrollbarProxy.addEventListener("scroll", () => {
+        if (syncingTreeScroll) {
+          return;
+        }
+        syncingProxyScroll = true;
+        treeShell.scrollLeft = treeScrollbarProxy.scrollLeft;
+        syncingProxyScroll = false;
+      });
+    }
+    document.addEventListener("click", (event) => {
+      const allBranchesButton = event.target.closest("button[data-toggle-branches='all']");
+      if (allBranchesButton) {
+        const isOpen = allBranchesButton.dataset.active === "true";
+        setAllBranches(!isOpen);
+        return;
+      }
+      const allDetailsButton = event.target.closest("button[data-toggle-details='all']");
+      if (allDetailsButton) {
+        const isOpen = allDetailsButton.dataset.active === "true";
+        setAllNodeDetails(!isOpen);
+        return;
+      }
+      const button = event.target.closest("button[data-toggle-class]");
+      if (button) {
+        const active = document.body.classList.toggle(button.dataset.toggleClass);
+        setToggleButtonState(button, active);
+        return;
+      }
+      const link = event.target.closest("a[href^='#node-']");
+      if (link) {
+        event.preventDefault();
+        const target = document.querySelector(link.getAttribute("href"));
+        if (target) {
+          revealAndFocusNodeTarget(target, link.getAttribute("href"));
+        }
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (summary) {
+        const branchTarget = summary.dataset.branchTarget;
+        const shell = summary.closest(".node-shell");
+        if (!shell) {
+          return;
+        }
+        if (!branchTarget) {
+          if (summary.dataset.detailTarget) {
+            const isOpen = summary.dataset.detailExpanded === "true";
+            setDetailOpen(shell, !isOpen);
+          }
+          return;
+        }
+        const existingTimer = nodeSummaryClickTimers.get(summary);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+          nodeSummaryClickTimers.delete(summary);
+          event.preventDefault();
+          const isOpen = summary.dataset.detailExpanded === "true";
+          setDetailOpen(shell, !isOpen);
+          return;
+        }
+        const timerId = window.setTimeout(() => {
+          nodeSummaryClickTimers.delete(summary);
+          const isOpen = summary.getAttribute("aria-expanded") === "true";
+          setBranchOpen(summary, !isOpen);
+          if (isOpen) {
+            const panel = getNodeDetailPanel(shell);
+            if (panel && !panel.hasAttribute("hidden")) {
+              setDetailOpen(shell, false);
+            }
+          }
+        }, NODE_DETAIL_DOUBLE_CLICK_MS);
+        nodeSummaryClickTimers.set(summary, timerId);
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (!summary) {
+        return;
+      }
+      event.preventDefault();
+      const shell = summary.closest(".node-shell");
+      if (!shell) {
+        return;
+      }
+      if (summary.dataset.branchTarget) {
+        const isOpen = summary.getAttribute("aria-expanded") === "true";
+        setBranchOpen(summary, !isOpen);
+        if (isOpen) {
+          const panel = getNodeDetailPanel(shell);
+          if (panel && !panel.hasAttribute("hidden")) {
+            setDetailOpen(shell, false);
+          }
+        }
+        return;
+      }
+      if (summary.dataset.detailTarget) {
+        const isOpen = summary.dataset.detailExpanded === "true";
+        setDetailOpen(shell, !isOpen);
+      }
+    });
+    document.addEventListener("beforematch", (event) => {
+      const branch = event.target.closest(".node-branch");
+      if (branch && branch.id) {
+        const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${branch.id}"]`);
+        setBranchOpen(marker, true);
+      }
+      const panel = event.target.closest(".node-detail-panel");
+      if (panel) {
+        const shell = panel.closest(".node-shell");
+        if (shell) {
+          openParents(shell);
+          setDetailOpen(shell, true);
+        }
+      }
+    });
+    document.querySelectorAll("button[data-toggle-class]").forEach((button) => {
+      const active = document.body.classList.contains(button.dataset.toggleClass);
+      setToggleButtonState(button, active);
+    });
+    if (window.ResizeObserver && treeShell) {
+      const observer = new ResizeObserver(() => {
+        updateTreeScrollbarProxy();
+      });
+      observer.observe(treeShell);
+      if (treeShellInner) {
+        observer.observe(treeShellInner);
+      }
+    }
+    window.addEventListener("resize", updateTreeScrollbarProxy);
+    window.addEventListener("scroll", updateTreeScrollbarProxy, { passive: true });
+    window.addEventListener("pageshow", () => {
+      if (window.location.hash) {
+        updateTreeScrollbarProxy();
+        return;
+      }
+      resetTreeScrollToStart();
+      window.requestAnimationFrame(() => {
+        resetTreeScrollToStart();
+      });
+      window.setTimeout(() => {
+        resetTreeScrollToStart();
+      }, 0);
+    });
+    syncAllBranchesToggle();
+    document.querySelectorAll("button[data-toggle-details='all']").forEach((button) => {
+      const active = button.dataset.active === "true";
+      setToggleButtonState(button, active);
+    });
+    updateTreeScrollbarProxy();
+    if (window.location.hash) {
+      const target = document.querySelector(window.location.hash);
+      if (target) {
+        revealAndFocusNodeTarget(target, window.location.hash);
+      }
+    }
+  </script>
+  <script data-search-target-line>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const targetLine = params.get("line");
+      const targetHash = window.location.hash;
+
+      if (!targetLine || !targetHash) {
+        return;
+      }
+
+      const targetShell = document.querySelector(targetHash);
+      if (!targetShell) {
+        return;
+      }
+
+      if (typeof openParents === "function") {
+        openParents(targetShell);
+      }
+      if (typeof setDetailOpen === "function") {
+        setDetailOpen(targetShell, true);
+      }
+
+      const normalize = (value) =>
+        (value || "")
+          .toLowerCase()
+          .normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      const normalizedTargetLine = normalize(targetLine);
+      if (!normalizedTargetLine) {
+        return;
+      }
+
+      const lineElements = Array.from(targetShell.querySelectorAll(".text-line"));
+      const matchingLine = lineElements.find((element) => {
+        const lineText = normalize(element.textContent);
+        return (
+          lineText === normalizedTargetLine ||
+          lineText.includes(normalizedTargetLine) ||
+          normalizedTargetLine.includes(lineText)
+        );
+      });
+
+      if (!matchingLine) {
+        return;
+      }
+
+      matchingLine.classList.add("search-target-line");
+      requestAnimationFrame(() => {
+        matchingLine.scrollIntoView({ block: "center" });
+      });
+    })();
+  </script>
+</body>
+</html>

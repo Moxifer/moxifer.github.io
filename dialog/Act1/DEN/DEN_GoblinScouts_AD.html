@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DEN_GoblinScouts_AD</title>
+  <script>
+    (function () {
+      const probe = document.createElement("div");
+      const supportsUntilFound = "onbeforematch" in probe;
+      document.documentElement.classList.add(
+        supportsUntilFound ? "supports-until-found" : "no-until-found"
+      );
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #182330;
+      --muted: #586477;
+      --line: #c7d2df;
+      --npc: #b91c1c;
+      --player: #15803d;
+      --system: #2563eb;
+      --rule: #2f6f44;
+      --tag: #0f766e;
+      --check: #7c3aed;
+      --set: #ea580c;
+      --roll: #6d28d9;
+      --approval: #0f766e;
+      --jump: #155eef;
+      --context: #475467;
+      --surface: #f3f6fa;
+      --surface-active: #e6edf5;
+      --surface-hover: #edf3f9;
+      --detail-surface: #e3ebf4;
+      --detail-border: #b4c2d4;
+      --focus: #90a4bc;
+      --highlight: #d9e5f5;
+      --scrollbar-proxy-bg: rgba(255, 255, 255, 0.94);
+      --mono: Consolas, "SFMono-Regular", Menlo, monospace;
+      --sans: Georgia, "Palatino Linotype", serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #fff;
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.35;
+      overflow-x: hidden;
+    }
+    a { color: var(--jump); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: none;
+      padding: 0;
+      border-radius: 0;
+    }
+    .page {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0.55rem 0.9rem 1.8rem;
+      overflow-x: hidden;
+    }
+    .hero {
+      margin-bottom: 0.55rem;
+    }
+    .hero h1 {
+      margin: 0 0 0.2rem;
+      font-size: 1.4rem;
+      line-height: 1.15;
+    }
+    .source {
+      color: var(--muted);
+      font-size: 0.9rem;
+      word-break: break-all;
+      margin-bottom: 0.2rem;
+    }
+    .source-label {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.3rem;
+    }
+    .summary-line {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 0.35rem;
+    }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.45rem;
+      margin-bottom: 0.45rem;
+      padding: 0.35rem 0;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      overflow: visible;
+    }
+    .toolbar-scroll {
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: calc(100% - 7rem);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+    }
+    .controls {
+      display: inline-flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0.45rem;
+      white-space: nowrap;
+      font-size: 0.9rem;
+      min-width: max-content;
+      overflow: visible;
+    }
+    .controls button,
+    .controls summary,
+    .speaker-map > summary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 1.85rem;
+      padding: 0.12rem 0.5rem;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: var(--surface);
+      color: var(--jump);
+      font: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      list-style: none;
+      user-select: none;
+    }
+    .controls button.is-active,
+    .controls details[open] > summary,
+    .speaker-map[open] > summary {
+      background: var(--surface-active);
+      border-color: var(--focus);
+    }
+    .controls button:hover,
+    .controls summary:hover,
+    .speaker-map > summary:hover {
+      background: var(--surface-hover);
+      text-decoration: none;
+    }
+    .controls summary:focus,
+    .controls button:focus,
+    .speaker-map > summary:focus {
+      outline: 1px solid var(--focus);
+      outline-offset: 1px;
+    }
+    .speaker-map {
+      flex: 0 0 auto;
+      position: relative;
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .speaker-map summary,
+    .meta-block summary {
+      cursor: pointer;
+      color: var(--jump);
+      list-style: none;
+    }
+    .speaker-map summary::-webkit-details-marker,
+    .meta-block summary::-webkit-details-marker {
+      display: none;
+    }
+    .speaker-map[open] ul {
+      display: block;
+    }
+    .speaker-map ul {
+      display: none;
+      list-style: none;
+      margin: 0.3rem 0 0;
+      padding: 0.45rem 0.6rem;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 0.2rem);
+      min-width: 20rem;
+      max-width: min(34rem, calc(100vw - 2rem));
+      max-height: 24rem;
+      overflow: auto;
+      background: #fbfcfe;
+      border: 1px solid var(--line);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+      z-index: 30;
+    }
+    .speaker-map li + li {
+      margin-top: 0.1rem;
+    }
+    .speaker-index {
+      display: inline-block;
+      min-width: 2rem;
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 600;
+    }
+    .speaker-name {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.25rem;
+    }
+    .inline-meta, .line-meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .tree-shell {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: visible;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-shell-inner {
+      width: max-content;
+      min-width: 100%;
+    }
+    .tree-scrollbar-proxy {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 1.1rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      background: var(--scrollbar-proxy-bg);
+      border-top: 1px solid var(--line);
+      z-index: 40;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-scrollbar-proxy[hidden] {
+      display: none;
+    }
+    .tree-scrollbar-proxy-inner {
+      height: 1px;
+    }
+    .orphan-section {
+      width: auto;
+      min-width: 0;
+      margin-top: 1rem;
+      padding-top: 0.55rem;
+      border-top: 1px dotted var(--line);
+    }
+    .orphan-section h2 {
+      margin: 0 0 0.15rem;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+    .orphan-note {
+      margin: 0 0 0.35rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .root-list, .child-list {
+      list-style: none;
+      margin: 0;
+      padding-left: 0;
+      width: auto;
+      min-width: 0;
+    }
+    .child-list {
+      margin-left: 1.1rem;
+      padding-left: 0.85rem;
+      border-left: 1px dotted var(--line);
+    }
+    .node-item {
+      margin: 0.18rem 0;
+    }
+    details.node {
+      margin: 0;
+    }
+    details.node:target > summary .node-line {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    .node-leaf:target {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 0;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    summary::-webkit-details-marker {
+      display: none;
+    }
+    details.node > summary::before {
+      content: "▸";
+      display: inline-block;
+      width: 0.9rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      vertical-align: top;
+      padding-top: 0.12rem;
+    }
+    details.node[open] > summary::before {
+      content: "▾";
+    }
+    details.node.no-children > summary::before {
+      content: "•";
+    }
+    .node-line {
+      display: inline;
+      padding: 0.06rem 0.18rem;
+    }
+    .node-leaf {
+      display: inline-block;
+      padding: 0.06rem 0.18rem;
+      border-radius: 6px;
+    }
+    details.node > summary::before {
+      content: "+";
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    details.node[open] > summary::before {
+      content: "-";
+    }
+    details.node.no-children > summary::before {
+      content: ".";
+    }
+    .node-number {
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 700;
+    }
+    .speaker-label {
+      font-weight: 700;
+      margin-left: 0.2rem;
+    }
+    .speaker-label.npc { color: var(--npc); }
+    .speaker-label.player { color: var(--player); }
+    .speaker-label.system { color: var(--system); }
+    .dialog {
+      color: var(--ink);
+      margin-left: 0.2rem;
+    }
+    .node-kind {
+      color: var(--system);
+      margin-left: 0.2rem;
+    }
+    .ruletag {
+      color: var(--rule);
+      margin-left: 0.35rem;
+    }
+    .tags {
+      color: var(--tag);
+      margin-left: 0.35rem;
+    }
+    .checkflag {
+      color: var(--check);
+      margin-left: 0.35rem;
+    }
+    .setflag {
+      color: var(--set);
+      margin-left: 0.35rem;
+    }
+    .rolls {
+      color: var(--roll);
+      margin-left: 0.35rem;
+    }
+    .approval {
+      color: var(--approval);
+      margin-left: 0.35rem;
+    }
+    .nodelink {
+      color: var(--jump);
+      margin-left: 0.35rem;
+    }
+    .context {
+      color: var(--context);
+      margin-left: 0.3rem;
+      cursor: help;
+    }
+    .end {
+      color: #8b1e1e;
+      margin-left: 0.35rem;
+    }
+    .node-shell:target,
+    .node-leaf:target {
+      background: none;
+      border-radius: 0;
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-shell {
+      display: block;
+    }
+    .node-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.32rem;
+      width: max-content;
+      min-width: 100%;
+      transition: background-color 0.18s ease;
+    }
+    .node-shell.jump-highlight > .node-row {
+      background: var(--highlight);
+    }
+    .node-content {
+      min-width: 0;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker,
+    .tree-spacer {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 0.95rem;
+      height: 0.95rem;
+      margin-top: 0.08rem;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker {
+      border: none;
+      background: none;
+      color: var(--muted);
+      padding: 0;
+      font: inherit;
+      font-weight: 800;
+      font-size: 1.18rem;
+      line-height: 1;
+      user-select: none;
+    }
+    .tree-spacer {
+      border: none;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .node-branch[hidden] {
+      display: none;
+    }
+    html.supports-until-found .node-branch[hidden='until-found'] {
+      display: block;
+    }
+    .repeat {
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+    .node-summary {
+      display: block;
+      cursor: default;
+    }
+    .node-summary.is-interactive {
+      cursor: pointer;
+    }
+    .node-summary.is-interactive:focus-visible {
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-main-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.35rem;
+    }
+    .node-main {
+      display: block;
+      flex: 1 1 auto;
+      min-width: 0;
+      white-space: normal;
+      line-height: 1.28;
+      overflow-wrap: anywhere;
+    }
+    .node-leaf {
+      display: block;
+      border-radius: 0;
+    }
+    .node-number {
+      font-weight: 600;
+    }
+    .speaker-label {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind,
+    .nodelink {
+      overflow-wrap: anywhere;
+    }
+    .nodelink,
+    .end {
+      margin-left: 0;
+    }
+    .node-previews {
+      display: block;
+      margin: 0.12rem 0 0 1.1rem;
+      font-size: 0.88rem;
+      white-space: normal;
+      line-height: 1.28;
+    }
+    .preview-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.12rem 0.45rem;
+    }
+    .preview-token {
+      display: inline;
+      overflow-wrap: anywhere;
+    }
+    .preview-token.tag {
+      color: var(--tag);
+    }
+    .preview-token.rule {
+      color: var(--rule);
+    }
+    .preview-token.check {
+      color: var(--check);
+    }
+    .preview-token.set {
+      color: var(--set);
+    }
+    .preview-note {
+      display: block;
+      margin-top: 0.08rem;
+      color: var(--context);
+      overflow-wrap: anywhere;
+      font-weight: 700;
+    }
+    .preview-note-label {
+      color: var(--context);
+      font-weight: 700;
+    }
+    .preview-note-value {
+      color: #4f463f;
+      font-weight: 600;
+    }
+    .signal-line {
+      display: block;
+      margin: 0.14rem 0 0.2rem;
+    }
+    .signal-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem;
+    }
+    .signal-label {
+      font-weight: 700;
+    }
+    .signal-scope {
+      color: var(--muted);
+    }
+    .tag-line, .tag-line .signal-label { color: var(--tag); }
+    .rule-line, .rule-line .signal-label { color: var(--rule); }
+    .checkflag-line, .checkflag-line .signal-label { color: var(--check); }
+    .setflag-line, .setflag-line .signal-label { color: var(--set); }
+    .roll-line, .roll-line .signal-label { color: var(--roll); }
+    .approval-line, .approval-line .signal-label { color: var(--approval); }
+    .context-line, .context-line .signal-label { color: var(--context); }
+    .context-line .signal-heading {
+      font-weight: 700;
+    }
+    .context-line .signal-item {
+      color: #4f463f;
+    }
+    .signal-values {
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .signal-list {
+      list-style: none;
+      margin: 0.06rem 0 0 0.9rem;
+      padding: 0;
+    }
+    .signal-item {
+      margin: 0.1rem 0;
+      overflow-wrap: anywhere;
+    }
+    .signal-item::before {
+      content: "- ";
+      color: var(--muted);
+    }
+    .signal-body {
+      display: block;
+      margin: 0.06rem 0 0 0.9rem;
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .asset-name {
+      color: var(--ink);
+    }
+    .asset-id {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.92em;
+      overflow-wrap: anywhere;
+    }
+    .asset-state {
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .node-detail-panel {
+      margin: 0.08rem 0 0.18rem 1.1rem;
+      padding: 0.35rem 0.5rem;
+      border: 1px solid var(--detail-border);
+      background: var(--detail-surface);
+      border-radius: 0;
+      display: block;
+      gap: 0;
+      max-width: none;
+    }
+    .node-detail-panel[hidden] {
+      display: none;
+    }
+    html.supports-until-found .node-detail-panel[hidden='until-found'] {
+      display: block;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: none;
+    }
+    .section {
+      margin: 0.16rem 0;
+      padding: 0;
+      background: none;
+      border: none;
+    }
+    .section h3 {
+      margin: 0 0 0.22rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .node-detail-panel > .section + .section {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-block + .text-block {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-line {
+      font-size: 0.96rem;
+      margin-bottom: 0.15rem;
+    }
+    .text-line {
+      margin: 0.08rem 0;
+      font-size: inherit;
+      overflow-wrap: anywhere;
+    }
+    .badge-row, .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .badge, .meta-item {
+      display: block;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+    }
+    .meta-items {
+      margin: 0.12rem 0 0 0.85rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+      white-space: normal;
+    }
+    .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .meta-item {
+      display: block;
+      margin: 0.06rem 0;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+      overflow-wrap: anywhere;
+    }
+    .meta-item strong {
+      color: var(--ink);
+    }
+    .badge.flags { color: var(--check); }
+    .badge.tags { color: var(--tag); }
+    .flag-groups {
+      display: block;
+      gap: 0;
+    }
+    .flag-group-type {
+      display: inline-block;
+      color: var(--muted);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.15rem;
+    }
+    .rule-tree, .rule-tree ul {
+      margin: 0;
+      padding-left: 1rem;
+    }
+    .body-hide-flags .section-flags,
+    .body-hide-rules .section-rules,
+    .body-hide-details .section-metadata,
+    .body-hide-context .preview-note,
+    .body-hide-context .context-line,
+    .body-hide-context .node-line .context {
+      display: none;
+    }
+    .body-hide-flags .node-line .checkflag,
+    .body-hide-flags .node-line .setflag,
+    .body-hide-rules .node-line .ruletag {
+      display: none;
+    }
+    .body-hide-flags .checkflag-line,
+    .body-hide-flags .setflag-line {
+      display: none;
+    }
+    .body-hide-flags .preview-token.check,
+    .body-hide-flags .preview-token.set {
+      display: none;
+    }
+    .body-hide-context .context-line {
+      display: none;
+    }
+    .body-hide-numbers .node-number {
+      display: none;
+    }
+    .missing, .cycle {
+      padding: 0.2rem 0.35rem;
+      color: #8b1e1e;
+      background: rgba(139, 30, 30, 0.08);
+      border-radius: 6px;
+      display: inline-block;
+    }
+    .missing, .cycle {
+      padding: 0;
+      background: none;
+      border-radius: 0;
+      display: block;
+      overflow-wrap: anywhere;
+    }
+    @media (max-width: 920px) {
+      .page {
+        padding: 0.45rem 0.5rem 0.9rem;
+      }
+      .tree-shell {
+        padding: 0;
+      }
+    }
+  </style>
+  <style data-search-target-highlight>
+    .node-shell:target {
+      outline: 3px solid #c68b00;
+      background: #fff7db;
+      scroll-margin-top: 1rem;
+    }
+    .text-line.search-target-line {
+      background: #fff0a6;
+      border-radius: 2px;
+      padding: 0 0.08rem;
+    }
+  </style>
+</head>
+  <body class="body-hide-numbers">
+  <div class="page">
+    <header class="hero">
+      <h1>DEN_GoblinScouts_AD</h1>
+      <div class="source"><span class="source-label">Start Dialog UUID:</span><strong><code>e9772457-2e92-f57e-efd3-7088cd7c3109</code></strong></div><div class="source"><span class="source-label">Timeline File UUID:</span><strong><code>bda83583-8891-d482-311a-0acead07ff34</code></strong></div><div class="source"><span class="source-label">Dialog File UUID:</span><strong><code>5311a1fa-6db9-52f2-e5f7-099250634a91</code></strong></div><div class="source"><span class="source-label">Dialog:</span>Mods\Gustav\Story\DialogsBinary\Act1\DEN\DEN_GoblinScouts_AD.lsf.lsx</div><div class="source"><span class="source-label">Timeline:</span>Public\Gustav\Timeline\Generated\DEN_GoblinScouts_AD.lsf.lsx</div><div class="source"><span class="source-label">Scene:</span>Public\Gustav\Timeline\Generated\DEN_GoblinScouts_AD_Scene.lsf.lsx</div>
+      <div class="summary-line">
+        category=Repeated automated NPC Dialog | nodes=15 | roots=4
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-scroll">
+          <div class="controls">
+            <button type="button" data-toggle-branches="all" data-hide-label="Expand all" data-show-label="Collapse all" data-active="false">Expand all</button>
+            <button type="button" data-toggle-class="body-hide-flags" data-hide-label="Hide flags" data-show-label="Show flags">Hide flags</button>
+            <button type="button" data-toggle-details="all" data-hide-label="Show details" data-show-label="Hide details" data-active="false">Show details</button>
+            <button type="button" data-toggle-class="body-hide-context" data-hide-label="Hide notes" data-show-label="Show notes">Hide notes</button>
+            <button type="button" data-toggle-class="body-hide-numbers" data-hide-label="Hide node numbers" data-show-label="Show node numbers">Hide node numbers</button>
+          </div>
+        </div>
+        <details class="speaker-map">
+          <summary>Speakers</summary>
+          <ul><li><span class='speaker-index'>0</span><span class='speaker-name'>Speaker 0</span><span class='inline-meta'>list=3c9e5843-32a6-49e7-91c2-1f8e6ae2833f | mapping=d31938e3-3c90-89af-ffb9-30b05ddcd5dc</span></li><li><span class='speaker-index'>1</span><span class='speaker-name'>Speaker 1</span><span class='inline-meta'>list=48c2871e-19e4-41da-8846-cc785fef64d3 | mapping=943401dc-6014-0300-28ce-f53ac6d3d6db</span></li><li><span class='speaker-index'>2</span><span class='speaker-name'>Speaker 2</span><span class='inline-meta'>list=1dfab0db-e7b5-48b8-9034-59628ddefa76 | mapping=48be4b84-82b4-0f31-da0a-a0b4ee70744b</span></li><li><span class='speaker-index'>3</span><span class='speaker-name'>Speaker 3</span><span class='inline-meta'>list=06a54b04-c141-4929-b21c-5f28737d88f7 | mapping=e413434b-3816-b6fc-8403-69caef69bd42</span></li></ul>
+        </details>
+      </div>
+    </header>
+    <section class="tree-shell">
+      <div class="tree-shell-inner">
+        <ul class="root-list"><li class='node-item'><div class='node-shell' id='node-13'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-13' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-13' aria-expanded='true' tabindex='0' data-detail-target='details-13' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>13.</span><span class='speaker-label npc'>Speaker 1</span><span>: </span><span class='dialog'>Pretty stubborn for a man wearin&#x27; leaves.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>5311a1fa-6db9-52f2-e5f7-099250634a91_C</span><span class='preview-token set'>!5311a1fa-6db9-52f2-e5f7-099250634a91_A</span><span class='preview-token set'>!5311a1fa-6db9-52f2-e5f7-099250634a91_B</span><span class='preview-token set'>!5311a1fa-6db9-52f2-e5f7-099250634a91_C</span></span></span></span><div class='node-detail-panel' id='details-13' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='5311a1fa-6db9-52f2-e5f7-099250634a91_Cdescription'>5311a1fa-6db9-52f2-e5f7-099250634a91_C</span> <span class='asset-id'>{882e2a4b-66f3-a395-8b74-70260c111e76}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='5311a1fa-6db9-52f2-e5f7-099250634a91_Adescription'>5311a1fa-6db9-52f2-e5f7-099250634a91_A</span> <span class='asset-id'>{f00a075e-af3e-2b89-70e5-7e2079d82c1b}</span> <span class='asset-state'>= False</span></li><li class='signal-item'><span class='asset-name' title='5311a1fa-6db9-52f2-e5f7-099250634a91_Bdescription'>5311a1fa-6db9-52f2-e5f7-099250634a91_B</span> <span class='asset-id'>{104c959f-11cf-4d04-b7fd-b6e8a0ec33d3}</span> <span class='asset-state'>= False</span></li><li class='signal-item'><span class='asset-name' title='5311a1fa-6db9-52f2-e5f7-099250634a91_Cdescription'>5311a1fa-6db9-52f2-e5f7-099250634a91_C</span> <span class='asset-id'>{882e2a4b-66f3-a395-8b74-70260c111e76}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: be0f50d6-779c-4b1a-f63c-f360dd64eafb</span><span class='meta-item'><strong>Speaker</strong>: 1 (Speaker 1)</span><span class='meta-item'><strong>Text Handle</strong>: h085a05aeg86e2g490bgb1e3g149de4f7ec1d</span><span class='meta-item'><strong>Text UUID</strong>: a5c81a36-45a3-2dab-d84f-0237f394e930</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 3</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: be0f50d6-779c-4b1a-f63c-f360dd64eafb</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.71s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: @ 21.71s | speaker 3 | Thinking (4)</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-13'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-7'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-7' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-7' aria-expanded='false' tabindex='0' data-detail-target='details-7' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>7.</span><span class='speaker-label npc'>Speaker 2</span><span>: </span><span class='dialog'>Maybe we can set him on fire.</span></span></span></span><div class='node-detail-panel' id='details-7' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 68c5d421-87e5-7868-ae4c-e5d1674abdc6</span><span class='meta-item'><strong>Speaker</strong>: 2 (Speaker 2)</span><span class='meta-item'><strong>Text Handle</strong>: h5c9498bfg8ee4g4ba2g801eg4b05b3cbdcb6</span><span class='meta-item'><strong>Text UUID</strong>: bbe42410-c603-8363-fef0-ae53bc656ed2</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 7</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 68c5d421-87e5-7868-ae4c-e5d1674abdc6</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 7.26s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: @ 39.32s | speaker 2 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: @ 43.51s | speaker 2 | Happy (2)</span></div></section></div></div></div><div class='node-branch' id='branch-7' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-15'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-15' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>15.</span><span class='speaker-label npc'>Speaker 3</span><span>: </span><span class='dialog'>We should set the whole grove on fire.</span> <span class='end'>[End]</span></span></span></span><div class='node-detail-panel' id='details-15' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: fd920950-145a-f613-7cef-e933ee7e97f5</span><span class='meta-item'><strong>Speaker</strong>: 3 (Speaker 3)</span><span class='meta-item'><strong>Text Handle</strong>: hf3855fe4gd4e3g434eg9746g5a523a51ba3c</span><span class='meta-item'><strong>Text UUID</strong>: 92cc6d6f-0148-c038-8d7d-3dd05b2d3a3c</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 14</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: fd920950-145a-f613-7cef-e933ee7e97f5</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.26s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: @ 75.29s | speaker 3 | Happy (2)</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-1'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-1' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-1' aria-expanded='true' tabindex='0' data-detail-target='details-1' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>1.</span><span class='speaker-label npc'>Speaker 2</span><span>: </span><span class='dialog'>Minthara&#x27;s gonna skin us. No one knows about this damn weapon.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>5311a1fa-6db9-52f2-e5f7-099250634a91_B</span><span class='preview-token set'>5311a1fa-6db9-52f2-e5f7-099250634a91_C</span></span></span></span><div class='node-detail-panel' id='details-1' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='5311a1fa-6db9-52f2-e5f7-099250634a91_Bdescription'>5311a1fa-6db9-52f2-e5f7-099250634a91_B</span> <span class='asset-id'>{104c959f-11cf-4d04-b7fd-b6e8a0ec33d3}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='5311a1fa-6db9-52f2-e5f7-099250634a91_Cdescription'>5311a1fa-6db9-52f2-e5f7-099250634a91_C</span> <span class='asset-id'>{882e2a4b-66f3-a395-8b74-70260c111e76}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 04421ffb-16a0-05fd-2c0e-ad8d35e83c9e</span><span class='meta-item'><strong>Speaker</strong>: 2 (Speaker 2)</span><span class='meta-item'><strong>Text Handle</strong>: h6e1a8fd5g796cg469ega80fgd2203c58764f</span><span class='meta-item'><strong>Text UUID</strong>: 6e4da0e4-77c9-32a9-7e87-eaba0bdb997b</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 0</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 04421ffb-16a0-05fd-2c0e-ad8d35e83c9e</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.9s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: @ 0s | speaker 2 | Angry (8)</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-1'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-4'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-4' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-4' aria-expanded='false' tabindex='0' data-detail-target='details-4' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>4.</span><span class='speaker-label npc'>Speaker 3</span><span>: </span><span class='dialog'>Yeah. She&#x27;ll kill us dead if we go back without it.</span></span></span></span><div class='node-detail-panel' id='details-4' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 0d56a9ec-c3a1-9376-99c1-70ba0f21a38f</span><span class='meta-item'><strong>Speaker</strong>: 3 (Speaker 3)</span><span class='meta-item'><strong>Text Handle</strong>: hb52bdf1bg909eg479eg9dfegf5be80f97a11</span><span class='meta-item'><strong>Text UUID</strong>: b706a5b1-9ada-a434-ff3e-d2896d7d7fc2</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 4</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 0d56a9ec-c3a1-9376-99c1-70ba0f21a38f</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.07s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: @ 25.79s | speaker 0 | Angry (8)</span></div></section></div></div></div><div class='node-branch' id='branch-4' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-6'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-6' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-6' aria-expanded='false' tabindex='0' data-detail-target='details-6' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>6.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>We&#x27;ll get the druid talking. Grove&#x27;s got to be full of magic.</span></span></span></span><div class='node-detail-panel' id='details-6' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 536184d2-0c5c-22d0-cb84-5bba5cc0dcca</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hb005e819gbf90g47bcg824egde79daa1f790</span><span class='meta-item'><strong>Text UUID</strong>: 2965becc-26ec-4780-b1da-5d11e4d4e095</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 6</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 536184d2-0c5c-22d0-cb84-5bba5cc0dcca</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6.43s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: @ 32.52s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: @ 33.52s | speaker 0 | Sad (32)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: @ 34.96s | speaker 0 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: @ 36.25s | speaker 2 | Fear (16)</span></div></section></div></div></div><div class='node-branch' id='branch-6' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-3'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-3' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>3.</span><span class='speaker-label npc'>Speaker 1</span><span>: </span><span class='dialog'>That&#x27;s why I&#x27;ve been stabbin&#x27; all the rats. Might be spies.</span> <span class='end'>[End]</span></span></span></span><div class='node-detail-panel' id='details-3' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 0aed5f64-3742-2636-4d99-88c13148c5a8</span><span class='meta-item'><strong>Speaker</strong>: 1 (Speaker 1)</span><span class='meta-item'><strong>Text Handle</strong>: hb181b817gef5ag456bgb0dbgd985ba2a6474</span><span class='meta-item'><strong>Text UUID</strong>: ac04cffe-20e0-4d2e-4370-8354fcbb8f6c</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 11</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 0aed5f64-3742-2636-4d99-88c13148c5a8</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5.03s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: @ 60.45s | speaker 1 | Sad (32)</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-2'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-2' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-2' aria-expanded='true' tabindex='0' data-detail-target='details-2' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>2.</span><span class='speaker-label npc'>Speaker 2</span><span>: </span><span class='dialog'>This was more fun when he was screamin&#x27;.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>5311a1fa-6db9-52f2-e5f7-099250634a91_A</span><span class='preview-token set'>5311a1fa-6db9-52f2-e5f7-099250634a91_B</span></span></span></span><div class='node-detail-panel' id='details-2' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='5311a1fa-6db9-52f2-e5f7-099250634a91_Adescription'>5311a1fa-6db9-52f2-e5f7-099250634a91_A</span> <span class='asset-id'>{f00a075e-af3e-2b89-70e5-7e2079d82c1b}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='5311a1fa-6db9-52f2-e5f7-099250634a91_Bdescription'>5311a1fa-6db9-52f2-e5f7-099250634a91_B</span> <span class='asset-id'>{104c959f-11cf-4d04-b7fd-b6e8a0ec33d3}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 0acc9a23-05cd-9c10-3d50-61c27f0bf7f8</span><span class='meta-item'><strong>Speaker</strong>: 2 (Speaker 2)</span><span class='meta-item'><strong>Text Handle</strong>: h2d555844gc589g4198g95f0g593567963d29</span><span class='meta-item'><strong>Text UUID</strong>: 1a07262f-4b76-e32a-843e-57376c869333</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 1</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 0acc9a23-05cd-9c10-3d50-61c27f0bf7f8</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: @ 4.9s | speaker 2 | Sad (32)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: @ 9.4s | speaker 1 | Sad (32)</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-2'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-14'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-14' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-14' aria-expanded='false' tabindex='0' data-detail-target='details-14' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>14.</span><span class='speaker-label npc'>Speaker 1</span><span>: </span><span class='dialog'>Could wake him up by choppin&#x27; off a toe. That&#x27;d be funny.</span></span></span></span><div class='node-detail-panel' id='details-14' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: ec1951b1-243c-5656-c592-ba0b075396b1</span><span class='meta-item'><strong>Speaker</strong>: 1 (Speaker 1)</span><span class='meta-item'><strong>Text Handle</strong>: hd57a879bg1503g4f8dgae4bg6af6743f0b1d</span><span class='meta-item'><strong>Text UUID</strong>: d61f8afe-c2d0-3c0d-30ea-b61731f3c438</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 10</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: ec1951b1-243c-5656-c592-ba0b075396b1</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5.81s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: @ 57.85s | speaker 1 | Happy (2)</span></div></section></div></div></div><div class='node-branch' id='branch-14' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-12'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-12' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-12' aria-expanded='false' tabindex='0' data-detail-target='details-12' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>12.</span><span class='speaker-label npc'>Speaker 3</span><span>: </span><span class='dialog'>Yeah. Give him somethin&#x27; to cry about.</span></span></span></span><div class='node-detail-panel' id='details-12' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: b0be4feb-82e7-61cc-ef23-76648bb3ba22</span><span class='meta-item'><strong>Speaker</strong>: 3 (Speaker 3)</span><span class='meta-item'><strong>Text Handle</strong>: hc91d6db9g50fbg4492gb49bg9a964f01743c</span><span class='meta-item'><strong>Text UUID</strong>: 5675b28d-bf48-2878-4c7b-7999c2aa6120</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 9</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: b0be4feb-82e7-61cc-ef23-76648bb3ba22</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.92s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: @ 52.73s | speaker 3 | Thinking (4)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: @ 54.65s | speaker 1 | Sad (32)</span></div></section></div></div></div><div class='node-branch' id='branch-12' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-10'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-10' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>10.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Don&#x27;t wear his voice out. We still need answers.</span> <span class='end'>[End]</span></span></span></span><div class='node-detail-panel' id='details-10' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 9adb71a8-a594-8ffd-419b-bce32d0e1686</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hf96cfde6gd758g4c52g803ag7cd3b85200fe</span><span class='meta-item'><strong>Text UUID</strong>: f5b6337b-b192-6839-9022-a0129e875bee</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 13</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 9adb71a8-a594-8ffd-419b-bce32d0e1686</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.97s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: @ 69.38s | speaker 0 | Sad (32)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: @ 73.36s | speaker 3 | Sad (32)</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-8'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-8' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-8' aria-expanded='true' tabindex='0' data-detail-target='details-8' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>8.</span><span class='speaker-label npc'>Speaker 1</span><span>: </span><span class='dialog'>No sign of the others yet. You think the fight up front went... bad?</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>5311a1fa-6db9-52f2-e5f7-099250634a91_A</span></span></span></span><div class='node-detail-panel' id='details-8' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='5311a1fa-6db9-52f2-e5f7-099250634a91_Adescription'>5311a1fa-6db9-52f2-e5f7-099250634a91_A</span> <span class='asset-id'>{f00a075e-af3e-2b89-70e5-7e2079d82c1b}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 78c11ee7-90f3-830d-a189-0d2bddd281d2</span><span class='meta-item'><strong>Speaker</strong>: 1 (Speaker 1)</span><span class='meta-item'><strong>Text Handle</strong>: h41b10866gc782g4704g87f2g334be9e4e70e</span><span class='meta-item'><strong>Text UUID</strong>: 51694b65-1a8a-6dda-19ad-bc7ad5ff3074</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 2</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 78c11ee7-90f3-830d-a189-0d2bddd281d2</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 8.61s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: @ 12.83s | speaker 1 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: @ 14.16s | speaker 1 | Sad (32)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: @ 18s | speaker 1 | Sad (32)</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-8'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-5'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-5' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-5' aria-expanded='false' tabindex='0' data-detail-target='details-5' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>5.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Shut it. Boss would rip ya for talking that way.</span></span></span></span><div class='node-detail-panel' id='details-5' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 392c3c59-0f87-edc1-df30-f9b7904a231c</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h97f22e1bg0faeg4b7ag84c7g4f2ade32f3e0</span><span class='meta-item'><strong>Text UUID</strong>: 7e473166-b5d0-8f9a-710c-9d3fb22fb6c3</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 5</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 392c3c59-0f87-edc1-df30-f9b7904a231c</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.04s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: @ 27.42s | speaker 0 | Sad (32)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: @ 28.95s | speaker 0 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: @ 29.82s | speaker 0 | Happy (2)</span></div></section></div></div></div><div class='node-branch' id='branch-5' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-11'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-11' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-11' aria-expanded='false' tabindex='0' data-detail-target='details-11' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>11.</span><span class='speaker-label npc'>Speaker 2</span><span>: </span><span class='dialog'>Least we got the druid to keep ourselves entertained.</span></span></span></span><div class='node-detail-panel' id='details-11' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: b026670f-1b59-b755-6063-e0ec93cbbe2b</span><span class='meta-item'><strong>Speaker</strong>: 2 (Speaker 2)</span><span class='meta-item'><strong>Text Handle</strong>: h612dc1e1ge0d6g455bgb83bgc0ba874fa333</span><span class='meta-item'><strong>Text UUID</strong>: ef58f649-a796-fc8a-4a03-0ff2952a3600</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 8</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: b026670f-1b59-b755-6063-e0ec93cbbe2b</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 7.22s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: @ 45.41s | speaker 2 | Sad (32)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: @ 46.74s | speaker 2 | Thinking (4)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: @ 47.71s | speaker 2 | Sad (32)</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: @ 48.67s | speaker 2 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: @ 50.73s | speaker 3 | Happy (2)</span></div></section></div></div></div><div class='node-branch' id='branch-11' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-9'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-9' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>9.</span><span class='speaker-label npc'>Speaker 3</span><span>: </span><span class='dialog'>He&#x27;s boring. Let&#x27;s find another one.</span> <span class='end'>[End]</span></span></span></span><div class='node-detail-panel' id='details-9' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 8dcefaa7-cd51-5730-3322-e9e373eb669e</span><span class='meta-item'><strong>Speaker</strong>: 3 (Speaker 3)</span><span class='meta-item'><strong>Text Handle</strong>: h917353c6ge13fg4f9dg8592gf9dfe9521c62</span><span class='meta-item'><strong>Text UUID</strong>: 211e3db1-495c-05f8-d78a-7cf9ed18888c</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 12</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 8dcefaa7-cd51-5730-3322-e9e373eb669e</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.9s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: @ 65.48s | speaker 3 | Thinking (4)</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul>
+        
+      </div>
+    </section>
+  </div>
+  <div class="tree-scrollbar-proxy" hidden>
+    <div class="tree-scrollbar-proxy-inner"></div>
+  </div>
+  <script>
+    function getNodeDetailPanel(shell) {
+      if (!shell) {
+        return null;
+      }
+      const content = shell.querySelector(":scope > .node-row > .node-content");
+      if (!content) {
+        return null;
+      }
+      return Array.from(content.children).find((child) => child.classList && child.classList.contains("node-detail-panel")) || null;
+    }
+    function getNodeDetailToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-detail-target]");
+    }
+    function getNodeBranchToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-branch-target]");
+    }
+    function getNodeBranchMarker(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .tree-toggle-marker[data-branch-target]");
+    }
+    const jumpHighlightTimers = new WeakMap();
+    const nodeSummaryClickTimers = new WeakMap();
+    const NODE_DETAIL_DOUBLE_CLICK_MS = 160;
+    const SUPPORTS_UNTIL_FOUND = document.documentElement.classList.contains("supports-until-found");
+    const treeShell = document.querySelector(".tree-shell");
+    const treeShellInner = treeShell ? treeShell.querySelector(".tree-shell-inner") : null;
+    const treeScrollbarProxy = document.querySelector(".tree-scrollbar-proxy");
+    const treeScrollbarProxyInner = treeScrollbarProxy
+      ? treeScrollbarProxy.querySelector(".tree-scrollbar-proxy-inner")
+      : null;
+    let syncingTreeScroll = false;
+    let syncingProxyScroll = false;
+    if (!SUPPORTS_UNTIL_FOUND) {
+      document.querySelectorAll("[hidden='until-found']").forEach((element) => {
+        element.setAttribute("hidden", "");
+      });
+    }
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+    function hideCollapsible(target) {
+      if (!target) {
+        return;
+      }
+      if (SUPPORTS_UNTIL_FOUND) {
+        target.setAttribute("hidden", "until-found");
+        return;
+      }
+      target.setAttribute("hidden", "");
+    }
+    function setToggleButtonState(button, active) {
+      if (!button) {
+        return;
+      }
+      button.classList.toggle("is-active", active);
+      const hideLabel = button.dataset.hideLabel;
+      const showLabel = button.dataset.showLabel;
+      if (hideLabel && showLabel) {
+        button.textContent = active ? showLabel : hideLabel;
+      }
+    }
+    function syncAllDetailsToggle() {
+      const button = document.querySelector("button[data-toggle-details='all']");
+      if (!button) {
+        return;
+      }
+      const panels = Array.from(document.querySelectorAll(".node-detail-panel"));
+      const allOpen = panels.length > 0 && panels.every((panel) => !panel.hasAttribute("hidden"));
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function syncAllBranchesToggle() {
+      const button = document.querySelector("button[data-toggle-branches='all']");
+      if (!button) {
+        return;
+      }
+      const branchMarkers = Array.from(document.querySelectorAll(".tree-toggle-marker[data-branch-target]"));
+      const allOpen = branchMarkers.length > 0 && branchMarkers.every((marker) => marker.dataset.branchExpanded === "true");
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function updateTreeScrollbarProxy() {
+      if (!treeShell || !treeShellInner || !treeScrollbarProxy || !treeScrollbarProxyInner) {
+        return;
+      }
+      const contentWidth = treeShellInner.scrollWidth;
+      const viewportWidth = treeShell.clientWidth;
+      const needsProxy = contentWidth > viewportWidth + 1;
+      if (!needsProxy) {
+        treeScrollbarProxy.hidden = true;
+        return;
+      }
+      const rect = treeShell.getBoundingClientRect();
+      treeScrollbarProxy.hidden = false;
+      treeScrollbarProxy.style.left = `${Math.max(0, rect.left)}px`;
+      treeScrollbarProxy.style.width = `${Math.max(0, rect.width)}px`;
+      treeScrollbarProxyInner.style.width = `${contentWidth}px`;
+      if (!syncingTreeScroll && Math.abs(treeScrollbarProxy.scrollLeft - treeShell.scrollLeft) > 1) {
+        syncingProxyScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingProxyScroll = false;
+      }
+    }
+    function resetTreeScrollToStart() {
+      document.querySelectorAll(".tree-shell").forEach((shell) => {
+        shell.scrollLeft = 0;
+      });
+      if (treeScrollbarProxy) {
+        treeScrollbarProxy.scrollLeft = 0;
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setBranchOpen(control, openState, syncState = true) {
+      if (!control) {
+        return;
+      }
+      const targetId = control.dataset.branchTarget;
+      const target = targetId ? document.getElementById(targetId) : null;
+      if (!target) {
+        return;
+      }
+      const shell = control.closest(".node-shell");
+      const marker = shell ? getNodeBranchMarker(shell) : null;
+      const summary = shell ? getNodeBranchToggle(shell) : null;
+      if (openState) {
+        target.removeAttribute("hidden");
+      } else {
+        hideCollapsible(target);
+      }
+      if (marker) {
+        marker.dataset.branchExpanded = openState ? "true" : "false";
+        marker.textContent = openState ? "-" : "+";
+      }
+      if (summary) {
+        summary.setAttribute("aria-expanded", openState ? "true" : "false");
+      }
+      if (syncState) {
+        syncAllBranchesToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setDetailOpen(shell, openState, syncState = true) {
+      const panel = getNodeDetailPanel(shell);
+      const toggle = getNodeDetailToggle(shell);
+      if (!panel) {
+        return;
+      }
+      if (openState) {
+        panel.removeAttribute("hidden");
+      } else {
+        hideCollapsible(panel);
+      }
+      if (toggle) {
+        toggle.dataset.detailExpanded = openState ? "true" : "false";
+      }
+      if (syncState) {
+        syncAllDetailsToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setAllBranches(openState) {
+      document.querySelectorAll(".tree-toggle-marker[data-branch-target]").forEach((marker) => { setBranchOpen(marker, openState, false); });
+      syncAllBranchesToggle();
+    }
+    function setAllNodeDetails(openState) {
+      document.querySelectorAll(".node-shell").forEach((shell) => {
+        if (getNodeDetailPanel(shell)) {
+          setDetailOpen(shell, openState, false);
+        }
+      });
+      syncAllDetailsToggle();
+    }
+    function openParents(target) {
+      let current = target;
+      while (current) {
+        if (current.classList && current.classList.contains("node-branch")) {
+          const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${current.id}"]`);
+          setBranchOpen(marker, true);
+        }
+        current = current.parentElement;
+      }
+    }
+    function highlightJumpTarget(target) {
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      if (!shell) {
+        return;
+      }
+      const existingTimer = jumpHighlightTimers.get(shell);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+      shell.classList.add("jump-highlight");
+      const timeoutId = window.setTimeout(() => {
+        shell.classList.remove("jump-highlight");
+        jumpHighlightTimers.delete(shell);
+      }, 5000);
+      jumpHighlightTimers.set(shell, timeoutId);
+    }
+    function getStickyScrollOffset() {
+      const toolbar = document.querySelector(".toolbar");
+      if (!toolbar) {
+        return 8;
+      }
+      return Math.ceil(toolbar.getBoundingClientRect().height) + 8;
+    }
+    function scrollNodeTargetIntoView(target) {
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      const scrollTarget = shell || target;
+      if (!scrollTarget) {
+        return;
+      }
+      const offset = getStickyScrollOffset();
+      const top = window.scrollY + scrollTarget.getBoundingClientRect().top - offset;
+      window.scrollTo({ top: Math.max(0, top), behavior: "auto" });
+    }
+    function revealAndFocusNodeTarget(target, href = "") {
+      if (!target) {
+        return;
+      }
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      openParents(shell || target);
+      if (href) {
+        history.replaceState(null, "", href);
+      }
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollNodeTargetIntoView(target);
+          highlightJumpTarget(target);
+          updateTreeScrollbarProxy();
+        });
+      });
+    }
+    if (treeShell && treeScrollbarProxy) {
+      treeShell.addEventListener("scroll", () => {
+        if (syncingProxyScroll) {
+          return;
+        }
+        syncingTreeScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingTreeScroll = false;
+      });
+      treeScrollbarProxy.addEventListener("scroll", () => {
+        if (syncingTreeScroll) {
+          return;
+        }
+        syncingProxyScroll = true;
+        treeShell.scrollLeft = treeScrollbarProxy.scrollLeft;
+        syncingProxyScroll = false;
+      });
+    }
+    document.addEventListener("click", (event) => {
+      const allBranchesButton = event.target.closest("button[data-toggle-branches='all']");
+      if (allBranchesButton) {
+        const isOpen = allBranchesButton.dataset.active === "true";
+        setAllBranches(!isOpen);
+        return;
+      }
+      const allDetailsButton = event.target.closest("button[data-toggle-details='all']");
+      if (allDetailsButton) {
+        const isOpen = allDetailsButton.dataset.active === "true";
+        setAllNodeDetails(!isOpen);
+        return;
+      }
+      const button = event.target.closest("button[data-toggle-class]");
+      if (button) {
+        const active = document.body.classList.toggle(button.dataset.toggleClass);
+        setToggleButtonState(button, active);
+        return;
+      }
+      const link = event.target.closest("a[href^='#node-']");
+      if (link) {
+        event.preventDefault();
+        const target = document.querySelector(link.getAttribute("href"));
+        if (target) {
+          revealAndFocusNodeTarget(target, link.getAttribute("href"));
+        }
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (summary) {
+        const branchTarget = summary.dataset.branchTarget;
+        const shell = summary.closest(".node-shell");
+        if (!shell) {
+          return;
+        }
+        if (!branchTarget) {
+          if (summary.dataset.detailTarget) {
+            const isOpen = summary.dataset.detailExpanded === "true";
+            setDetailOpen(shell, !isOpen);
+          }
+          return;
+        }
+        const existingTimer = nodeSummaryClickTimers.get(summary);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+          nodeSummaryClickTimers.delete(summary);
+          event.preventDefault();
+          const isOpen = summary.dataset.detailExpanded === "true";
+          setDetailOpen(shell, !isOpen);
+          return;
+        }
+        const timerId = window.setTimeout(() => {
+          nodeSummaryClickTimers.delete(summary);
+          const isOpen = summary.getAttribute("aria-expanded") === "true";
+          setBranchOpen(summary, !isOpen);
+          if (isOpen) {
+            const panel = getNodeDetailPanel(shell);
+            if (panel && !panel.hasAttribute("hidden")) {
+              setDetailOpen(shell, false);
+            }
+          }
+        }, NODE_DETAIL_DOUBLE_CLICK_MS);
+        nodeSummaryClickTimers.set(summary, timerId);
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (!summary) {
+        return;
+      }
+      event.preventDefault();
+      const shell = summary.closest(".node-shell");
+      if (!shell) {
+        return;
+      }
+      if (summary.dataset.branchTarget) {
+        const isOpen = summary.getAttribute("aria-expanded") === "true";
+        setBranchOpen(summary, !isOpen);
+        if (isOpen) {
+          const panel = getNodeDetailPanel(shell);
+          if (panel && !panel.hasAttribute("hidden")) {
+            setDetailOpen(shell, false);
+          }
+        }
+        return;
+      }
+      if (summary.dataset.detailTarget) {
+        const isOpen = summary.dataset.detailExpanded === "true";
+        setDetailOpen(shell, !isOpen);
+      }
+    });
+    document.addEventListener("beforematch", (event) => {
+      const branch = event.target.closest(".node-branch");
+      if (branch && branch.id) {
+        const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${branch.id}"]`);
+        setBranchOpen(marker, true);
+      }
+      const panel = event.target.closest(".node-detail-panel");
+      if (panel) {
+        const shell = panel.closest(".node-shell");
+        if (shell) {
+          openParents(shell);
+          setDetailOpen(shell, true);
+        }
+      }
+    });
+    document.querySelectorAll("button[data-toggle-class]").forEach((button) => {
+      const active = document.body.classList.contains(button.dataset.toggleClass);
+      setToggleButtonState(button, active);
+    });
+    if (window.ResizeObserver && treeShell) {
+      const observer = new ResizeObserver(() => {
+        updateTreeScrollbarProxy();
+      });
+      observer.observe(treeShell);
+      if (treeShellInner) {
+        observer.observe(treeShellInner);
+      }
+    }
+    window.addEventListener("resize", updateTreeScrollbarProxy);
+    window.addEventListener("scroll", updateTreeScrollbarProxy, { passive: true });
+    window.addEventListener("pageshow", () => {
+      if (window.location.hash) {
+        updateTreeScrollbarProxy();
+        return;
+      }
+      resetTreeScrollToStart();
+      window.requestAnimationFrame(() => {
+        resetTreeScrollToStart();
+      });
+      window.setTimeout(() => {
+        resetTreeScrollToStart();
+      }, 0);
+    });
+    syncAllBranchesToggle();
+    document.querySelectorAll("button[data-toggle-details='all']").forEach((button) => {
+      const active = button.dataset.active === "true";
+      setToggleButtonState(button, active);
+    });
+    updateTreeScrollbarProxy();
+    if (window.location.hash) {
+      const target = document.querySelector(window.location.hash);
+      if (target) {
+        revealAndFocusNodeTarget(target, window.location.hash);
+      }
+    }
+  </script>
+  <script data-search-target-line>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const targetLine = params.get("line");
+      const targetHash = window.location.hash;
+
+      if (!targetLine || !targetHash) {
+        return;
+      }
+
+      const targetShell = document.querySelector(targetHash);
+      if (!targetShell) {
+        return;
+      }
+
+      if (typeof openParents === "function") {
+        openParents(targetShell);
+      }
+      if (typeof setDetailOpen === "function") {
+        setDetailOpen(targetShell, true);
+      }
+
+      const normalize = (value) =>
+        (value || "")
+          .toLowerCase()
+          .normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      const normalizedTargetLine = normalize(targetLine);
+      if (!normalizedTargetLine) {
+        return;
+      }
+
+      const lineElements = Array.from(targetShell.querySelectorAll(".text-line"));
+      const matchingLine = lineElements.find((element) => {
+        const lineText = normalize(element.textContent);
+        return (
+          lineText === normalizedTargetLine ||
+          lineText.includes(normalizedTargetLine) ||
+          normalizedTargetLine.includes(lineText)
+        );
+      });
+
+      if (!matchingLine) {
+        return;
+      }
+
+      matchingLine.classList.add("search-target-line");
+      requestAnimationFrame(() => {
+        matchingLine.scrollIntoView({ block: "center" });
+      });
+    })();
+  </script>
+</body>
+</html>

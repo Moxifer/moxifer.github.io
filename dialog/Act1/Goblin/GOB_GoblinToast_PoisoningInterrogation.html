@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GOB_GoblinToast_PoisoningInterrogation</title>
+  <script>
+    (function () {
+      const probe = document.createElement("div");
+      const supportsUntilFound = "onbeforematch" in probe;
+      document.documentElement.classList.add(
+        supportsUntilFound ? "supports-until-found" : "no-until-found"
+      );
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #182330;
+      --muted: #586477;
+      --line: #c7d2df;
+      --npc: #b91c1c;
+      --player: #15803d;
+      --system: #2563eb;
+      --rule: #2f6f44;
+      --tag: #0f766e;
+      --check: #7c3aed;
+      --set: #ea580c;
+      --roll: #6d28d9;
+      --approval: #0f766e;
+      --jump: #155eef;
+      --context: #475467;
+      --surface: #f3f6fa;
+      --surface-active: #e6edf5;
+      --surface-hover: #edf3f9;
+      --detail-surface: #e3ebf4;
+      --detail-border: #b4c2d4;
+      --focus: #90a4bc;
+      --highlight: #d9e5f5;
+      --scrollbar-proxy-bg: rgba(255, 255, 255, 0.94);
+      --mono: Consolas, "SFMono-Regular", Menlo, monospace;
+      --sans: Georgia, "Palatino Linotype", serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #fff;
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.35;
+      overflow-x: hidden;
+    }
+    a { color: var(--jump); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: none;
+      padding: 0;
+      border-radius: 0;
+    }
+    .page {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0.55rem 0.9rem 1.8rem;
+      overflow-x: hidden;
+    }
+    .hero {
+      margin-bottom: 0.55rem;
+    }
+    .hero h1 {
+      margin: 0 0 0.2rem;
+      font-size: 1.4rem;
+      line-height: 1.15;
+    }
+    .source {
+      color: var(--muted);
+      font-size: 0.9rem;
+      word-break: break-all;
+      margin-bottom: 0.2rem;
+    }
+    .source-label {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.3rem;
+    }
+    .summary-line {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 0.35rem;
+    }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.45rem;
+      margin-bottom: 0.45rem;
+      padding: 0.35rem 0;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      overflow: visible;
+    }
+    .toolbar-scroll {
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: calc(100% - 7rem);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+    }
+    .controls {
+      display: inline-flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0.45rem;
+      white-space: nowrap;
+      font-size: 0.9rem;
+      min-width: max-content;
+      overflow: visible;
+    }
+    .controls button,
+    .controls summary,
+    .speaker-map > summary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 1.85rem;
+      padding: 0.12rem 0.5rem;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: var(--surface);
+      color: var(--jump);
+      font: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      list-style: none;
+      user-select: none;
+    }
+    .controls button.is-active,
+    .controls details[open] > summary,
+    .speaker-map[open] > summary {
+      background: var(--surface-active);
+      border-color: var(--focus);
+    }
+    .controls button:hover,
+    .controls summary:hover,
+    .speaker-map > summary:hover {
+      background: var(--surface-hover);
+      text-decoration: none;
+    }
+    .controls summary:focus,
+    .controls button:focus,
+    .speaker-map > summary:focus {
+      outline: 1px solid var(--focus);
+      outline-offset: 1px;
+    }
+    .speaker-map {
+      flex: 0 0 auto;
+      position: relative;
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .speaker-map summary,
+    .meta-block summary {
+      cursor: pointer;
+      color: var(--jump);
+      list-style: none;
+    }
+    .speaker-map summary::-webkit-details-marker,
+    .meta-block summary::-webkit-details-marker {
+      display: none;
+    }
+    .speaker-map[open] ul {
+      display: block;
+    }
+    .speaker-map ul {
+      display: none;
+      list-style: none;
+      margin: 0.3rem 0 0;
+      padding: 0.45rem 0.6rem;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 0.2rem);
+      min-width: 20rem;
+      max-width: min(34rem, calc(100vw - 2rem));
+      max-height: 24rem;
+      overflow: auto;
+      background: #fbfcfe;
+      border: 1px solid var(--line);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+      z-index: 30;
+    }
+    .speaker-map li + li {
+      margin-top: 0.1rem;
+    }
+    .speaker-index {
+      display: inline-block;
+      min-width: 2rem;
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 600;
+    }
+    .speaker-name {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.25rem;
+    }
+    .inline-meta, .line-meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .tree-shell {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: visible;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-shell-inner {
+      width: max-content;
+      min-width: 100%;
+    }
+    .tree-scrollbar-proxy {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 1.1rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      background: var(--scrollbar-proxy-bg);
+      border-top: 1px solid var(--line);
+      z-index: 40;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-scrollbar-proxy[hidden] {
+      display: none;
+    }
+    .tree-scrollbar-proxy-inner {
+      height: 1px;
+    }
+    .orphan-section {
+      width: auto;
+      min-width: 0;
+      margin-top: 1rem;
+      padding-top: 0.55rem;
+      border-top: 1px dotted var(--line);
+    }
+    .orphan-section h2 {
+      margin: 0 0 0.15rem;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+    .orphan-note {
+      margin: 0 0 0.35rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .root-list, .child-list {
+      list-style: none;
+      margin: 0;
+      padding-left: 0;
+      width: auto;
+      min-width: 0;
+    }
+    .child-list {
+      margin-left: 1.1rem;
+      padding-left: 0.85rem;
+      border-left: 1px dotted var(--line);
+    }
+    .node-item {
+      margin: 0.18rem 0;
+    }
+    details.node {
+      margin: 0;
+    }
+    details.node:target > summary .node-line {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    .node-leaf:target {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 0;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    summary::-webkit-details-marker {
+      display: none;
+    }
+    details.node > summary::before {
+      content: "▸";
+      display: inline-block;
+      width: 0.9rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      vertical-align: top;
+      padding-top: 0.12rem;
+    }
+    details.node[open] > summary::before {
+      content: "▾";
+    }
+    details.node.no-children > summary::before {
+      content: "•";
+    }
+    .node-line {
+      display: inline;
+      padding: 0.06rem 0.18rem;
+    }
+    .node-leaf {
+      display: inline-block;
+      padding: 0.06rem 0.18rem;
+      border-radius: 6px;
+    }
+    details.node > summary::before {
+      content: "+";
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    details.node[open] > summary::before {
+      content: "-";
+    }
+    details.node.no-children > summary::before {
+      content: ".";
+    }
+    .node-number {
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 700;
+    }
+    .speaker-label {
+      font-weight: 700;
+      margin-left: 0.2rem;
+    }
+    .speaker-label.npc { color: var(--npc); }
+    .speaker-label.player { color: var(--player); }
+    .speaker-label.system { color: var(--system); }
+    .dialog {
+      color: var(--ink);
+      margin-left: 0.2rem;
+    }
+    .node-kind {
+      color: var(--system);
+      margin-left: 0.2rem;
+    }
+    .ruletag {
+      color: var(--rule);
+      margin-left: 0.35rem;
+    }
+    .tags {
+      color: var(--tag);
+      margin-left: 0.35rem;
+    }
+    .checkflag {
+      color: var(--check);
+      margin-left: 0.35rem;
+    }
+    .setflag {
+      color: var(--set);
+      margin-left: 0.35rem;
+    }
+    .rolls {
+      color: var(--roll);
+      margin-left: 0.35rem;
+    }
+    .approval {
+      color: var(--approval);
+      margin-left: 0.35rem;
+    }
+    .nodelink {
+      color: var(--jump);
+      margin-left: 0.35rem;
+    }
+    .context {
+      color: var(--context);
+      margin-left: 0.3rem;
+      cursor: help;
+    }
+    .end {
+      color: #8b1e1e;
+      margin-left: 0.35rem;
+    }
+    .node-shell:target,
+    .node-leaf:target {
+      background: none;
+      border-radius: 0;
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-shell {
+      display: block;
+    }
+    .node-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.32rem;
+      width: max-content;
+      min-width: 100%;
+      transition: background-color 0.18s ease;
+    }
+    .node-shell.jump-highlight > .node-row {
+      background: var(--highlight);
+    }
+    .node-content {
+      min-width: 0;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker,
+    .tree-spacer {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 0.95rem;
+      height: 0.95rem;
+      margin-top: 0.08rem;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker {
+      border: none;
+      background: none;
+      color: var(--muted);
+      padding: 0;
+      font: inherit;
+      font-weight: 800;
+      font-size: 1.18rem;
+      line-height: 1;
+      user-select: none;
+    }
+    .tree-spacer {
+      border: none;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .node-branch[hidden] {
+      display: none;
+    }
+    html.supports-until-found .node-branch[hidden='until-found'] {
+      display: block;
+    }
+    .repeat {
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+    .node-summary {
+      display: block;
+      cursor: default;
+    }
+    .node-summary.is-interactive {
+      cursor: pointer;
+    }
+    .node-summary.is-interactive:focus-visible {
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-main-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.35rem;
+    }
+    .node-main {
+      display: block;
+      flex: 1 1 auto;
+      min-width: 0;
+      white-space: normal;
+      line-height: 1.28;
+      overflow-wrap: anywhere;
+    }
+    .node-leaf {
+      display: block;
+      border-radius: 0;
+    }
+    .node-number {
+      font-weight: 600;
+    }
+    .speaker-label {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind,
+    .nodelink {
+      overflow-wrap: anywhere;
+    }
+    .nodelink,
+    .end {
+      margin-left: 0;
+    }
+    .node-previews {
+      display: block;
+      margin: 0.12rem 0 0 1.1rem;
+      font-size: 0.88rem;
+      white-space: normal;
+      line-height: 1.28;
+    }
+    .preview-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.12rem 0.45rem;
+    }
+    .preview-token {
+      display: inline;
+      overflow-wrap: anywhere;
+    }
+    .preview-token.tag {
+      color: var(--tag);
+    }
+    .preview-token.rule {
+      color: var(--rule);
+    }
+    .preview-token.check {
+      color: var(--check);
+    }
+    .preview-token.set {
+      color: var(--set);
+    }
+    .preview-note {
+      display: block;
+      margin-top: 0.08rem;
+      color: var(--context);
+      overflow-wrap: anywhere;
+      font-weight: 700;
+    }
+    .preview-note-label {
+      color: var(--context);
+      font-weight: 700;
+    }
+    .preview-note-value {
+      color: #4f463f;
+      font-weight: 600;
+    }
+    .signal-line {
+      display: block;
+      margin: 0.14rem 0 0.2rem;
+    }
+    .signal-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem;
+    }
+    .signal-label {
+      font-weight: 700;
+    }
+    .signal-scope {
+      color: var(--muted);
+    }
+    .tag-line, .tag-line .signal-label { color: var(--tag); }
+    .rule-line, .rule-line .signal-label { color: var(--rule); }
+    .checkflag-line, .checkflag-line .signal-label { color: var(--check); }
+    .setflag-line, .setflag-line .signal-label { color: var(--set); }
+    .roll-line, .roll-line .signal-label { color: var(--roll); }
+    .approval-line, .approval-line .signal-label { color: var(--approval); }
+    .context-line, .context-line .signal-label { color: var(--context); }
+    .context-line .signal-heading {
+      font-weight: 700;
+    }
+    .context-line .signal-item {
+      color: #4f463f;
+    }
+    .signal-values {
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .signal-list {
+      list-style: none;
+      margin: 0.06rem 0 0 0.9rem;
+      padding: 0;
+    }
+    .signal-item {
+      margin: 0.1rem 0;
+      overflow-wrap: anywhere;
+    }
+    .signal-item::before {
+      content: "- ";
+      color: var(--muted);
+    }
+    .signal-body {
+      display: block;
+      margin: 0.06rem 0 0 0.9rem;
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .asset-name {
+      color: var(--ink);
+    }
+    .asset-id {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.92em;
+      overflow-wrap: anywhere;
+    }
+    .asset-state {
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .node-detail-panel {
+      margin: 0.08rem 0 0.18rem 1.1rem;
+      padding: 0.35rem 0.5rem;
+      border: 1px solid var(--detail-border);
+      background: var(--detail-surface);
+      border-radius: 0;
+      display: block;
+      gap: 0;
+      max-width: none;
+    }
+    .node-detail-panel[hidden] {
+      display: none;
+    }
+    html.supports-until-found .node-detail-panel[hidden='until-found'] {
+      display: block;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: none;
+    }
+    .section {
+      margin: 0.16rem 0;
+      padding: 0;
+      background: none;
+      border: none;
+    }
+    .section h3 {
+      margin: 0 0 0.22rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .node-detail-panel > .section + .section {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-block + .text-block {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-line {
+      font-size: 0.96rem;
+      margin-bottom: 0.15rem;
+    }
+    .text-line {
+      margin: 0.08rem 0;
+      font-size: inherit;
+      overflow-wrap: anywhere;
+    }
+    .badge-row, .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .badge, .meta-item {
+      display: block;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+    }
+    .meta-items {
+      margin: 0.12rem 0 0 0.85rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+      white-space: normal;
+    }
+    .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .meta-item {
+      display: block;
+      margin: 0.06rem 0;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+      overflow-wrap: anywhere;
+    }
+    .meta-item strong {
+      color: var(--ink);
+    }
+    .badge.flags { color: var(--check); }
+    .badge.tags { color: var(--tag); }
+    .flag-groups {
+      display: block;
+      gap: 0;
+    }
+    .flag-group-type {
+      display: inline-block;
+      color: var(--muted);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.15rem;
+    }
+    .rule-tree, .rule-tree ul {
+      margin: 0;
+      padding-left: 1rem;
+    }
+    .body-hide-flags .section-flags,
+    .body-hide-rules .section-rules,
+    .body-hide-details .section-metadata,
+    .body-hide-context .preview-note,
+    .body-hide-context .context-line,
+    .body-hide-context .node-line .context {
+      display: none;
+    }
+    .body-hide-flags .node-line .checkflag,
+    .body-hide-flags .node-line .setflag,
+    .body-hide-rules .node-line .ruletag {
+      display: none;
+    }
+    .body-hide-flags .checkflag-line,
+    .body-hide-flags .setflag-line {
+      display: none;
+    }
+    .body-hide-flags .preview-token.check,
+    .body-hide-flags .preview-token.set {
+      display: none;
+    }
+    .body-hide-context .context-line {
+      display: none;
+    }
+    .body-hide-numbers .node-number {
+      display: none;
+    }
+    .missing, .cycle {
+      padding: 0.2rem 0.35rem;
+      color: #8b1e1e;
+      background: rgba(139, 30, 30, 0.08);
+      border-radius: 6px;
+      display: inline-block;
+    }
+    .missing, .cycle {
+      padding: 0;
+      background: none;
+      border-radius: 0;
+      display: block;
+      overflow-wrap: anywhere;
+    }
+    @media (max-width: 920px) {
+      .page {
+        padding: 0.45rem 0.5rem 0.9rem;
+      }
+      .tree-shell {
+        padding: 0;
+      }
+    }
+  </style>
+  <style data-search-target-highlight>
+    .node-shell:target {
+      outline: 3px solid #c68b00;
+      background: #fff7db;
+      scroll-margin-top: 1rem;
+    }
+    .text-line.search-target-line {
+      background: #fff0a6;
+      border-radius: 2px;
+      padding: 0 0.08rem;
+    }
+  </style>
+</head>
+  <body class="body-hide-numbers">
+  <div class="page">
+    <header class="hero">
+      <h1>GOB_GoblinToast_PoisoningInterrogation</h1>
+      <div class="source"><span class="source-label">Start Dialog UUID:</span><strong><code>c0f43bec-7a24-c7ba-f392-1edc8d9034fc</code></strong></div><div class="source"><span class="source-label">Timeline File UUID:</span><strong><code>f0f4ddf5-524a-5ca3-b97c-85890006ddf5</code></strong></div><div class="source"><span class="source-label">Dialog File UUID:</span><strong><code>edcabbc0-bb88-1d1a-d275-e82becc7420e</code></strong></div><div class="source"><span class="source-label">Dialog:</span>Mods\Gustav\Story\DialogsBinary\Act1\Goblin\GOB_GoblinToast_PoisoningInterrogation.lsf.lsx</div><div class="source"><span class="source-label">Timeline:</span>Public\Gustav\Timeline\Generated\GOB_GoblinToast_PoisoningInterrogation.lsf.lsx</div><div class="source"><span class="source-label">Scene:</span>Public\Gustav\Timeline\Generated\GOB_GoblinToast_PoisoningInterrogation_Scene.lsf.lsx</div>
+      <div class="summary-line">
+        category=Generic NPC Dialog | nodes=43 | roots=3
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-scroll">
+          <div class="controls">
+            <button type="button" data-toggle-branches="all" data-hide-label="Expand all" data-show-label="Collapse all" data-active="false">Expand all</button>
+            <button type="button" data-toggle-class="body-hide-flags" data-hide-label="Hide flags" data-show-label="Show flags">Hide flags</button>
+            <button type="button" data-toggle-details="all" data-hide-label="Show details" data-show-label="Hide details" data-active="false">Show details</button>
+            <button type="button" data-toggle-class="body-hide-context" data-hide-label="Hide notes" data-show-label="Show notes">Hide notes</button>
+            <button type="button" data-toggle-class="body-hide-numbers" data-hide-label="Hide node numbers" data-show-label="Show node numbers">Hide node numbers</button>
+          </div>
+        </div>
+        <details class="speaker-map">
+          <summary>Speakers</summary>
+          <ul><li><span class='speaker-index'>0</span><span class='speaker-name'>Festivities</span><span class='inline-meta'>GROUP_Act1_GOB_Festivities | list=60a0bd91-a9d6-ab27-5217-726ab903f5b3 | mapping=f249220d-26e2-82d9-90df-07fd96c91505</span></li><li><span class='speaker-index'>1</span><span class='speaker-name'>Player</span><span class='inline-meta'>GROUP_Players | list=e0d1ff71-04a8-4340-ae64-9684d846eb83 | mapping=6b1d03c0-7b35-9701-f2d0-3d94a381a393</span></li></ul>
+        </details>
+      </div>
+    </header>
+    <section class="tree-shell">
+      <div class="tree-shell-inner">
+        <ul class="root-list"><li class='node-item'><div class='node-shell' id='node-9'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-9' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-9' aria-expanded='true' tabindex='0' data-detail-target='details-9' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>9.</span><span class='speaker-label npc'>Festivities</span><span>: </span><span class='dialog'>You! I knew you&#x27;d been mucking with our beer! You poisoned us!</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>GOB_GoblinToast_GoblinNoticedPoisoning</span><span class='preview-token check'>GOB_GoblinToast_PlayerWasNoticedPoisoning</span></span></span></span><div class='node-detail-panel' id='details-9' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 0 Festivities</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on goblin in greeting of GOB_GoblinToast_NoticedPoisoning crime dialog'>GOB_GoblinToast_GoblinNoticedPoisoning</span> <span class='asset-id'>{86884613-52d4-3a2e-678d-7fb3f631207d}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on player in greeting of GOB_GoblinToast_NoticedPoisoning crime dialog'>GOB_GoblinToast_PlayerWasNoticedPoisoning</span> <span class='asset-id'>{28425afd-b31b-5589-a173-da6d62196b73}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 34459a7f-4b21-7e61-b02e-735a90066369</span><span class='meta-item'><strong>Speaker</strong>: 0 (Festivities)</span><span class='meta-item'><strong>Text Handle</strong>: hdabb3b7eg6331g4d40g9d9bg176a2e2b50ed</span><span class='meta-item'><strong>Text UUID</strong>: 6c18073d-4dff-07b2-c082-553d478f6a1c</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 1</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 34459a7f-4b21-7e61-b02e-735a90066369</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 8.12s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [3.51s-5.56s] | @ 3.51s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 2 [5.56s-8.28s] | @ 5.76s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 2 [5.56s-8.28s] | @ 5.76s | speaker 1 | Confusion (1024)</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 2 [5.56s-8.28s] | @ 5.85s | peanut slot 2 | Confusion (1024) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 2 [5.56s-8.28s] | @ 6.62s | peanut slot 1 | Confusion (1024) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 2 [5.56s-8.28s] | @ 6.73s | peanut slot 0 | Confusion (1024) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 3 [8.28s-11.63s] | @ 8.28s | speaker 0 | Pain (2048) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 3 [8.28s-11.63s] | @ 9.34s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 9</strong>: Shot 3 [8.28s-11.63s] | @ 10.53s | speaker 0 | Disgust (128) | variation 1</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-9'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-11'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-11' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>11.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-41'>Node 41</a></span></span></span></span><div class='node-detail-panel' id='details-11' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 48e32d73-2434-08bd-9b7b-4a7ba9c6fdcc</span><span class='meta-item'><strong>Jump Target</strong>: Node 41 (ecd167b2-f957-11c8-9f0d-c18b720a3ae2)</span><span class='meta-item'><strong>Jump Target Point</strong>: 2</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-32'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-32' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-32' aria-expanded='true' tabindex='0' data-detail-target='details-32' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>32.</span><span class='speaker-label npc'>Festivities</span><span>: </span><span class='dialog'>You! Outsider! You poisoned us!</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>GOB_GoblinToast_GoblinNoticedPoisoning</span><span class='preview-token check'>!GOB_GoblinToast_PlayerWasNoticedPoisoning</span></span></span></span><div class='node-detail-panel' id='details-32' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 0 Festivities</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on goblin in greeting of GOB_GoblinToast_NoticedPoisoning crime dialog'>GOB_GoblinToast_GoblinNoticedPoisoning</span> <span class='asset-id'>{86884613-52d4-3a2e-678d-7fb3f631207d}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Dialog | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set on player in greeting of GOB_GoblinToast_NoticedPoisoning crime dialog'>GOB_GoblinToast_PlayerWasNoticedPoisoning</span> <span class='asset-id'>{28425afd-b31b-5589-a173-da6d62196b73}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: bb8ce079-7ebe-d650-3ea0-82e38a28088c</span><span class='meta-item'><strong>Speaker</strong>: 0 (Festivities)</span><span class='meta-item'><strong>Text Handle</strong>: h7d2f0b0fg1e0ag47e8ga69fgbefd30a66027</span><span class='meta-item'><strong>Text UUID</strong>: 85f53f5a-9b6f-19e1-2b9d-fd953aff2b89</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 2</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: bb8ce079-7ebe-d650-3ea0-82e38a28088c</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.96s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [11.63s-12.95s] | @ 11.63s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 2 [12.95s-14.75s] | @ 13.26s | speaker 1 | Confusion (1024)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 2 [12.95s-14.75s] | @ 13.35s | speaker 0 | Angry (8) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 2 [12.95s-14.75s] | @ 13.95s | peanut slot 2 | Confusion (1024) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 2 [12.95s-14.75s] | @ 13.95s | peanut slot 0 | Confusion (1024) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 2 [12.95s-14.75s] | @ 13.96s | peanut slot 1 | Confusion (1024) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 3 [14.75s-16.59s] | @ 14.75s | speaker 0 | Disgust (128) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 3 [14.75s-16.59s] | @ 15.15s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 9</strong>: Shot 3 [14.75s-16.59s] | @ 15.81s | speaker 0 | Angry (8) | variation 1</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-32'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-11'>Node 11</a> <span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-41'>Node 41</a></span></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-41'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-41' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-41' aria-expanded='true' tabindex='0' data-detail-target='details-41' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>41.</span><span class='speaker-label npc'>Festivities</span><span>: </span><span class='dialog'>You! You poisoned us!</span></span></span></span><div class='node-detail-panel' id='details-41' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: ecd167b2-f957-11c8-9f0d-c18b720a3ae2</span><span class='meta-item'><strong>Speaker</strong>: 0 (Festivities)</span><span class='meta-item'><strong>Text Handle</strong>: h108416a9g234cg4f50g84b9ga1b6ef39b276</span><span class='meta-item'><strong>Text UUID</strong>: d4e694ca-9c57-89b1-f884-5e5e51888cf0</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 0</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: ecd167b2-f957-11c8-9f0d-c18b720a3ae2</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.51s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [0s-1.51s] | @ 0s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 2 [1.51s-3.51s] | @ 1.75s | speaker 1 | Confusion (1024)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 2 [1.51s-3.51s] | @ 1.93s | speaker 0 | Disgust (128) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 2 [1.51s-3.51s] | @ 2.13s | peanut slot 2 | Confusion (1024) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 2 [1.51s-3.51s] | @ 2.34s | peanut slot 1 | Confusion (1024) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 2 [1.51s-3.51s] | @ 2.56s | peanut slot 0 | Confusion (1024) | mimicry</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-41'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-27'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-27' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-27' aria-expanded='false' tabindex='0' data-detail-target='details-27' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>27.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*The mark glows, but you feel nothing in response. Your illithid power is beyond reach until you rest.*</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>GLO_Tadpoled_UsedToday1</span></span></span></span><div class='node-detail-panel' id='details-27' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GLO_Tadpoled_UsedToday1description'>GLO_Tadpoled_UsedToday1</span> <span class='asset-id'>{36d218ea-3eab-481f-fdaa-4ee185e76c25}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: a3eed0b8-1db0-92e1-1e37-fd2169c001de</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: ha40b5dfbgf360g4432g860fgb0f61ae79cd8</span><span class='meta-item'><strong>Text UUID</strong>: 661a5509-b33d-cd7a-c01f-ac3364ae3d40</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 7</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: a3eed0b8-1db0-92e1-1e37-fd2169c001de</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 9.17s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 13316381-684d-44a6-b1a0-67835593578b</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Creatures/Goblins/_Male/GOB_M_Rig/_Construction/GOB_M_Rig_DFLT_CINE_ShakeHead_No_StandR_01.GR2</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [49.36s-53.15s] | @ 51.9s | speaker 1 | Pain (2048) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [49.36s-53.15s] | @ 52.32s | peanut slot 2 | Pain (2048) | variation 1 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [49.36s-53.15s] | @ 52.52s | peanut slot 1 | Pain (2048) | variation 1 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [49.36s-53.15s] | @ 52.58s | peanut slot 0 | Pain (2048) | variation 1 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 2 [53.15s-57.52s] | @ 55.09s | speaker 1 | Sad (32)</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 2 [53.15s-57.52s] | @ 55.28s | peanut slot 2 | Sad (32) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 2 [53.15s-57.52s] | @ 55.78s | peanut slot 0 | Sad (32) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 2 [53.15s-57.52s] | @ 55.97s | peanut slot 1 | Sad (32) | mimicry</span><span class='meta-item'><strong>Optional</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-27' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-8'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-8' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-8' aria-expanded='false' tabindex='0' data-detail-target='details-8' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>8.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>You poisoned yourselves. This is Elderberry Beer - goblins are allergic to it.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>233377a8-9099-ed74-4410-b8f46400bd4f_MindHasBeenRead</span></span></span></span><div class='node-detail-panel' id='details-8' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='233377a8-9099-ed74-4410-b8f46400bd4f_MindHasBeenReaddescription'>233377a8-9099-ed74-4410-b8f46400bd4f_MindHasBeenRead</span> <span class='asset-id'>{ba01d965-3dcc-0ac0-f0fd-eeb5a990f59b}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 250de825-13a7-d190-7015-979a8f399b0a</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: had421a0dgb00bg4d12gb63bg4974035e26fe</span><span class='meta-item'><strong>Text UUID</strong>: 642e1158-ac8d-6e28-afa2-4defcc4ce681</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-8' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-37'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-37' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>37.</span><span class='speaker-label npc'>Festivities</span><span>: </span><span class='dialog'>A-allergic? You mean just the beer can kill us?! G-get out of my way. I need some fresh air.</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>GOB_GoblinToast_State_ConfrontedAboutPoisoning</span></span></span></span><div class='node-detail-panel' id='details-37' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set in a confrontation dialog after goblins die of poison'>GOB_GoblinToast_State_ConfrontedAboutPoisoning</span> <span class='asset-id'>{2a1bfba9-36ec-49aa-8540-97cd87301592}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: d4d31b6f-8a17-1927-d6e7-5e69b61bb0c3</span><span class='meta-item'><strong>Speaker</strong>: 0 (Festivities)</span><span class='meta-item'><strong>Text Handle</strong>: hde82c034g3d7eg405agb3bag23a80298c463</span><span class='meta-item'><strong>Text UUID</strong>: 1207c5ab-560a-1eef-f3ef-d8653cc42501</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 10</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: d4d31b6f-8a17-1927-d6e7-5e69b61bb0c3</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 11.66s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: fd86929f-2f2c-c5cc-e31b-1ecb9c7133d6</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Creatures/Goblins/_Male/GOB_M_Rig/_Construction/GOB_M_Rig_DFLT_CINE_StandLTurnLeft45_toWalk_01.GR2</span><span class='meta-item'><strong>Timeline Animation 2 Resource ID</strong>: 81451844-abad-37f2-eaf2-21e6ae84ef6c</span><span class='meta-item'><strong>Timeline Animation 2 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Creatures/Goblins/_Male/GOB_M_Rig/_Construction/GOB_M_Rig_DFLT_CINE_Walk_01.GR2</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [68.31s-74.18s] | @ 68.41s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [68.31s-74.18s] | @ 70.12s | speaker 0 | Thinking (4) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [68.31s-74.18s] | @ 71.73s | speaker 0 | Surprise (64) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [68.31s-74.18s] | @ 73.89s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 2 [74.18s-79.97s] | @ 75.87s | speaker 0 | Fear (16) | variation 2</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-40'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-40' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-40' aria-expanded='false' tabindex='0' data-detail-target='details-40' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>40.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Deception, Charisma, SkillCheck) DC 15 target=0 (Festivities)</span></span></span></span><div class='node-detail-panel' id='details-40' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line roll-line'><div class='signal-heading'><span class='signal-label'>roll</span></div><div class='signal-body'>Deception, Charisma, SkillCheck | dc=15 (Act1_Hard) | speaker 0 Festivities</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: e2fd8487-3b33-77cf-3961-ef9272f27f7c</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h44bd5c18g75dbg439bg813eg07764c6d56c4</span><span class='meta-item'><strong>Text UUID</strong>: 327f4aef-a1a5-7781-e1a7-94b0e10f1ff9</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Difficulty Class UUID</strong>: 831e1fbe-428d-4f4d-bd17-4206d6efea35</span><span class='meta-item'><strong>Difficulty Class Name</strong>: Act1_Hard</span><span class='meta-item'><strong>Difficulty Class Value</strong>: 15</span><span class='meta-item'><strong>Exclude Companion Bonuses</strong>: False</span><span class='meta-item'><strong>Exclude Speaker Bonuses</strong>: False</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0 (Festivities)</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Deception</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-40' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-6'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-6' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-6' aria-expanded='false' tabindex='0' data-detail-target='details-6' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>6.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-6' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 17c69a24-71ef-c42f-d061-dc0e2711b935</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-6' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-19'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-19' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>19.</span><span class='speaker-label npc'>Festivities</span><span>: </span><span class='dialog'><i>Tnak</i>, you&#x27;re right. Whoever did this could be anywhere by now.</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>GOB_GoblinToast_State_ConfrontedAboutPoisoning</span></span></span></span><div class='node-detail-panel' id='details-19' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set in a confrontation dialog after goblins die of poison'>GOB_GoblinToast_State_ConfrontedAboutPoisoning</span> <span class='asset-id'>{2a1bfba9-36ec-49aa-8540-97cd87301592}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 80d988dd-ea23-948b-8261-60a7b787ea0d</span><span class='meta-item'><strong>Speaker</strong>: 0 (Festivities)</span><span class='meta-item'><strong>Text Handle</strong>: h8b6de211g3086g4e63ga7d3g8ab3b3c0c050</span><span class='meta-item'><strong>Text UUID</strong>: 1194ea9c-01ef-2dde-5f78-18a5349e434b</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 13</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 80d988dd-ea23-948b-8261-60a7b787ea0d</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6.54s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [97.81s-104.34s] | @ 97.81s | speaker 0 | Surprise (64) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [97.81s-104.34s] | @ 98.82s | speaker 0 | Angry (8) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [97.81s-104.34s] | @ 99.63s | speaker 0 | Angry (8) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [97.81s-104.34s] | @ 100.99s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [97.81s-104.34s] | @ 102.93s | speaker 0 | Disgust (128) | variation 2</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-20'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-20' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-20' aria-expanded='false' tabindex='0' data-detail-target='details-20' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>20.</span><span class='dialog'>Failure</span></span></span></span><div class='node-detail-panel' id='details-20' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 820ca272-9a5b-50a4-0337-79c0c7350886</span></div></section></div></div></div><div class='node-branch' id='branch-20' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-21'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-21' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>21.</span><span class='speaker-label npc'>Festivities</span><span>: </span><span class='dialog'>Or you just thought we&#x27;d be stupid enough to believe ya!</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>GOB_GoblinToast_State_ConfrontedAboutPoisoning</span><span class='preview-token set'>TemporaryHostilityAfterDialog</span></span></span></span><div class='node-detail-panel' id='details-21' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set in a confrontation dialog after goblins die of poison'>GOB_GoblinToast_State_ConfrontedAboutPoisoning</span> <span class='asset-id'>{2a1bfba9-36ec-49aa-8540-97cd87301592}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Festivities</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='TemporaryHostilityAfterDialogdescription'>TemporaryHostilityAfterDialog</span> <span class='asset-id'>{ca0cbe39-d121-069e-b408-c02954b32cf7}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 86219cbc-071b-2182-6672-92a559c3b951</span><span class='meta-item'><strong>Speaker</strong>: 0 (Festivities)</span><span class='meta-item'><strong>Text Handle</strong>: h644402edg908ag4b5bga046g00c0f298e048</span><span class='meta-item'><strong>Text UUID</strong>: 789979fb-77f9-fef1-e10a-3c2780121c46</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 14</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 86219cbc-071b-2182-6672-92a559c3b951</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.87s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [104.35s-109.22s] | @ 104.5s | speaker 0 | Thinking (4)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [104.35s-109.22s] | @ 106.15s | speaker 0 | Angry (8) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [104.35s-109.22s] | @ 107.73s | speaker 0 | Disgust (128) | variation 2</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-13'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-13' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-13' aria-expanded='false' tabindex='0' data-detail-target='details-13' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>13.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Intimidation, Charisma, SkillCheck) DC 20 target=0 (Festivities)</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!Barbarian</span><span class='preview-token check'>!Drow</span></span></span></span><div class='node-detail-panel' id='details-13' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='They call you a savage, an animal. They don&#x27;t know what it&#x27;s like to need to fight, tooth and claw, just to survive. You do. '>Barbarian</span> <span class='asset-id'>{02913f9a-f696-40cf-acdf-32032afab32c}</span> <span class='asset-state'>= False</span></li><li class='signal-item'><span class='asset-name' title='|Drow|'>Drow</span> <span class='asset-id'>{a672ac1d-d088-451a-9537-3da4bf74466c}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line roll-line'><div class='signal-heading'><span class='signal-label'>roll</span></div><div class='signal-body'>Intimidation, Charisma, SkillCheck | dc=20 (Act1_NearlyImpossible) | speaker 0 Festivities</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 5c8d2530-9447-229a-42ab-60eba7967570</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hf52dd5f8g06e6g4872g9458ga92c6f6bd3af</span><span class='meta-item'><strong>Text UUID</strong>: 1af12a69-94a5-459e-18c8-2f1f2fc55d8e</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Difficulty Class UUID</strong>: ea049218-36a8-4440-a3fc-f3019a57c86b</span><span class='meta-item'><strong>Difficulty Class Name</strong>: Act1_NearlyImpossible</span><span class='meta-item'><strong>Difficulty Class Value</strong>: 20</span><span class='meta-item'><strong>Exclude Companion Bonuses</strong>: False</span><span class='meta-item'><strong>Exclude Speaker Bonuses</strong>: False</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0 (Festivities)</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Intimidation</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-13' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-24'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-24' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-24' aria-expanded='false' tabindex='0' data-detail-target='details-24' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>24.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-24' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 996a6019-ef04-a131-e30c-bacbfc318da4</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-24' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-33'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-33' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-33' aria-expanded='false' tabindex='0' data-detail-target='details-33' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>33.</span><span class='speaker-label npc'>Festivities</span><span>: </span><span class='dialog'>P-please don&#x27;t! I won&#x27;t rat you out, I swear! J-just leave me be.</span></span></span></span><div class='node-detail-panel' id='details-33' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: c086f22e-4f6a-f9da-cae5-a693e32c652b</span><span class='meta-item'><strong>Speaker</strong>: 0 (Festivities)</span><span class='meta-item'><strong>Text Handle</strong>: h2d2d8c3cg8427g49c1g978ag5f65e66471f6</span><span class='meta-item'><strong>Text UUID</strong>: 62469100-0fc0-05be-7627-2b37d991d551</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 16</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: c086f22e-4f6a-f9da-cae5-a693e32c652b</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 12.78s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [119.35s-126.35s] | @ 119.47s | speaker 0 | Fear (16) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [119.35s-126.35s] | @ 122.22s | speaker 0 | Surprise (64) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [119.35s-126.35s] | @ 124.44s | speaker 0 | Sad (32)</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 2 [126.35s-132.13s] | @ 126.76s | speaker 0 | Thinking (4) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 2 [126.35s-132.13s] | @ 128.93s | speaker 0 | Surprise (64) | variation 1</span><span class='meta-item'><strong>Group ID</strong>: c086f22e-4f6a-f9da-cae5-a693e32c652b</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-33' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-17'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-17' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>17.</span><span class='speaker-label npc'>Festivities</span><span>: </span><span class='dialog'>Th-this one&#x27;s all right, lads! Knows nothin&#x27; about no poisonin&#x27;!</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>GOB_GoblinToast_State_ConfrontedAboutPoisoning</span></span></span></span><div class='node-detail-panel' id='details-17' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set in a confrontation dialog after goblins die of poison'>GOB_GoblinToast_State_ConfrontedAboutPoisoning</span> <span class='asset-id'>{2a1bfba9-36ec-49aa-8540-97cd87301592}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 795859a3-ca57-3ca4-3df2-8181830e337d</span><span class='meta-item'><strong>Speaker</strong>: 0 (Festivities)</span><span class='meta-item'><strong>Text Handle</strong>: hf68750ecgb457g4892ga4bcg31c6ccafd599</span><span class='meta-item'><strong>Text UUID</strong>: 7801b7c6-8268-0d31-ae1f-2cabcf452393</span><span class='meta-item'><strong>End Node</strong>: True</span><span class='meta-item'><strong>Group ID</strong>: c086f22e-4f6a-f9da-cae5-a693e32c652b</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-31'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-31' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-31' aria-expanded='false' tabindex='0' data-detail-target='details-31' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>31.</span><span class='dialog'>Failure</span></span></span></span><div class='node-detail-panel' id='details-31' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: b827c2d1-351e-45dc-f20c-1dbaa12f6568</span></div></section></div></div></div><div class='node-branch' id='branch-31' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-1'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-1' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>1.</span><span class='speaker-label npc'>Festivities</span><span>: </span><span class='dialog'>Yeah? We&#x27;ll see &#x27;bout that!</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>GOB_GoblinToast_State_ConfrontedAboutPoisoning</span><span class='preview-token set'>TemporaryHostilityAfterDialog</span></span></span></span><div class='node-detail-panel' id='details-1' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set in a confrontation dialog after goblins die of poison'>GOB_GoblinToast_State_ConfrontedAboutPoisoning</span> <span class='asset-id'>{2a1bfba9-36ec-49aa-8540-97cd87301592}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Festivities</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='TemporaryHostilityAfterDialogdescription'>TemporaryHostilityAfterDialog</span> <span class='asset-id'>{ca0cbe39-d121-069e-b408-c02954b32cf7}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 006065f7-f090-4d13-7873-4fece02fa7e6</span><span class='meta-item'><strong>Speaker</strong>: 0 (Festivities)</span><span class='meta-item'><strong>Text Handle</strong>: h0cc8acf9gef9bg4735gb4afg3106fbed4a6d</span><span class='meta-item'><strong>Text UUID</strong>: de6c128c-cca2-727b-edc3-a557af13443b</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 8</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 006065f7-f090-4d13-7873-4fece02fa7e6</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 4.66s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [58.53s-63.19s] | @ 59.81s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [58.53s-63.19s] | @ 60.53s | speaker 0 | Angry (8) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [58.53s-63.19s] | @ 61.83s | speaker 0 | Disgust (128) | variation 2</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-26'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-26' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-26' aria-expanded='false' tabindex='0' data-detail-target='details-26' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>26.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Intimidation, Charisma, SkillCheck) DC 20 [1] target=0 (Festivities)</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token rule'>Berserker</span><span class='preview-token check'>Barbarian</span></span></span></span><div class='node-detail-panel' id='details-26' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line rule-line'><div class='signal-heading'><span class='signal-label'>ruletag</span><span class='signal-scope'>type rule</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='A supplimentary Berserker tag for more primal lines.'>Berserker</span> <span class='asset-id'>{ac3449f7-c09b-4bc0-8634-fcff97d49279}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='They call you a savage, an animal. They don&#x27;t know what it&#x27;s like to need to fight, tooth and claw, just to survive. You do. '>Barbarian</span> <span class='asset-id'>{02913f9a-f696-40cf-acdf-32032afab32c}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line roll-line'><div class='signal-heading'><span class='signal-label'>roll</span></div><div class='signal-body'>Intimidation, Charisma, SkillCheck | dc=20 (Act1_NearlyImpossible) | advantage=1 | speaker 0 Festivities</div></div></section><section class='section'><h3>Text</h3><div class='text-block'><h3>Variant 1</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='A supplimentary Berserker tag for more primal lines.'><code>Berserker</code></li></ul><div class='text-line'><b>I should have ripped your arms off!</b></div><div class='line-meta'><code>heeac8925g4e22g43f0g96e0g111116bc2053</code> | <code>66f73cf6-eb35-d199-85f4-76ceb6760370</code> | stub</div></div><div class='text-block'><h3>Variant 2</h3><div class='text-line'>Could&#x27;ve done a lot worse. <b>A lot worse.</b></div><div class='line-meta'><code>h7f114fc1g54d4g485agb57ag76d918bd08c1</code> | <code>876b19a7-571c-4842-9be0-1fead302d0ee</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 9af37cae-a95d-8bf5-a477-28992f814832</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text 1 Handle</strong>: heeac8925g4e22g43f0g96e0g111116bc2053</span><span class='meta-item'><strong>Text 1 UUID</strong>: 66f73cf6-eb35-d199-85f4-76ceb6760370</span><span class='meta-item'><strong>Text 2 Handle</strong>: h7f114fc1g54d4g485agb57ag76d918bd08c1</span><span class='meta-item'><strong>Text 2 UUID</strong>: 876b19a7-571c-4842-9be0-1fead302d0ee</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Advantage</strong>: 1</span><span class='meta-item'><strong>Difficulty Class UUID</strong>: ea049218-36a8-4440-a3fc-f3019a57c86b</span><span class='meta-item'><strong>Difficulty Class Name</strong>: Act1_NearlyImpossible</span><span class='meta-item'><strong>Difficulty Class Value</strong>: 20</span><span class='meta-item'><strong>Exclude Companion Bonuses</strong>: False</span><span class='meta-item'><strong>Exclude Speaker Bonuses</strong>: False</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0 (Festivities)</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Intimidation</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-26' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-12'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-12' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>12.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-13'>Node 13</a></span></span></span></span><div class='node-detail-panel' id='details-12' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 4e2623b5-270d-3cde-a639-7852993d9ee0</span><span class='meta-item'><strong>Jump Target</strong>: Node 13 (5c8d2530-9447-229a-42ab-60eba7967570)</span><span class='meta-item'><strong>Jump Target Point</strong>: 2</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-22'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-22' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-22' aria-expanded='false' tabindex='0' data-detail-target='details-22' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>22.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Intimidation, Charisma, SkillCheck) DC 10 target=0 (Festivities)</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token rule'>Drow</span></span></span></span><div class='node-detail-panel' id='details-22' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line rule-line'><div class='signal-heading'><span class='signal-label'>ruletag</span><span class='signal-scope'>type rule</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Drow|'>Drow</span> <span class='asset-id'>{a672ac1d-d088-451a-9537-3da4bf74466c}</span></li></ul></div><div class='signal-line roll-line'><div class='signal-heading'><span class='signal-label'>roll</span></div><div class='signal-body'>Intimidation, Charisma, SkillCheck | dc=10 (Act1_Medium) | speaker 0 Festivities</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 87eb5cfe-d9ac-4823-de60-b3e2183b666f</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h766f66d2g488cg4069g882bg48eb17434ef2</span><span class='meta-item'><strong>Text UUID</strong>: 7087222d-c5f9-7a3c-395c-d74849ea62a7</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Charisma</span><span class='meta-item'><strong>Difficulty Class UUID</strong>: fa621d38-6f83-4e42-a55c-6aa651a75d46</span><span class='meta-item'><strong>Difficulty Class Name</strong>: Act1_Medium</span><span class='meta-item'><strong>Difficulty Class Value</strong>: 10</span><span class='meta-item'><strong>Exclude Companion Bonuses</strong>: False</span><span class='meta-item'><strong>Exclude Speaker Bonuses</strong>: False</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0 (Festivities)</span><span class='meta-item'><strong>Roll Type</strong>: SkillCheck</span><span class='meta-item'><strong>Skill</strong>: Intimidation</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-22' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-12'>Node 12</a> <span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-13'>Node 13</a></span></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-30'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-30' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-30' aria-expanded='false' tabindex='0' data-detail-target='details-30' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>30.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Intelligence) 00000000-0000-0000-0000-000000000000 target=0 (Festivities)</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token rule'>Male</span><span class='preview-token rule'>Female</span><span class='preview-token check'>!233377a8-9099-ed74-4410-b8f46400bd4f_MindHasBeenRead</span><span class='preview-token check'>44f9fbf3-735d-8eaf-94dc-6c1d1cf5382d</span></span></span></span><div class='node-detail-panel' id='details-30' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line rule-line'><div class='signal-heading'><span class='signal-label'>ruletag</span><span class='signal-scope'>type rule</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>Male</span> <span class='asset-id'>{8f74d144-041e-4035-a9ac-72f41fc32de7}</span></li><li class='signal-item'><span class='asset-name'>Female</span> <span class='asset-id'>{3806477c-65a7-4100-9f92-be4c12c4fa4f}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='233377a8-9099-ed74-4410-b8f46400bd4f_MindHasBeenReaddescription'>233377a8-9099-ed74-4410-b8f46400bd4f_MindHasBeenRead</span> <span class='asset-id'>{ba01d965-3dcc-0ac0-f0fd-eeb5a990f59b}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Script</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name'>44f9fbf3-735d-8eaf-94dc-6c1d1cf5382d</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line roll-line'><div class='signal-heading'><span class='signal-label'>roll</span></div><div class='signal-body'>Intelligence | difficulty=00000000-0000-0000-0000-000000000000 | speaker 0 Festivities</div></div></section><section class='section'><h3>Text</h3><div class='text-block'><h3>Variant 1</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title=''><code>Male</code></li></ul><div class='text-line'><i>Read his mind.</i></div><div class='line-meta'><code>h1ea7e64fgad34g4bb4g8e7eg9670eae20c84</code> | <code>c05e8b1a-165f-8fc7-35fe-40074d9ed2ab</code> | stub</div></div><div class='text-block'><h3>Variant 2</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title=''><code>Female</code></li></ul><div class='text-line'><i>Read her mind.</i></div><div class='line-meta'><code>h06dbd042gaf79g4fe3g811fg1a1503b3d6ee</code> | <code>7b4f31b9-fff1-c8a0-c693-e87280dc30f4</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: b229b2db-7594-2bb4-84ef-f289a1a4abb7</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h1ea7e64fgad34g4bb4g8e7eg9670eae20c84</span><span class='meta-item'><strong>Text 1 UUID</strong>: c05e8b1a-165f-8fc7-35fe-40074d9ed2ab</span><span class='meta-item'><strong>Text 2 Handle</strong>: h06dbd042gaf79g4fe3g811fg1a1503b3d6ee</span><span class='meta-item'><strong>Text 2 UUID</strong>: 7b4f31b9-fff1-c8a0-c693-e87280dc30f4</span><span class='meta-item'><strong>Ability</strong>: Intelligence</span><span class='meta-item'><strong>Difficulty Class UUID</strong>: 00000000-0000-0000-0000-000000000000</span><span class='meta-item'><strong>Exclude Companion Bonuses</strong>: False</span><span class='meta-item'><strong>Exclude Speaker Bonuses</strong>: False</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0 (Festivities)</span><span class='meta-item'><strong>Roll Type</strong>: RawAbility</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span><span class='meta-item'><strong>Unmapped Attributes</strong>: DetectThoughts</span></div></section></div></div></div><div class='node-branch' id='branch-30' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-28'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-28' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-28' aria-expanded='false' tabindex='0' data-detail-target='details-28' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>28.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-28' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: a545cbae-3c2b-19cd-ecd6-7d9d237847f7</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-28' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-4'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-4' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>4.</span><span class='speaker-label npc'>Festivities</span><span>: </span><span class='dialog'><i>I </i>knew <i>we shouldn&#x27;tve taken that fancy berry beer. Could&#x27;ve tasted the poison if it hadn&#x27;t been so sweet.</i></span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token tag'>Detect Thoughts</span><span class='preview-token set'>233377a8-9099-ed74-4410-b8f46400bd4f_MindHasBeenRead</span></span></span></span><div class='node-detail-panel' id='details-4' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker 0 Festivities</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Player has acces to Detect Thoughts (Either spell prepared and free spellslot or scroll available) | Also used in as Interal Speech indicator'>Detect Thoughts</span> <span class='asset-id'>{7e0395f8-aa53-4549-9af3-e2d203d678ee}</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Local</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='233377a8-9099-ed74-4410-b8f46400bd4f_MindHasBeenReaddescription'>233377a8-9099-ed74-4410-b8f46400bd4f_MindHasBeenRead</span> <span class='asset-id'>{ba01d965-3dcc-0ac0-f0fd-eeb5a990f59b}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 0a8913b8-8c7b-fbcd-6fba-9490e73d8ba4</span><span class='meta-item'><strong>Speaker</strong>: 0 (Festivities)</span><span class='meta-item'><strong>Text Handle</strong>: h1ad3dd2eg0169g4808g9854g5d2d61bd93ac</span><span class='meta-item'><strong>Text UUID</strong>: 4358f653-f4b2-9dc0-7748-7a98fa2265aa</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 3</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 0a8913b8-8c7b-fbcd-6fba-9490e73d8ba4</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 10s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 2 [19.31s-26.59s] | @ 19.5s | speaker 0 | Pain (2048)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 2 [19.31s-26.59s] | @ 21.13s | speaker 0 | Thinking (4)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 2 [19.31s-26.59s] | @ 23.72s | speaker 0 | Thinking (4)</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 2 [19.31s-26.59s] | @ 25.48s | speaker 0 | Disgust (128) | variation 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-10'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-10' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-10' aria-expanded='false' tabindex='0' data-detail-target='details-10' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>10.</span><span class='dialog'>Failure</span></span></span></span><div class='node-detail-panel' id='details-10' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: 44ea41b1-2ec2-e3d7-b660-c2f4fb0faac9</span></div></section></div></div></div><div class='node-branch' id='branch-10' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-35'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-35' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>35.</span><span class='speaker-label npc'>Festivities</span><span>: </span><span class='dialog'>What are you... this one&#x27;s tryin&#x27; to control my mind or somethin&#x27;!</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>GOB_GoblinToast_State_ConfrontedAboutPoisoning</span><span class='preview-token set'>TemporaryHostilityAfterDialog</span></span></span></span><div class='node-detail-panel' id='details-35' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set in a confrontation dialog after goblins die of poison'>GOB_GoblinToast_State_ConfrontedAboutPoisoning</span> <span class='asset-id'>{2a1bfba9-36ec-49aa-8540-97cd87301592}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Festivities</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='TemporaryHostilityAfterDialogdescription'>TemporaryHostilityAfterDialog</span> <span class='asset-id'>{ca0cbe39-d121-069e-b408-c02954b32cf7}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: cdb8446f-82b6-6d20-d1f9-b7ab2e301d9e</span><span class='meta-item'><strong>Speaker</strong>: 0 (Festivities)</span><span class='meta-item'><strong>Text Handle</strong>: hfd504babgcf58g412fg8207g15cbef50515b</span><span class='meta-item'><strong>Text UUID</strong>: 26994c9a-4239-279d-4c8d-b6e2297bfdd0</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 12</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: cdb8446f-82b6-6d20-d1f9-b7ab2e301d9e</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 8.56s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 6b107552-2db4-4b51-8505-06845d459b58</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/SharedDev/Assets/Characters/_Anims/Dragonborn/_Female/DGB_F_Rig/_Construction/DGB_F_Rig_DFLT_CINE_MindMeldLevel_01.GR2</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 2 [91.97s-97.81s] | @ 91.97s | speaker 0 | Surprise (64) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 2 [91.97s-97.81s] | @ 94.58s | speaker 0 | Angry (8) | variation 2</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-14'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-14' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-14' aria-expanded='false' tabindex='0' data-detail-target='details-14' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>14.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*A strange symbol glows, marked on their flesh, and something within you stirs in response.*</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!GLO_TadpoleIntro_NPC</span><span class='preview-token set'>GLO_TadpoleIntro_NPC</span></span></span></span><div class='node-detail-panel' id='details-14' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type User | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GLO_TadpoleIntro_NPCdescription'>GLO_TadpoleIntro_NPC</span> <span class='asset-id'>{7450cbc3-2e52-7120-b02e-544db21fbc70}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type User | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GLO_TadpoleIntro_NPCdescription'>GLO_TadpoleIntro_NPC</span> <span class='asset-id'>{7450cbc3-2e52-7120-b02e-544db21fbc70}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 5fd2fae0-121b-13b2-7f90-9b8eecce55e6</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: h3fe72047g9326g4922ga27ag4a81e50cb31f</span><span class='meta-item'><strong>Text UUID</strong>: a40aa687-8f4f-894a-80f6-952fd1dbae53</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 5</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 5fd2fae0-121b-13b2-7f90-9b8eecce55e6</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 9.25s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [32.61s-36.66s] | @ 32.71s | speaker 0 | Thinking (4)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [32.61s-36.66s] | @ 32.89s | speaker 1 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [32.61s-36.66s] | @ 33.04s | peanut slot 1 | Surprise (64) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [32.61s-36.66s] | @ 33.08s | peanut slot 2 | Surprise (64) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [32.61s-36.66s] | @ 33.56s | peanut slot 0 | Surprise (64) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 2 [36.66s-40.88s] | @ 36.97s | speaker 1 | Thinking (4)</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 2 [36.66s-40.88s] | @ 37.33s | peanut slot 1 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 2 [36.66s-40.88s] | @ 37.46s | peanut slot 0 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 9</strong>: Shot 2 [36.66s-40.88s] | @ 37.49s | peanut slot 2 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Optional</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-14' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-8'>Node 8</a> <span class='repeat-speaker speaker-label player'>(Player)</span> <span class='dialog'>You poisoned yourselves. This is Elderberry Beer - goblins are allergic to it.</span></div></li><li class='node-item'><div class='repeat'>See <a href='#node-40'>Node 40</a> <span class='repeat-speaker speaker-label player'>(Player)</span> <span class='rolls'>Active roll (Deception, Charisma, SkillCheck) DC 15 target=0 (Festivities)</span></div></li><li class='node-item'><div class='repeat'>See <a href='#node-13'>Node 13</a> <span class='repeat-speaker speaker-label player'>(Player)</span> <span class='rolls'>Active roll (Intimidation, Charisma, SkillCheck) DC 20 target=0 (Festivities)</span></div></li><li class='node-item'><div class='repeat'>See <a href='#node-26'>Node 26</a> <span class='repeat-speaker speaker-label player'>(Player)</span> <span class='rolls'>Active roll (Intimidation, Charisma, SkillCheck) DC 20 [1] target=0 (Festivities)</span></div></li><li class='node-item'><div class='repeat'>See <a href='#node-22'>Node 22</a> <span class='repeat-speaker speaker-label player'>(Player)</span> <span class='rolls'>Active roll (Intimidation, Charisma, SkillCheck) DC 10 target=0 (Festivities)</span></div></li><li class='node-item'><div class='node-shell' id='node-23'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-23' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-23' aria-expanded='false' tabindex='0' data-detail-target='details-23' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>23.</span><span class='speaker-label player'>Player</span><span>: </span><span class='rolls'>Active roll (Wisdom) DC 5 target=0 (Festivities)</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>GLO_Absolute_Knows_TrueSoul</span><span class='preview-token check'>!GLO_Tadpoled_UsedToday1</span><span class='preview-token check'>!True Soul</span><span class='preview-token check'>Illithid</span><span class='preview-token set'>GLO_Tadpoled_UsedToday1</span></span></span></span><div class='node-detail-panel' id='details-23' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player knows that a True Soul is an important religious figure that can hear the Voice of the Absolute.'>GLO_Absolute_Knows_TrueSoul</span> <span class='asset-id'>{9fc3d264-8795-a0d5-2320-4d8d96f302ac}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GLO_Tadpoled_UsedToday1description'>GLO_Tadpoled_UsedToday1</span> <span class='asset-id'>{36d218ea-3eab-481f-fdaa-4ee185e76c25}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='| Became a true soul by using tadpoled convince a lot. |'>True Soul</span> <span class='asset-id'>{11491bda-fa57-44ed-a306-a13fdf8e3b82}</span> <span class='asset-state'>= False</span></li><li class='signal-item'><span class='asset-name' title='|Is infected by an Illithid Tadpole| '>Illithid</span> <span class='asset-id'>{1eec74e8-3673-4500-abec-57b7ed8469ed}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GLO_Tadpoled_UsedToday1description'>GLO_Tadpoled_UsedToday1</span> <span class='asset-id'>{36d218ea-3eab-481f-fdaa-4ee185e76c25}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line roll-line'><div class='signal-heading'><span class='signal-label'>roll</span></div><div class='signal-body'>Wisdom | dc=5 (Act1_VeryEasy) | speaker 0 Festivities</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: ActiveRoll</span><span class='meta-item'><strong>UUID</strong>: 96eca036-dd60-45b5-68a0-63e9e306393e</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: ha52132bbg42e7g49fegbbe5gf486f69cf828</span><span class='meta-item'><strong>Text UUID</strong>: 7fbf7711-f63c-d489-f1f7-b646c16c38ab</span><span class='meta-item'><strong>Show Once</strong>: True</span><span class='meta-item'><strong>Ability</strong>: Wisdom</span><span class='meta-item'><strong>Difficulty Class UUID</strong>: 8d398021-34e0-40b9-b7b2-0445f38a4c0b</span><span class='meta-item'><strong>Difficulty Class Name</strong>: Act1_VeryEasy</span><span class='meta-item'><strong>Difficulty Class Value</strong>: 5</span><span class='meta-item'><strong>Exclude Companion Bonuses</strong>: False</span><span class='meta-item'><strong>Exclude Speaker Bonuses</strong>: False</span><span class='meta-item'><strong>Roll Target Speaker</strong>: 0 (Festivities)</span><span class='meta-item'><strong>Roll Type</strong>: RawAbility</span><span class='meta-item'><strong>Transition Mode</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-23' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-38'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-38' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-38' aria-expanded='false' tabindex='0' data-detail-target='details-38' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>38.</span><span class='dialog'>Success</span></span></span></span><div class='node-detail-panel' id='details-38' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: db5947b9-ec39-4d50-0daa-891ef603c594</span><span class='meta-item'><strong>Success</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-38' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-5'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-5' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-5' aria-expanded='false' tabindex='0' data-detail-target='details-5' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>5.</span><span class='speaker-label npc'>Festivities</span><span>: </span><span class='dialog'>V-very sorry - I didn&#x27;t know. I swear I didn&#x27;t know!</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token set'>GOB_GoblinToast_State_ConfrontedAboutPoisoning</span></span></span></span><div class='node-detail-panel' id='details-5' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set in a confrontation dialog after goblins die of poison'>GOB_GoblinToast_State_ConfrontedAboutPoisoning</span> <span class='asset-id'>{2a1bfba9-36ec-49aa-8540-97cd87301592}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 0ee4281a-338c-d4f1-fcc6-0d76289003e6</span><span class='meta-item'><strong>Speaker</strong>: 0 (Festivities)</span><span class='meta-item'><strong>Text Handle</strong>: h34238d13g2103g4f50gac82g65a8da3747ac</span><span class='meta-item'><strong>Text UUID</strong>: 86d95d0a-82b9-7d49-e852-ffae09d87c32</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 4</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 0ee4281a-338c-d4f1-fcc6-0d76289003e6</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6.02s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [26.59s-32.61s] | @ 26.91s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [26.59s-32.61s] | @ 28.73s | speaker 0 | Fear (16) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [26.59s-32.61s] | @ 30.29s | speaker 0 | Sad (32)</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [26.59s-32.61s] | @ 31.95s | speaker 0 | Pain (2048)</span></div></section></div></div></div><div class='node-branch' id='branch-5' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-39'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-39' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>39.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*A shiver runs across your mind... You feel sated.*</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!GLO_TadpoledCount1</span><span class='preview-token check'>!True Soul</span><span class='preview-token set'>GLO_TadpoledCount1</span></span></span></span><div class='node-detail-panel' id='details-39' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker -666 Narrator</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Node is narration and should not have FaceFX applied'>Narration</span> <span class='asset-id'>{4cb0fac6-1396-46ff-8554-e64bc2635909}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GLO_TadpoledCount1description'>GLO_TadpoledCount1</span> <span class='asset-id'>{ff1c4f21-91b7-9c21-0ed6-74ec9c1c5628}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='| Became a true soul by using tadpoled convince a lot. |'>True Soul</span> <span class='asset-id'>{11491bda-fa57-44ed-a306-a13fdf8e3b82}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GLO_TadpoledCount1description'>GLO_TadpoledCount1</span> <span class='asset-id'>{ff1c4f21-91b7-9c21-0ed6-74ec9c1c5628}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: e12d3ffd-c5b9-6c78-8bfa-a6438c5db1ee</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: h5491cd80gf016g4c47g9563g419e19dc5edc</span><span class='meta-item'><strong>Text UUID</strong>: 3916d63e-6be1-ac72-756a-a03a15664a09</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 9</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: e12d3ffd-c5b9-6c78-8bfa-a6438c5db1ee</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5.12s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [63.19s-68.31s] | @ 66.97s | speaker 1 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [63.19s-68.31s] | @ 67.48s | peanut slot 1 | Happy (2) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [63.19s-68.31s] | @ 67.55s | peanut slot 0 | Happy (2) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [63.19s-68.31s] | @ 67.8s | peanut slot 2 | Happy (2) | mimicry</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-16'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-16' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>16.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*Something stirs deep within you, hungry and alert... it&#x27;s taking something you&#x27;ll never get back.*</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!GLO_TadpoledCount2</span><span class='preview-token check'>!True Soul</span><span class='preview-token set'>GLO_TadpoledCount2</span></span></span></span><div class='node-detail-panel' id='details-16' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker -666 Narrator</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Node is narration and should not have FaceFX applied'>Narration</span> <span class='asset-id'>{4cb0fac6-1396-46ff-8554-e64bc2635909}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GLO_TadpoledCount2description'>GLO_TadpoledCount2</span> <span class='asset-id'>{d35434a5-94f1-88b2-479d-674b9aee2a29}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='| Became a true soul by using tadpoled convince a lot. |'>True Soul</span> <span class='asset-id'>{11491bda-fa57-44ed-a306-a13fdf8e3b82}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GLO_TadpoledCount2description'>GLO_TadpoledCount2</span> <span class='asset-id'>{d35434a5-94f1-88b2-479d-674b9aee2a29}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 7492e4a2-ccef-c879-5158-6c8e308b4dbf</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: hcead7af2gf3e4g4e6egb80cg93bfe421bd3e</span><span class='meta-item'><strong>Text UUID</strong>: 0f3839fd-089c-2d1f-ea84-169b4d58100f</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 17</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 7492e4a2-ccef-c879-5158-6c8e308b4dbf</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 8.08s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [132.13s-140.19s] | @ 134.92s | speaker 1 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [132.13s-140.19s] | @ 135.13s | peanut slot 0 | Angry (8) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [132.13s-140.19s] | @ 135.21s | peanut slot 1 | Angry (8) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [132.13s-140.19s] | @ 135.87s | peanut slot 2 | Angry (8) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [132.13s-140.19s] | @ 137.15s | speaker 1 | Pain (2048)</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 1 [132.13s-140.19s] | @ 137.25s | peanut slot 2 | Pain (2048) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 1 [132.13s-140.19s] | @ 137.38s | peanut slot 1 | Pain (2048) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 1 [132.13s-140.19s] | @ 137.48s | peanut slot 0 | Pain (2048) | mimicry</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-3'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-3' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>3.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*Your mind lurches, reeling suddenly as if... bitten.*</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!GLO_TadpoledCount3</span><span class='preview-token check'>!True Soul</span><span class='preview-token set'>GLO_TadpoledCount3</span></span></span></span><div class='node-detail-panel' id='details-3' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker -666 Narrator</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Node is narration and should not have FaceFX applied'>Narration</span> <span class='asset-id'>{4cb0fac6-1396-46ff-8554-e64bc2635909}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GLO_TadpoledCount3description'>GLO_TadpoledCount3</span> <span class='asset-id'>{969f02bb-f03f-50e1-f3ae-86293dece3cc}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='| Became a true soul by using tadpoled convince a lot. |'>True Soul</span> <span class='asset-id'>{11491bda-fa57-44ed-a306-a13fdf8e3b82}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GLO_TadpoledCount3description'>GLO_TadpoledCount3</span> <span class='asset-id'>{969f02bb-f03f-50e1-f3ae-86293dece3cc}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 073970b5-a4f3-6cda-ee23-847c5383c8eb</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: he01e27c1gf780g45f2g92f4gaf2ebc542c99</span><span class='meta-item'><strong>Text UUID</strong>: 9ee9d127-412a-c610-079f-3574734e1e75</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 20</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 073970b5-a4f3-6cda-ee23-847c5383c8eb</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5.39s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: f5c08f51-40a6-4ddd-b064-3d1d3e11ce27</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Creatures/Goblins/_Female/GOB_F_Rig/_Construction/GOB_F_Rig_DFLT_CINE_MindMeldLevel_02.GR2</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [152.86s-158.25s] | @ 152.86s | speaker 1 | Pain (2048)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [152.86s-158.25s] | @ 153.06s | peanut slot 0 | Pain (2048) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [152.86s-158.25s] | @ 153.17s | peanut slot 1 | Pain (2048) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [152.86s-158.25s] | @ 153.67s | peanut slot 2 | Pain (2048) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [152.86s-158.25s] | @ 154.19s | speaker 1 | Sleeping (256)</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 1 [152.86s-158.25s] | @ 154.37s | peanut slot 0 | Sleeping (256) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 1 [152.86s-158.25s] | @ 154.63s | peanut slot 1 | Sleeping (256) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 1 [152.86s-158.25s] | @ 154.89s | peanut slot 2 | Sleeping (256) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 9</strong>: Shot 1 [152.86s-158.25s] | @ 157.12s | speaker 1 | Pain (2048)</span><span class='meta-item'><strong>Timeline Emotion 10</strong>: Shot 1 [152.86s-158.25s] | @ 157.55s | peanut slot 1 | Pain (2048) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 11</strong>: Shot 1 [152.86s-158.25s] | @ 157.84s | peanut slot 2 | Pain (2048) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 12</strong>: Shot 1 [152.86s-158.25s] | @ 157.86s | peanut slot 0 | Pain (2048) | mimicry</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-36'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-36' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>36.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*A shadow swims across your vision, and a familiar voice tells you to be calm. You are loved.*</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!GLO_TadpoledCount4</span><span class='preview-token check'>!True Soul</span><span class='preview-token set'>GLO_TadpoledCount4</span></span></span></span><div class='node-detail-panel' id='details-36' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker -666 Narrator</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Node is narration and should not have FaceFX applied'>Narration</span> <span class='asset-id'>{4cb0fac6-1396-46ff-8554-e64bc2635909}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GLO_TadpoledCount4description'>GLO_TadpoledCount4</span> <span class='asset-id'>{9a94c778-c16e-9e23-8aeb-c9d7b7834582}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='| Became a true soul by using tadpoled convince a lot. |'>True Soul</span> <span class='asset-id'>{11491bda-fa57-44ed-a306-a13fdf8e3b82}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GLO_TadpoledCount4description'>GLO_TadpoledCount4</span> <span class='asset-id'>{9a94c778-c16e-9e23-8aeb-c9d7b7834582}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: d0962252-20fb-97a1-2c0a-eec25fb3bd74</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: h28b257a5g7ae2g4651g9142gfcafedcf8b46</span><span class='meta-item'><strong>Text UUID</strong>: 9e837b5e-737e-e82d-697d-3affc191a442</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 11</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: d0962252-20fb-97a1-2c0a-eec25fb3bd74</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 9.28s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [79.97s-89.25s] | @ 79.97s | speaker 1 | Confusion (1024)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [79.97s-89.25s] | @ 80.28s | peanut slot 0 | Confusion (1024) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [79.97s-89.25s] | @ 80.47s | peanut slot 2 | Confusion (1024) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [79.97s-89.25s] | @ 80.68s | peanut slot 1 | Confusion (1024) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [79.97s-89.25s] | @ 82.8s | speaker 1 | Thinking (4)</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 1 [79.97s-89.25s] | @ 83.23s | peanut slot 1 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 1 [79.97s-89.25s] | @ 83.56s | peanut slot 0 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 1 [79.97s-89.25s] | @ 83.65s | peanut slot 2 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 9</strong>: Shot 1 [79.97s-89.25s] | @ 85.07s | speaker 1 | Sad (32)</span><span class='meta-item'><strong>Timeline Emotion 10</strong>: Shot 1 [79.97s-89.25s] | @ 85.88s | peanut slot 0 | Sad (32) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 11</strong>: Shot 1 [79.97s-89.25s] | @ 85.88s | peanut slot 1 | Sad (32) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 12</strong>: Shot 1 [79.97s-89.25s] | @ 85.93s | peanut slot 2 | Sad (32) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 13</strong>: Shot 1 [79.97s-89.25s] | @ 87.22s | speaker 1 | Pain (2048)</span><span class='meta-item'><strong>Timeline Emotion 14</strong>: Shot 1 [79.97s-89.25s] | @ 87.44s | peanut slot 1 | Pain (2048) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 15</strong>: Shot 1 [79.97s-89.25s] | @ 87.76s | peanut slot 2 | Pain (2048) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 16</strong>: Shot 1 [79.97s-89.25s] | @ 88.04s | peanut slot 0 | Pain (2048) | mimicry</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-7'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-7' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>7.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*Your blood runs quicker, feeding the gnawing absence at the centre of your mind.*</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!GLO_TadpoledCount5</span><span class='preview-token check'>!True Soul</span><span class='preview-token set'>GLO_TadpoledCount5</span></span></span></span><div class='node-detail-panel' id='details-7' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker -666 Narrator</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Node is narration and should not have FaceFX applied'>Narration</span> <span class='asset-id'>{4cb0fac6-1396-46ff-8554-e64bc2635909}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GLO_TadpoledCount5description'>GLO_TadpoledCount5</span> <span class='asset-id'>{01a081b5-ddd7-c0f5-b3d7-0c6e2532b57d}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='| Became a true soul by using tadpoled convince a lot. |'>True Soul</span> <span class='asset-id'>{11491bda-fa57-44ed-a306-a13fdf8e3b82}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GLO_TadpoledCount5description'>GLO_TadpoledCount5</span> <span class='asset-id'>{01a081b5-ddd7-c0f5-b3d7-0c6e2532b57d}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 228118da-6524-72da-abff-5eb366b01f86</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: hffce63ecgd1ebg4013gbf57g486adf66f9ba</span><span class='meta-item'><strong>Text UUID</strong>: 541b8920-f104-c121-1a68-66641921360e</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 19</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 228118da-6524-72da-abff-5eb366b01f86</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5.55s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [147.31s-152.84s] | @ 147.31s | speaker 1 | Pain (2048)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [147.31s-152.84s] | @ 147.54s | peanut slot 2 | Pain (2048) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [147.31s-152.84s] | @ 147.81s | peanut slot 1 | Pain (2048) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [147.31s-152.84s] | @ 147.84s | peanut slot 0 | Pain (2048) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [147.31s-152.84s] | @ 150.14s | speaker 1 | Sad (32)</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 1 [147.31s-152.84s] | @ 150.23s | peanut slot 1 | Sad (32) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 1 [147.31s-152.84s] | @ 150.52s | peanut slot 0 | Sad (32) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 1 [147.31s-152.84s] | @ 150.91s | peanut slot 2 | Sad (32) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 9</strong>: Shot 1 [147.31s-152.84s] | @ 151.74s | speaker 1 | Thinking (4)</span><span class='meta-item'><strong>Timeline Emotion 10</strong>: Shot 1 [147.31s-152.84s] | @ 151.93s | peanut slot 0 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 11</strong>: Shot 1 [147.31s-152.84s] | @ 152.21s | peanut slot 1 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 12</strong>: Shot 1 [147.31s-152.84s] | @ 152.5s | peanut slot 2 | Thinking (4) | mimicry</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-25'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-25' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>25.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*The presence deep in your mind is awake, unblinking. This is it. A single word pervades your consciousness: &#x27;Soon&#x27;.*</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!GLO_TadpoledCount6</span><span class='preview-token check'>!True Soul</span><span class='preview-token set'>GLO_TadpoledCount6</span></span></span></span><div class='node-detail-panel' id='details-25' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker -666 Narrator</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Node is narration and should not have FaceFX applied'>Narration</span> <span class='asset-id'>{4cb0fac6-1396-46ff-8554-e64bc2635909}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GLO_TadpoledCount6description'>GLO_TadpoledCount6</span> <span class='asset-id'>{d857f96a-5da1-a03b-d4b6-fb7e433be60a}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='| Became a true soul by using tadpoled convince a lot. |'>True Soul</span> <span class='asset-id'>{11491bda-fa57-44ed-a306-a13fdf8e3b82}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GLO_TadpoledCount6description'>GLO_TadpoledCount6</span> <span class='asset-id'>{d857f96a-5da1-a03b-d4b6-fb7e433be60a}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 99c66239-eecc-31db-d533-0f251a75312c</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: h2e4260c8g59b3g4c81gbf2eg8ed3a49e0494</span><span class='meta-item'><strong>Text UUID</strong>: e2c7f6ce-94c6-84a1-3f00-2b42bf1bbfda</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 21</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 99c66239-eecc-31db-d533-0f251a75312c</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 12.36s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [158.25s-170.61s] | @ 158.25s | speaker 1 | Confusion (1024)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [158.25s-170.61s] | @ 158.39s | peanut slot 1 | Confusion (1024) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [158.25s-170.61s] | @ 159.12s | peanut slot 0 | Confusion (1024) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [158.25s-170.61s] | @ 159.13s | peanut slot 2 | Confusion (1024) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [158.25s-170.61s] | @ 160.05s | speaker 1 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 1 [158.25s-170.61s] | @ 160.37s | peanut slot 1 | Surprise (64) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 1 [158.25s-170.61s] | @ 160.4s | peanut slot 0 | Surprise (64) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 1 [158.25s-170.61s] | @ 160.95s | peanut slot 2 | Surprise (64) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 9</strong>: Shot 1 [158.25s-170.61s] | @ 162.61s | speaker 1 | Sad (32)</span><span class='meta-item'><strong>Timeline Emotion 10</strong>: Shot 1 [158.25s-170.61s] | @ 162.72s | peanut slot 0 | Sad (32) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 11</strong>: Shot 1 [158.25s-170.61s] | @ 162.91s | peanut slot 1 | Sad (32) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 12</strong>: Shot 1 [158.25s-170.61s] | @ 163.44s | peanut slot 2 | Sad (32) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 13</strong>: Shot 1 [158.25s-170.61s] | @ 164.88s | speaker 1 | Thinking (4)</span><span class='meta-item'><strong>Timeline Emotion 14</strong>: Shot 1 [158.25s-170.61s] | @ 165.68s | peanut slot 1 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 15</strong>: Shot 1 [158.25s-170.61s] | @ 165.78s | peanut slot 0 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 16</strong>: Shot 1 [158.25s-170.61s] | @ 165.85s | peanut slot 2 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 17</strong>: Shot 1 [158.25s-170.61s] | @ 168.2s | speaker 1 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 18</strong>: Shot 1 [158.25s-170.61s] | @ 168.76s | peanut slot 1 | Angry (8) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 19</strong>: Shot 1 [158.25s-170.61s] | @ 168.78s | peanut slot 2 | Angry (8) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 20</strong>: Shot 1 [158.25s-170.61s] | @ 169s | peanut slot 0 | Angry (8) | mimicry</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-43'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-43' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>43.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*Your mind is full, bursting with ecstasy and terror. Finally, it is coming. You are becoming.*</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>!True Soul</span><span class='preview-token set'>True Soul</span></span></span></span><div class='node-detail-panel' id='details-43' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line tag-line'><div class='signal-heading'><span class='signal-label'>tags</span><span class='signal-scope'>type node | speaker -666 Narrator</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Node is narration and should not have FaceFX applied'>Narration</span> <span class='asset-id'>{4cb0fac6-1396-46ff-8554-e64bc2635909}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='| Became a true soul by using tadpoled convince a lot. |'>True Soul</span> <span class='asset-id'>{11491bda-fa57-44ed-a306-a13fdf8e3b82}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='| Became a true soul by using tadpoled convince a lot. |'>True Soul</span> <span class='asset-id'>{11491bda-fa57-44ed-a306-a13fdf8e3b82}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: fa0a978c-f371-c7c5-0727-1053aba6309c</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: hba13a0e9g5c66g4d6cg902egb90cbaf0943f</span><span class='meta-item'><strong>Text UUID</strong>: 9a568aa1-e1ee-d74a-9d85-fdc531541cba</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 15</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: fa0a978c-f371-c7c5-0727-1053aba6309c</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 10.13s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [109.22s-119.35s] | @ 110.74s | speaker 1 | Sleeping (256)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [109.22s-119.35s] | @ 110.88s | peanut slot 0 | Sleeping (256) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [109.22s-119.35s] | @ 111.18s | peanut slot 1 | Sleeping (256) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [109.22s-119.35s] | @ 111.43s | peanut slot 2 | Sleeping (256) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [109.22s-119.35s] | @ 116.75s | speaker 1 | Sad (32)</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 1 [109.22s-119.35s] | @ 116.86s | peanut slot 0 | Sad (32) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 1 [109.22s-119.35s] | @ 117.69s | peanut slot 2 | Sad (32) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 1 [109.22s-119.35s] | @ 117.69s | peanut slot 1 | Sad (32) | mimicry</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-42'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-42' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>42.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-39'>Node 39</a></span></span></span></span><div class='node-detail-panel' id='details-42' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: f2e5c8b3-bf3c-bf36-4dc3-1c1a7145eed7</span><span class='meta-item'><strong>Jump Target</strong>: Node 39 (e12d3ffd-c5b9-6c78-8bfa-a6438c5db1ee)</span><span class='meta-item'><strong>Jump Target Point</strong>: 2</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-29'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-29' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-29' aria-expanded='false' tabindex='0' data-detail-target='details-29' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>29.</span><span class='dialog'>Failure</span></span></span></span><div class='node-detail-panel' id='details-29' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: RollResult</span><span class='meta-item'><strong>UUID</strong>: a5937f60-359a-888b-1888-3d7ffa67fb42</span></div></section></div></div></div><div class='node-branch' id='branch-29' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-15'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-15' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>15.</span><span class='speaker-label npc'>Festivities</span><span>: </span><span class='dialog'>You? You&#x27;re smaller than a worg whelp. Guys - get this idiot!<br></span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token rule'>Short</span><span class='preview-token set'>GOB_GoblinToast_State_ConfrontedAboutPoisoning</span><span class='preview-token set'>TemporaryHostilityAfterDialog</span></span></span></span><div class='node-detail-panel' id='details-15' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line rule-line'><div class='signal-heading'><span class='signal-label'>ruletag</span><span class='signal-scope'>type rule</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Is a small humanoid.|'>Short</span> <span class='asset-id'>{50e7beca-4e90-43cd-b7c5-c235e236077f}</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Set in a confrontation dialog after goblins die of poison'>GOB_GoblinToast_State_ConfrontedAboutPoisoning</span> <span class='asset-id'>{2a1bfba9-36ec-49aa-8540-97cd87301592}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 0 Festivities</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='TemporaryHostilityAfterDialogdescription'>TemporaryHostilityAfterDialog</span> <span class='asset-id'>{ca0cbe39-d121-069e-b408-c02954b32cf7}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section'><h3>Text</h3><div class='text-block'><h3>Variant 1</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='|Is a small humanoid.|'><code>Short</code></li></ul><div class='text-line'>You? You&#x27;re smaller than a worg whelp. Guys - get this idiot!<br></div><div class='line-meta'><code>hcee8c448g75f5g4b89gade3g07aa51782562</code> | <code>40f3dc89-7640-8664-93be-9acb418868d6</code> | stub</div></div><div class='text-block'><h3>Variant 2</h3><div class='text-line'>You, a True Soul? I&#x27;d be shakin&#x27; in my boots if you were, but all I&#x27;m feelin&#x27; is the urge to see your guts.</div><div class='line-meta'><code>h5cf09a0fg5948g4668g8bcbgb5e4ad5a6f1e</code> | <code>7d034494-61a6-eb90-bbd6-25b48b21af72</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 6989b0c5-68b5-0bd7-f857-d2b621084e13</span><span class='meta-item'><strong>Speaker</strong>: 0 (Festivities)</span><span class='meta-item'><strong>Text 1 Handle</strong>: hcee8c448g75f5g4b89gade3g07aa51782562</span><span class='meta-item'><strong>Text 1 UUID</strong>: 40f3dc89-7640-8664-93be-9acb418868d6</span><span class='meta-item'><strong>Text 2 Handle</strong>: h5cf09a0fg5948g4668g8bcbgb5e4ad5a6f1e</span><span class='meta-item'><strong>Text 2 UUID</strong>: 7d034494-61a6-eb90-bbd6-25b48b21af72</span><span class='meta-item'><strong>Timeline 1 Phase Index</strong>: 18</span><span class='meta-item'><strong>Timeline 1 Dialog Node UUID</strong>: 6989b0c5-68b5-0bd7-f857-d2b621084e13</span><span class='meta-item'><strong>Timeline 1 Phase Duration</strong>: 7.1s</span><span class='meta-item'><strong>Timeline 1 Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline 1 Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline 1 Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline 1 Emotion 1</strong>: Shot 1 [140.21s-147.31s] | @ 140.4s | speaker 0 | Thinking (4) | variation 2</span><span class='meta-item'><strong>Timeline 1 Emotion 2</strong>: Shot 1 [140.21s-147.31s] | @ 141.47s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline 1 Emotion 3</strong>: Shot 1 [140.21s-147.31s] | @ 142.51s | speaker 0 | Disgust (128) | variation 1</span><span class='meta-item'><strong>Timeline 1 Emotion 4</strong>: Shot 1 [140.21s-147.31s] | @ 143.46s | speaker 0 | Pain (2048) | variation 2</span><span class='meta-item'><strong>Timeline 1 Emotion 5</strong>: Shot 1 [140.21s-147.31s] | @ 144.14s | speaker 0 | Angry (8) | variation 2</span><span class='meta-item'><strong>Timeline 1 Emotion 6</strong>: Shot 1 [140.21s-147.31s] | @ 145.5s | speaker 0 | Disgust (128)</span><span class='meta-item'><strong>Timeline 1 Emotion 7</strong>: Shot 1 [140.21s-147.31s] | @ 146.52s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline 2 Phase Index</strong>: 22</span><span class='meta-item'><strong>Timeline 2 Dialog Node UUID</strong>: 6989b0c5-68b5-0bd7-f857-d2b621084e13</span><span class='meta-item'><strong>Timeline 2 Phase Duration</strong>: 11.76s</span><span class='meta-item'><strong>Timeline 2 Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline 2 Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline 2 Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline 2 Emotion 1</strong>: Shot 1 [170.61s-182.34s] | @ 170.71s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline 2 Emotion 2</strong>: Shot 1 [170.61s-182.34s] | @ 171.54s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline 2 Emotion 3</strong>: Shot 1 [170.61s-182.34s] | @ 172.69s | speaker 0 | Disgust (128) | variation 2</span><span class='meta-item'><strong>Timeline 2 Emotion 4</strong>: Shot 1 [170.61s-182.34s] | @ 174.3s | speaker 0 | Angry (8) | variation 1</span><span class='meta-item'><strong>Timeline 2 Emotion 5</strong>: Shot 1 [170.61s-182.34s] | @ 176.22s | speaker 0 | Pain (2048)</span><span class='meta-item'><strong>Timeline 2 Emotion 6</strong>: Shot 1 [170.61s-182.34s] | @ 177.91s | speaker 0 | Disgust (128) | variation 2</span><span class='meta-item'><strong>Timeline 2 Emotion 7</strong>: Shot 1 [170.61s-182.34s] | @ 179.19s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline 2 Emotion 8</strong>: Shot 1 [170.61s-182.34s] | @ 179.82s | speaker 0 | Angry (8) | variation 2</span><span class='meta-item'><strong>Timeline 2 Emotion 9</strong>: Shot 1 [170.61s-182.34s] | @ 181.17s | speaker 0 | Disgust (128) | variation 1</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-2'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-2' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-2' aria-expanded='false' tabindex='0' data-detail-target='details-2' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>2.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>And why would I do that? I&#x27;m a True Soul.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>GLO_Absolute_Knows_TrueSoul</span><span class='preview-token check'>!GLO_Tadpoled_UsedToday1</span><span class='preview-token check'>True Soul</span><span class='preview-token set'>GLO_Tadpoled_UsedToday1</span></span></span></span><div class='node-detail-panel' id='details-2' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Player knows that a True Soul is an important religious figure that can hear the Voice of the Absolute.'>GLO_Absolute_Knows_TrueSoul</span> <span class='asset-id'>{9fc3d264-8795-a0d5-2320-4d8d96f302ac}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GLO_Tadpoled_UsedToday1description'>GLO_Tadpoled_UsedToday1</span> <span class='asset-id'>{36d218ea-3eab-481f-fdaa-4ee185e76c25}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='| Became a true soul by using tadpoled convince a lot. |'>True Soul</span> <span class='asset-id'>{11491bda-fa57-44ed-a306-a13fdf8e3b82}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GLO_Tadpoled_UsedToday1description'>GLO_Tadpoled_UsedToday1</span> <span class='asset-id'>{36d218ea-3eab-481f-fdaa-4ee185e76c25}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 016fce3b-4d86-8a90-45a8-40d639518aa9</span><span class='meta-item'><strong>Speaker</strong>: 1 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h335f674fgfbe7g4750gadb8g9a5fcf9714d7</span><span class='meta-item'><strong>Text UUID</strong>: a307c502-8206-2679-0df6-baab045fd211</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-2' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-34'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-34' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>34.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-5'>Node 5</a></span></span></span></span><div class='node-detail-panel' id='details-34' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: ccaf13ad-d213-6ba1-3e4e-8c27d258fefa</span><span class='meta-item'><strong>Jump Target</strong>: Node 5 (0ee4281a-338c-d4f1-fcc6-0d76289003e6)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='repeat'>See <a href='#node-30'>Node 30</a> <span class='repeat-speaker speaker-label player'>(Player)</span> <span class='rolls'>Active roll (Intelligence) 00000000-0000-0000-0000-000000000000 target=0 (Festivities)</span></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-18'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-18' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-18' aria-expanded='false' tabindex='0' data-detail-target='details-18' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>18.</span><span class='speaker-label npc'>Narrator</span><span>: </span><span class='dialog'>*As the symbol glows, power courses through you. <i>Authority</i>.*</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>GLO_TadpoleIntro_NPC</span></span></span></span><div class='node-detail-panel' id='details-18' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type User | speaker 1 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='GLO_TadpoleIntro_NPCdescription'>GLO_TadpoleIntro_NPC</span> <span class='asset-id'>{7450cbc3-2e52-7120-b02e-544db21fbc70}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 7c12bbb9-683f-b49f-f537-e79559372866</span><span class='meta-item'><strong>Speaker</strong>: -666 (Narrator)</span><span class='meta-item'><strong>Text Handle</strong>: h13dbc24egcec3g4a3fgb81bg790edd5aab90</span><span class='meta-item'><strong>Text UUID</strong>: 3472aab4-f1b9-5453-3a4a-1c9d52437744</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 6</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 7c12bbb9-683f-b49f-f537-e79559372866</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 7.5s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Timeline Material 1 Group ID</strong>: c4635383-1153-4c73-9eab-c59d2d0fa7f0</span><span class='meta-item'><strong>Timeline Material 1 Group File</strong>: Engine\Public\Engine\Timeline\MaterialGroups\c4635383-1153-4c73-9eab-c59d2d0fa7f0.lsf</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [41.86s-46.01s] | @ 41.86s | speaker 1 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [41.86s-46.01s] | @ 41.96s | speaker 0 | Thinking (4)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [41.86s-46.01s] | @ 42.16s | peanut slot 1 | Surprise (64) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [41.86s-46.01s] | @ 42.23s | peanut slot 2 | Surprise (64) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [41.86s-46.01s] | @ 42.8s | peanut slot 0 | Surprise (64) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 1 [41.86s-46.01s] | @ 43.65s | speaker 1 | Thinking (4)</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 1 [41.86s-46.01s] | @ 44.13s | peanut slot 1 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 1 [41.86s-46.01s] | @ 44.2s | peanut slot 0 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 9</strong>: Shot 1 [41.86s-46.01s] | @ 44.2s | peanut slot 2 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Optional</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-18' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-8'>Node 8</a> <span class='repeat-speaker speaker-label player'>(Player)</span> <span class='dialog'>You poisoned yourselves. This is Elderberry Beer - goblins are allergic to it.</span></div></li><li class='node-item'><div class='repeat'>See <a href='#node-40'>Node 40</a> <span class='repeat-speaker speaker-label player'>(Player)</span> <span class='rolls'>Active roll (Deception, Charisma, SkillCheck) DC 15 target=0 (Festivities)</span></div></li><li class='node-item'><div class='repeat'>See <a href='#node-13'>Node 13</a> <span class='repeat-speaker speaker-label player'>(Player)</span> <span class='rolls'>Active roll (Intimidation, Charisma, SkillCheck) DC 20 target=0 (Festivities)</span></div></li><li class='node-item'><div class='repeat'>See <a href='#node-26'>Node 26</a> <span class='repeat-speaker speaker-label player'>(Player)</span> <span class='rolls'>Active roll (Intimidation, Charisma, SkillCheck) DC 20 [1] target=0 (Festivities)</span></div></li><li class='node-item'><div class='repeat'>See <a href='#node-22'>Node 22</a> <span class='repeat-speaker speaker-label player'>(Player)</span> <span class='rolls'>Active roll (Intimidation, Charisma, SkillCheck) DC 10 target=0 (Festivities)</span></div></li><li class='node-item'><div class='repeat'>See <a href='#node-23'>Node 23</a> <span class='repeat-speaker speaker-label player'>(Player)</span> <span class='rolls'>Active roll (Wisdom) DC 5 target=0 (Festivities)</span></div></li><li class='node-item'><div class='repeat'>See <a href='#node-2'>Node 2</a> <span class='repeat-speaker speaker-label player'>(Player)</span> <span class='dialog'>And why would I do that? I&#x27;m a True Soul.</span></div></li><li class='node-item'><div class='repeat'>See <a href='#node-30'>Node 30</a> <span class='repeat-speaker speaker-label player'>(Player)</span> <span class='rolls'>Active roll (Intelligence) 00000000-0000-0000-0000-000000000000 target=0 (Festivities)</span></div></li></ul></div></div></li></ul></div></div></li></ul>
+        
+      </div>
+    </section>
+  </div>
+  <div class="tree-scrollbar-proxy" hidden>
+    <div class="tree-scrollbar-proxy-inner"></div>
+  </div>
+  <script>
+    function getNodeDetailPanel(shell) {
+      if (!shell) {
+        return null;
+      }
+      const content = shell.querySelector(":scope > .node-row > .node-content");
+      if (!content) {
+        return null;
+      }
+      return Array.from(content.children).find((child) => child.classList && child.classList.contains("node-detail-panel")) || null;
+    }
+    function getNodeDetailToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-detail-target]");
+    }
+    function getNodeBranchToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-branch-target]");
+    }
+    function getNodeBranchMarker(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .tree-toggle-marker[data-branch-target]");
+    }
+    const jumpHighlightTimers = new WeakMap();
+    const nodeSummaryClickTimers = new WeakMap();
+    const NODE_DETAIL_DOUBLE_CLICK_MS = 160;
+    const SUPPORTS_UNTIL_FOUND = document.documentElement.classList.contains("supports-until-found");
+    const treeShell = document.querySelector(".tree-shell");
+    const treeShellInner = treeShell ? treeShell.querySelector(".tree-shell-inner") : null;
+    const treeScrollbarProxy = document.querySelector(".tree-scrollbar-proxy");
+    const treeScrollbarProxyInner = treeScrollbarProxy
+      ? treeScrollbarProxy.querySelector(".tree-scrollbar-proxy-inner")
+      : null;
+    let syncingTreeScroll = false;
+    let syncingProxyScroll = false;
+    if (!SUPPORTS_UNTIL_FOUND) {
+      document.querySelectorAll("[hidden='until-found']").forEach((element) => {
+        element.setAttribute("hidden", "");
+      });
+    }
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+    function hideCollapsible(target) {
+      if (!target) {
+        return;
+      }
+      if (SUPPORTS_UNTIL_FOUND) {
+        target.setAttribute("hidden", "until-found");
+        return;
+      }
+      target.setAttribute("hidden", "");
+    }
+    function setToggleButtonState(button, active) {
+      if (!button) {
+        return;
+      }
+      button.classList.toggle("is-active", active);
+      const hideLabel = button.dataset.hideLabel;
+      const showLabel = button.dataset.showLabel;
+      if (hideLabel && showLabel) {
+        button.textContent = active ? showLabel : hideLabel;
+      }
+    }
+    function syncAllDetailsToggle() {
+      const button = document.querySelector("button[data-toggle-details='all']");
+      if (!button) {
+        return;
+      }
+      const panels = Array.from(document.querySelectorAll(".node-detail-panel"));
+      const allOpen = panels.length > 0 && panels.every((panel) => !panel.hasAttribute("hidden"));
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function syncAllBranchesToggle() {
+      const button = document.querySelector("button[data-toggle-branches='all']");
+      if (!button) {
+        return;
+      }
+      const branchMarkers = Array.from(document.querySelectorAll(".tree-toggle-marker[data-branch-target]"));
+      const allOpen = branchMarkers.length > 0 && branchMarkers.every((marker) => marker.dataset.branchExpanded === "true");
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function updateTreeScrollbarProxy() {
+      if (!treeShell || !treeShellInner || !treeScrollbarProxy || !treeScrollbarProxyInner) {
+        return;
+      }
+      const contentWidth = treeShellInner.scrollWidth;
+      const viewportWidth = treeShell.clientWidth;
+      const needsProxy = contentWidth > viewportWidth + 1;
+      if (!needsProxy) {
+        treeScrollbarProxy.hidden = true;
+        return;
+      }
+      const rect = treeShell.getBoundingClientRect();
+      treeScrollbarProxy.hidden = false;
+      treeScrollbarProxy.style.left = `${Math.max(0, rect.left)}px`;
+      treeScrollbarProxy.style.width = `${Math.max(0, rect.width)}px`;
+      treeScrollbarProxyInner.style.width = `${contentWidth}px`;
+      if (!syncingTreeScroll && Math.abs(treeScrollbarProxy.scrollLeft - treeShell.scrollLeft) > 1) {
+        syncingProxyScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingProxyScroll = false;
+      }
+    }
+    function resetTreeScrollToStart() {
+      document.querySelectorAll(".tree-shell").forEach((shell) => {
+        shell.scrollLeft = 0;
+      });
+      if (treeScrollbarProxy) {
+        treeScrollbarProxy.scrollLeft = 0;
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setBranchOpen(control, openState, syncState = true) {
+      if (!control) {
+        return;
+      }
+      const targetId = control.dataset.branchTarget;
+      const target = targetId ? document.getElementById(targetId) : null;
+      if (!target) {
+        return;
+      }
+      const shell = control.closest(".node-shell");
+      const marker = shell ? getNodeBranchMarker(shell) : null;
+      const summary = shell ? getNodeBranchToggle(shell) : null;
+      if (openState) {
+        target.removeAttribute("hidden");
+      } else {
+        hideCollapsible(target);
+      }
+      if (marker) {
+        marker.dataset.branchExpanded = openState ? "true" : "false";
+        marker.textContent = openState ? "-" : "+";
+      }
+      if (summary) {
+        summary.setAttribute("aria-expanded", openState ? "true" : "false");
+      }
+      if (syncState) {
+        syncAllBranchesToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setDetailOpen(shell, openState, syncState = true) {
+      const panel = getNodeDetailPanel(shell);
+      const toggle = getNodeDetailToggle(shell);
+      if (!panel) {
+        return;
+      }
+      if (openState) {
+        panel.removeAttribute("hidden");
+      } else {
+        hideCollapsible(panel);
+      }
+      if (toggle) {
+        toggle.dataset.detailExpanded = openState ? "true" : "false";
+      }
+      if (syncState) {
+        syncAllDetailsToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setAllBranches(openState) {
+      document.querySelectorAll(".tree-toggle-marker[data-branch-target]").forEach((marker) => { setBranchOpen(marker, openState, false); });
+      syncAllBranchesToggle();
+    }
+    function setAllNodeDetails(openState) {
+      document.querySelectorAll(".node-shell").forEach((shell) => {
+        if (getNodeDetailPanel(shell)) {
+          setDetailOpen(shell, openState, false);
+        }
+      });
+      syncAllDetailsToggle();
+    }
+    function openParents(target) {
+      let current = target;
+      while (current) {
+        if (current.classList && current.classList.contains("node-branch")) {
+          const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${current.id}"]`);
+          setBranchOpen(marker, true);
+        }
+        current = current.parentElement;
+      }
+    }
+    function highlightJumpTarget(target) {
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      if (!shell) {
+        return;
+      }
+      const existingTimer = jumpHighlightTimers.get(shell);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+      shell.classList.add("jump-highlight");
+      const timeoutId = window.setTimeout(() => {
+        shell.classList.remove("jump-highlight");
+        jumpHighlightTimers.delete(shell);
+      }, 5000);
+      jumpHighlightTimers.set(shell, timeoutId);
+    }
+    function getStickyScrollOffset() {
+      const toolbar = document.querySelector(".toolbar");
+      if (!toolbar) {
+        return 8;
+      }
+      return Math.ceil(toolbar.getBoundingClientRect().height) + 8;
+    }
+    function scrollNodeTargetIntoView(target) {
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      const scrollTarget = shell || target;
+      if (!scrollTarget) {
+        return;
+      }
+      const offset = getStickyScrollOffset();
+      const top = window.scrollY + scrollTarget.getBoundingClientRect().top - offset;
+      window.scrollTo({ top: Math.max(0, top), behavior: "auto" });
+    }
+    function revealAndFocusNodeTarget(target, href = "") {
+      if (!target) {
+        return;
+      }
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      openParents(shell || target);
+      if (href) {
+        history.replaceState(null, "", href);
+      }
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollNodeTargetIntoView(target);
+          highlightJumpTarget(target);
+          updateTreeScrollbarProxy();
+        });
+      });
+    }
+    if (treeShell && treeScrollbarProxy) {
+      treeShell.addEventListener("scroll", () => {
+        if (syncingProxyScroll) {
+          return;
+        }
+        syncingTreeScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingTreeScroll = false;
+      });
+      treeScrollbarProxy.addEventListener("scroll", () => {
+        if (syncingTreeScroll) {
+          return;
+        }
+        syncingProxyScroll = true;
+        treeShell.scrollLeft = treeScrollbarProxy.scrollLeft;
+        syncingProxyScroll = false;
+      });
+    }
+    document.addEventListener("click", (event) => {
+      const allBranchesButton = event.target.closest("button[data-toggle-branches='all']");
+      if (allBranchesButton) {
+        const isOpen = allBranchesButton.dataset.active === "true";
+        setAllBranches(!isOpen);
+        return;
+      }
+      const allDetailsButton = event.target.closest("button[data-toggle-details='all']");
+      if (allDetailsButton) {
+        const isOpen = allDetailsButton.dataset.active === "true";
+        setAllNodeDetails(!isOpen);
+        return;
+      }
+      const button = event.target.closest("button[data-toggle-class]");
+      if (button) {
+        const active = document.body.classList.toggle(button.dataset.toggleClass);
+        setToggleButtonState(button, active);
+        return;
+      }
+      const link = event.target.closest("a[href^='#node-']");
+      if (link) {
+        event.preventDefault();
+        const target = document.querySelector(link.getAttribute("href"));
+        if (target) {
+          revealAndFocusNodeTarget(target, link.getAttribute("href"));
+        }
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (summary) {
+        const branchTarget = summary.dataset.branchTarget;
+        const shell = summary.closest(".node-shell");
+        if (!shell) {
+          return;
+        }
+        if (!branchTarget) {
+          if (summary.dataset.detailTarget) {
+            const isOpen = summary.dataset.detailExpanded === "true";
+            setDetailOpen(shell, !isOpen);
+          }
+          return;
+        }
+        const existingTimer = nodeSummaryClickTimers.get(summary);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+          nodeSummaryClickTimers.delete(summary);
+          event.preventDefault();
+          const isOpen = summary.dataset.detailExpanded === "true";
+          setDetailOpen(shell, !isOpen);
+          return;
+        }
+        const timerId = window.setTimeout(() => {
+          nodeSummaryClickTimers.delete(summary);
+          const isOpen = summary.getAttribute("aria-expanded") === "true";
+          setBranchOpen(summary, !isOpen);
+          if (isOpen) {
+            const panel = getNodeDetailPanel(shell);
+            if (panel && !panel.hasAttribute("hidden")) {
+              setDetailOpen(shell, false);
+            }
+          }
+        }, NODE_DETAIL_DOUBLE_CLICK_MS);
+        nodeSummaryClickTimers.set(summary, timerId);
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (!summary) {
+        return;
+      }
+      event.preventDefault();
+      const shell = summary.closest(".node-shell");
+      if (!shell) {
+        return;
+      }
+      if (summary.dataset.branchTarget) {
+        const isOpen = summary.getAttribute("aria-expanded") === "true";
+        setBranchOpen(summary, !isOpen);
+        if (isOpen) {
+          const panel = getNodeDetailPanel(shell);
+          if (panel && !panel.hasAttribute("hidden")) {
+            setDetailOpen(shell, false);
+          }
+        }
+        return;
+      }
+      if (summary.dataset.detailTarget) {
+        const isOpen = summary.dataset.detailExpanded === "true";
+        setDetailOpen(shell, !isOpen);
+      }
+    });
+    document.addEventListener("beforematch", (event) => {
+      const branch = event.target.closest(".node-branch");
+      if (branch && branch.id) {
+        const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${branch.id}"]`);
+        setBranchOpen(marker, true);
+      }
+      const panel = event.target.closest(".node-detail-panel");
+      if (panel) {
+        const shell = panel.closest(".node-shell");
+        if (shell) {
+          openParents(shell);
+          setDetailOpen(shell, true);
+        }
+      }
+    });
+    document.querySelectorAll("button[data-toggle-class]").forEach((button) => {
+      const active = document.body.classList.contains(button.dataset.toggleClass);
+      setToggleButtonState(button, active);
+    });
+    if (window.ResizeObserver && treeShell) {
+      const observer = new ResizeObserver(() => {
+        updateTreeScrollbarProxy();
+      });
+      observer.observe(treeShell);
+      if (treeShellInner) {
+        observer.observe(treeShellInner);
+      }
+    }
+    window.addEventListener("resize", updateTreeScrollbarProxy);
+    window.addEventListener("scroll", updateTreeScrollbarProxy, { passive: true });
+    window.addEventListener("pageshow", () => {
+      if (window.location.hash) {
+        updateTreeScrollbarProxy();
+        return;
+      }
+      resetTreeScrollToStart();
+      window.requestAnimationFrame(() => {
+        resetTreeScrollToStart();
+      });
+      window.setTimeout(() => {
+        resetTreeScrollToStart();
+      }, 0);
+    });
+    syncAllBranchesToggle();
+    document.querySelectorAll("button[data-toggle-details='all']").forEach((button) => {
+      const active = button.dataset.active === "true";
+      setToggleButtonState(button, active);
+    });
+    updateTreeScrollbarProxy();
+    if (window.location.hash) {
+      const target = document.querySelector(window.location.hash);
+      if (target) {
+        revealAndFocusNodeTarget(target, window.location.hash);
+      }
+    }
+  </script>
+  <script data-search-target-line>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const targetLine = params.get("line");
+      const targetHash = window.location.hash;
+
+      if (!targetLine || !targetHash) {
+        return;
+      }
+
+      const targetShell = document.querySelector(targetHash);
+      if (!targetShell) {
+        return;
+      }
+
+      if (typeof openParents === "function") {
+        openParents(targetShell);
+      }
+      if (typeof setDetailOpen === "function") {
+        setDetailOpen(targetShell, true);
+      }
+
+      const normalize = (value) =>
+        (value || "")
+          .toLowerCase()
+          .normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      const normalizedTargetLine = normalize(targetLine);
+      if (!normalizedTargetLine) {
+        return;
+      }
+
+      const lineElements = Array.from(targetShell.querySelectorAll(".text-line"));
+      const matchingLine = lineElements.find((element) => {
+        const lineText = normalize(element.textContent);
+        return (
+          lineText === normalizedTargetLine ||
+          lineText.includes(normalizedTargetLine) ||
+          normalizedTargetLine.includes(lineText)
+        );
+      });
+
+      if (!matchingLine) {
+        return;
+      }
+
+      matchingLine.classList.add("search-target-line");
+      requestAnimationFrame(() => {
+        matchingLine.scrollIntoView({ block: "center" });
+      });
+    })();
+  </script>
+</body>
+</html>

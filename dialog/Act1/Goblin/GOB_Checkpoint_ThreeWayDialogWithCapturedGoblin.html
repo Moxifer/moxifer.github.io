@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GOB_Checkpoint_ThreeWayDialogWithCapturedGoblin</title>
+  <script>
+    (function () {
+      const probe = document.createElement("div");
+      const supportsUntilFound = "onbeforematch" in probe;
+      document.documentElement.classList.add(
+        supportsUntilFound ? "supports-until-found" : "no-until-found"
+      );
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #182330;
+      --muted: #586477;
+      --line: #c7d2df;
+      --npc: #b91c1c;
+      --player: #15803d;
+      --system: #2563eb;
+      --rule: #2f6f44;
+      --tag: #0f766e;
+      --check: #7c3aed;
+      --set: #ea580c;
+      --roll: #6d28d9;
+      --approval: #0f766e;
+      --jump: #155eef;
+      --context: #475467;
+      --surface: #f3f6fa;
+      --surface-active: #e6edf5;
+      --surface-hover: #edf3f9;
+      --detail-surface: #e3ebf4;
+      --detail-border: #b4c2d4;
+      --focus: #90a4bc;
+      --highlight: #d9e5f5;
+      --scrollbar-proxy-bg: rgba(255, 255, 255, 0.94);
+      --mono: Consolas, "SFMono-Regular", Menlo, monospace;
+      --sans: Georgia, "Palatino Linotype", serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #fff;
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.35;
+      overflow-x: hidden;
+    }
+    a { color: var(--jump); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: none;
+      padding: 0;
+      border-radius: 0;
+    }
+    .page {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0.55rem 0.9rem 1.8rem;
+      overflow-x: hidden;
+    }
+    .hero {
+      margin-bottom: 0.55rem;
+    }
+    .hero h1 {
+      margin: 0 0 0.2rem;
+      font-size: 1.4rem;
+      line-height: 1.15;
+    }
+    .source {
+      color: var(--muted);
+      font-size: 0.9rem;
+      word-break: break-all;
+      margin-bottom: 0.2rem;
+    }
+    .source-label {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.3rem;
+    }
+    .summary-line {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 0.35rem;
+    }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.45rem;
+      margin-bottom: 0.45rem;
+      padding: 0.35rem 0;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      overflow: visible;
+    }
+    .toolbar-scroll {
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: calc(100% - 7rem);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+    }
+    .controls {
+      display: inline-flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0.45rem;
+      white-space: nowrap;
+      font-size: 0.9rem;
+      min-width: max-content;
+      overflow: visible;
+    }
+    .controls button,
+    .controls summary,
+    .speaker-map > summary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 1.85rem;
+      padding: 0.12rem 0.5rem;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: var(--surface);
+      color: var(--jump);
+      font: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      list-style: none;
+      user-select: none;
+    }
+    .controls button.is-active,
+    .controls details[open] > summary,
+    .speaker-map[open] > summary {
+      background: var(--surface-active);
+      border-color: var(--focus);
+    }
+    .controls button:hover,
+    .controls summary:hover,
+    .speaker-map > summary:hover {
+      background: var(--surface-hover);
+      text-decoration: none;
+    }
+    .controls summary:focus,
+    .controls button:focus,
+    .speaker-map > summary:focus {
+      outline: 1px solid var(--focus);
+      outline-offset: 1px;
+    }
+    .speaker-map {
+      flex: 0 0 auto;
+      position: relative;
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .speaker-map summary,
+    .meta-block summary {
+      cursor: pointer;
+      color: var(--jump);
+      list-style: none;
+    }
+    .speaker-map summary::-webkit-details-marker,
+    .meta-block summary::-webkit-details-marker {
+      display: none;
+    }
+    .speaker-map[open] ul {
+      display: block;
+    }
+    .speaker-map ul {
+      display: none;
+      list-style: none;
+      margin: 0.3rem 0 0;
+      padding: 0.45rem 0.6rem;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 0.2rem);
+      min-width: 20rem;
+      max-width: min(34rem, calc(100vw - 2rem));
+      max-height: 24rem;
+      overflow: auto;
+      background: #fbfcfe;
+      border: 1px solid var(--line);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+      z-index: 30;
+    }
+    .speaker-map li + li {
+      margin-top: 0.1rem;
+    }
+    .speaker-index {
+      display: inline-block;
+      min-width: 2rem;
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 600;
+    }
+    .speaker-name {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.25rem;
+    }
+    .inline-meta, .line-meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .tree-shell {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: visible;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-shell-inner {
+      width: max-content;
+      min-width: 100%;
+    }
+    .tree-scrollbar-proxy {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 1.1rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      background: var(--scrollbar-proxy-bg);
+      border-top: 1px solid var(--line);
+      z-index: 40;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-scrollbar-proxy[hidden] {
+      display: none;
+    }
+    .tree-scrollbar-proxy-inner {
+      height: 1px;
+    }
+    .orphan-section {
+      width: auto;
+      min-width: 0;
+      margin-top: 1rem;
+      padding-top: 0.55rem;
+      border-top: 1px dotted var(--line);
+    }
+    .orphan-section h2 {
+      margin: 0 0 0.15rem;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+    .orphan-note {
+      margin: 0 0 0.35rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .root-list, .child-list {
+      list-style: none;
+      margin: 0;
+      padding-left: 0;
+      width: auto;
+      min-width: 0;
+    }
+    .child-list {
+      margin-left: 1.1rem;
+      padding-left: 0.85rem;
+      border-left: 1px dotted var(--line);
+    }
+    .node-item {
+      margin: 0.18rem 0;
+    }
+    details.node {
+      margin: 0;
+    }
+    details.node:target > summary .node-line {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    .node-leaf:target {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 0;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    summary::-webkit-details-marker {
+      display: none;
+    }
+    details.node > summary::before {
+      content: "▸";
+      display: inline-block;
+      width: 0.9rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      vertical-align: top;
+      padding-top: 0.12rem;
+    }
+    details.node[open] > summary::before {
+      content: "▾";
+    }
+    details.node.no-children > summary::before {
+      content: "•";
+    }
+    .node-line {
+      display: inline;
+      padding: 0.06rem 0.18rem;
+    }
+    .node-leaf {
+      display: inline-block;
+      padding: 0.06rem 0.18rem;
+      border-radius: 6px;
+    }
+    details.node > summary::before {
+      content: "+";
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    details.node[open] > summary::before {
+      content: "-";
+    }
+    details.node.no-children > summary::before {
+      content: ".";
+    }
+    .node-number {
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 700;
+    }
+    .speaker-label {
+      font-weight: 700;
+      margin-left: 0.2rem;
+    }
+    .speaker-label.npc { color: var(--npc); }
+    .speaker-label.player { color: var(--player); }
+    .speaker-label.system { color: var(--system); }
+    .dialog {
+      color: var(--ink);
+      margin-left: 0.2rem;
+    }
+    .node-kind {
+      color: var(--system);
+      margin-left: 0.2rem;
+    }
+    .ruletag {
+      color: var(--rule);
+      margin-left: 0.35rem;
+    }
+    .tags {
+      color: var(--tag);
+      margin-left: 0.35rem;
+    }
+    .checkflag {
+      color: var(--check);
+      margin-left: 0.35rem;
+    }
+    .setflag {
+      color: var(--set);
+      margin-left: 0.35rem;
+    }
+    .rolls {
+      color: var(--roll);
+      margin-left: 0.35rem;
+    }
+    .approval {
+      color: var(--approval);
+      margin-left: 0.35rem;
+    }
+    .nodelink {
+      color: var(--jump);
+      margin-left: 0.35rem;
+    }
+    .context {
+      color: var(--context);
+      margin-left: 0.3rem;
+      cursor: help;
+    }
+    .end {
+      color: #8b1e1e;
+      margin-left: 0.35rem;
+    }
+    .node-shell:target,
+    .node-leaf:target {
+      background: none;
+      border-radius: 0;
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-shell {
+      display: block;
+    }
+    .node-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.32rem;
+      width: max-content;
+      min-width: 100%;
+      transition: background-color 0.18s ease;
+    }
+    .node-shell.jump-highlight > .node-row {
+      background: var(--highlight);
+    }
+    .node-content {
+      min-width: 0;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker,
+    .tree-spacer {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 0.95rem;
+      height: 0.95rem;
+      margin-top: 0.08rem;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker {
+      border: none;
+      background: none;
+      color: var(--muted);
+      padding: 0;
+      font: inherit;
+      font-weight: 800;
+      font-size: 1.18rem;
+      line-height: 1;
+      user-select: none;
+    }
+    .tree-spacer {
+      border: none;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .node-branch[hidden] {
+      display: none;
+    }
+    html.supports-until-found .node-branch[hidden='until-found'] {
+      display: block;
+    }
+    .repeat {
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+    .node-summary {
+      display: block;
+      cursor: default;
+    }
+    .node-summary.is-interactive {
+      cursor: pointer;
+    }
+    .node-summary.is-interactive:focus-visible {
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-main-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.35rem;
+    }
+    .node-main {
+      display: block;
+      flex: 1 1 auto;
+      min-width: 0;
+      white-space: normal;
+      line-height: 1.28;
+      overflow-wrap: anywhere;
+    }
+    .node-leaf {
+      display: block;
+      border-radius: 0;
+    }
+    .node-number {
+      font-weight: 600;
+    }
+    .speaker-label {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind,
+    .nodelink {
+      overflow-wrap: anywhere;
+    }
+    .nodelink,
+    .end {
+      margin-left: 0;
+    }
+    .node-previews {
+      display: block;
+      margin: 0.12rem 0 0 1.1rem;
+      font-size: 0.88rem;
+      white-space: normal;
+      line-height: 1.28;
+    }
+    .preview-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.12rem 0.45rem;
+    }
+    .preview-token {
+      display: inline;
+      overflow-wrap: anywhere;
+    }
+    .preview-token.tag {
+      color: var(--tag);
+    }
+    .preview-token.rule {
+      color: var(--rule);
+    }
+    .preview-token.check {
+      color: var(--check);
+    }
+    .preview-token.set {
+      color: var(--set);
+    }
+    .preview-note {
+      display: block;
+      margin-top: 0.08rem;
+      color: var(--context);
+      overflow-wrap: anywhere;
+      font-weight: 700;
+    }
+    .preview-note-label {
+      color: var(--context);
+      font-weight: 700;
+    }
+    .preview-note-value {
+      color: #4f463f;
+      font-weight: 600;
+    }
+    .signal-line {
+      display: block;
+      margin: 0.14rem 0 0.2rem;
+    }
+    .signal-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem;
+    }
+    .signal-label {
+      font-weight: 700;
+    }
+    .signal-scope {
+      color: var(--muted);
+    }
+    .tag-line, .tag-line .signal-label { color: var(--tag); }
+    .rule-line, .rule-line .signal-label { color: var(--rule); }
+    .checkflag-line, .checkflag-line .signal-label { color: var(--check); }
+    .setflag-line, .setflag-line .signal-label { color: var(--set); }
+    .roll-line, .roll-line .signal-label { color: var(--roll); }
+    .approval-line, .approval-line .signal-label { color: var(--approval); }
+    .context-line, .context-line .signal-label { color: var(--context); }
+    .context-line .signal-heading {
+      font-weight: 700;
+    }
+    .context-line .signal-item {
+      color: #4f463f;
+    }
+    .signal-values {
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .signal-list {
+      list-style: none;
+      margin: 0.06rem 0 0 0.9rem;
+      padding: 0;
+    }
+    .signal-item {
+      margin: 0.1rem 0;
+      overflow-wrap: anywhere;
+    }
+    .signal-item::before {
+      content: "- ";
+      color: var(--muted);
+    }
+    .signal-body {
+      display: block;
+      margin: 0.06rem 0 0 0.9rem;
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .asset-name {
+      color: var(--ink);
+    }
+    .asset-id {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.92em;
+      overflow-wrap: anywhere;
+    }
+    .asset-state {
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .node-detail-panel {
+      margin: 0.08rem 0 0.18rem 1.1rem;
+      padding: 0.35rem 0.5rem;
+      border: 1px solid var(--detail-border);
+      background: var(--detail-surface);
+      border-radius: 0;
+      display: block;
+      gap: 0;
+      max-width: none;
+    }
+    .node-detail-panel[hidden] {
+      display: none;
+    }
+    html.supports-until-found .node-detail-panel[hidden='until-found'] {
+      display: block;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: none;
+    }
+    .section {
+      margin: 0.16rem 0;
+      padding: 0;
+      background: none;
+      border: none;
+    }
+    .section h3 {
+      margin: 0 0 0.22rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .node-detail-panel > .section + .section {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-block + .text-block {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-line {
+      font-size: 0.96rem;
+      margin-bottom: 0.15rem;
+    }
+    .text-line {
+      margin: 0.08rem 0;
+      font-size: inherit;
+      overflow-wrap: anywhere;
+    }
+    .badge-row, .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .badge, .meta-item {
+      display: block;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+    }
+    .meta-items {
+      margin: 0.12rem 0 0 0.85rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+      white-space: normal;
+    }
+    .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .meta-item {
+      display: block;
+      margin: 0.06rem 0;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+      overflow-wrap: anywhere;
+    }
+    .meta-item strong {
+      color: var(--ink);
+    }
+    .badge.flags { color: var(--check); }
+    .badge.tags { color: var(--tag); }
+    .flag-groups {
+      display: block;
+      gap: 0;
+    }
+    .flag-group-type {
+      display: inline-block;
+      color: var(--muted);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.15rem;
+    }
+    .rule-tree, .rule-tree ul {
+      margin: 0;
+      padding-left: 1rem;
+    }
+    .body-hide-flags .section-flags,
+    .body-hide-rules .section-rules,
+    .body-hide-details .section-metadata,
+    .body-hide-context .preview-note,
+    .body-hide-context .context-line,
+    .body-hide-context .node-line .context {
+      display: none;
+    }
+    .body-hide-flags .node-line .checkflag,
+    .body-hide-flags .node-line .setflag,
+    .body-hide-rules .node-line .ruletag {
+      display: none;
+    }
+    .body-hide-flags .checkflag-line,
+    .body-hide-flags .setflag-line {
+      display: none;
+    }
+    .body-hide-flags .preview-token.check,
+    .body-hide-flags .preview-token.set {
+      display: none;
+    }
+    .body-hide-context .context-line {
+      display: none;
+    }
+    .body-hide-numbers .node-number {
+      display: none;
+    }
+    .missing, .cycle {
+      padding: 0.2rem 0.35rem;
+      color: #8b1e1e;
+      background: rgba(139, 30, 30, 0.08);
+      border-radius: 6px;
+      display: inline-block;
+    }
+    .missing, .cycle {
+      padding: 0;
+      background: none;
+      border-radius: 0;
+      display: block;
+      overflow-wrap: anywhere;
+    }
+    @media (max-width: 920px) {
+      .page {
+        padding: 0.45rem 0.5rem 0.9rem;
+      }
+      .tree-shell {
+        padding: 0;
+      }
+    }
+  </style>
+  <style data-search-target-highlight>
+    .node-shell:target {
+      outline: 3px solid #c68b00;
+      background: #fff7db;
+      scroll-margin-top: 1rem;
+    }
+    .text-line.search-target-line {
+      background: #fff0a6;
+      border-radius: 2px;
+      padding: 0 0.08rem;
+    }
+  </style>
+</head>
+  <body class="body-hide-numbers">
+  <div class="page">
+    <header class="hero">
+      <h1>GOB_Checkpoint_ThreeWayDialogWithCapturedGoblin</h1>
+      <div class="source"><span class="source-label">Start Dialog UUID:</span><strong><code>66247460-b5d8-095b-6a46-1c52ad952e6f</code></strong></div><div class="source"><span class="source-label">Timeline File UUID:</span><strong><code>3d0ac801-a41a-a371-0dae-d600e2149c53</code></strong></div><div class="source"><span class="source-label">Dialog File UUID:</span><strong><code>ae890992-108a-833d-c765-d6577f5e6b27</code></strong></div><div class="source"><span class="source-label">Dialog:</span>Mods\Gustav\Story\DialogsBinary\Act1\Goblin\GOB_Checkpoint_ThreeWayDialogWithCapturedGoblin.lsf.lsx</div><div class="source"><span class="source-label">Timeline:</span>Public\Gustav\Timeline\Generated\GOB_Checkpoint_ThreeWayDialogWithCapturedGoblin.lsf.lsx</div><div class="source"><span class="source-label">Scene:</span>Public\Gustav\Timeline\Generated\GOB_Checkpoint_ThreeWayDialogWithCapturedGoblin_Scene.lsf.lsx</div>
+      <div class="summary-line">
+        category=Generic NPC Dialog | nodes=39 | roots=2
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-scroll">
+          <div class="controls">
+            <button type="button" data-toggle-branches="all" data-hide-label="Expand all" data-show-label="Collapse all" data-active="false">Expand all</button>
+            <button type="button" data-toggle-class="body-hide-flags" data-hide-label="Hide flags" data-show-label="Show flags">Hide flags</button>
+            <button type="button" data-toggle-details="all" data-hide-label="Show details" data-show-label="Hide details" data-active="false">Show details</button>
+            <button type="button" data-toggle-class="body-hide-context" data-hide-label="Hide notes" data-show-label="Show notes">Hide notes</button>
+            <button type="button" data-toggle-class="body-hide-numbers" data-hide-label="Hide node numbers" data-show-label="Show node numbers">Hide node numbers</button>
+          </div>
+        </div>
+        <details class="speaker-map">
+          <summary>Speakers</summary>
+          <ul><li><span class='speaker-index'>0</span><span class='speaker-name'>Speaker 0</span><span class='inline-meta'>list=6d69a347-9b3f-4b64-818e-013f849c6ae4 | mapping=246382a0-3eb7-21ba-f591-1e2ba1aca410</span></li><li><span class='speaker-index'>1</span><span class='speaker-name'>Speaker 1</span><span class='inline-meta'>list=783d7572-a846-455f-b686-247a95263ebb | mapping=342650a9-96ef-7cd1-f845-c7d297e34e70</span></li><li><span class='speaker-index'>2</span><span class='speaker-name'>Player</span><span class='inline-meta'>GROUP_Players | list=e0d1ff71-04a8-4340-ae64-9684d846eb83 | mapping=7baeb366-994f-9016-8c45-bcfe3616ce21</span></li></ul>
+        </details>
+      </div>
+    </header>
+    <section class="tree-shell">
+      <div class="tree-shell-inner">
+        <ul class="root-list"><li class='node-item'><div class='node-shell' id='node-16'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-16' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-16' aria-expanded='true' tabindex='0' data-detail-target='details-16' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>16.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Well! Look what the rat dragged in.</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span><span class='preview-inline'><span class='preview-token rule'>Drow</span><span class='preview-token check'>!GOB_Checkpoint_State_PretendedToBeTrueSouls</span><span class='preview-token set'>GOB_Checkpoint_Guard01_HasMet</span></span></span></span><div class='node-detail-panel' id='details-16' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line rule-line'><div class='signal-heading'><span class='signal-label'>ruletag</span><span class='signal-scope'>type rule</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Drow|'>Drow</span> <span class='asset-id'>{a672ac1d-d088-451a-9537-3da4bf74466c}</span></li></ul></div><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player pretended to be a True Soul to get access to the camp'>GOB_Checkpoint_State_PretendedToBeTrueSouls</span> <span class='asset-id'>{b4a02fb9-e711-0331-c163-a23fe10ee268}</span> <span class='asset-state'>= False</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 2 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player talked to the main guard'>GOB_Checkpoint_Guard01_HasMet</span> <span class='asset-id'>{43f28c01-263a-1ee2-8e26-c82cb184c9fe}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section'><h3>Text</h3><div class='text-block'><h3>Variant 1</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='|Drow|'><code>Drow</code></li></ul><div class='text-line'>Well! Look what the rat dragged in.</div><div class='line-meta'><code>h7298e855ga931g4fa5ga362g8ed82d535005</code> | <code>b28b5792-9ac8-5eb7-332d-bd074a970866</code> | stub</div></div><div class='text-block'><h3>Variant 2</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='|Drow|'><code>Drow</code></li></ul><div class='text-line'>Well! Look who&#x27;s gettin&#x27; dragged back. And by such high company! How badly did you mess up?</div><div class='line-meta'><code>hd89e0dbbg6427g4bb8gb3cdg007d3d8fe8f2</code> | <code>2b768ece-9eda-b10f-c1ad-f863b28bb547</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 448516bc-0b30-fcd2-340c-30576324a743</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h7298e855ga931g4fa5ga362g8ed82d535005</span><span class='meta-item'><strong>Text 1 UUID</strong>: b28b5792-9ac8-5eb7-332d-bd074a970866</span><span class='meta-item'><strong>Text 2 Handle</strong>: hd89e0dbbg6427g4bb8gb3cdg007d3d8fe8f2</span><span class='meta-item'><strong>Text 2 UUID</strong>: 2b768ece-9eda-b10f-c1ad-f863b28bb547</span><span class='meta-item'><strong>Timeline 1 Phase Index</strong>: 0</span><span class='meta-item'><strong>Timeline 1 Dialog Node UUID</strong>: 448516bc-0b30-fcd2-340c-30576324a743</span><span class='meta-item'><strong>Timeline 1 Phase Duration</strong>: 4.64s</span><span class='meta-item'><strong>Timeline 1 Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline 1 Animation 1 Resource ID</strong>: a5aa24e8-2409-4e48-88c6-061d740fce40</span><span class='meta-item'><strong>Timeline 1 Animation 1 Resource File</strong>: Shared\Public\Shared\Content\Assets\Characters\Creatures\Worg\[PAK]_Body\_merged.lsf.lsx</span><span class='meta-item'><strong>Timeline 1 Animation 2 Resource ID</strong>: 17d6f422-87a5-1364-21af-0d4c6badd127</span><span class='meta-item'><strong>Timeline 1 Animation 2 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/GOB/GOB_Checkpoint_Worg_001/WORG_Rig_DFLT_SCENE_GOB_Checkpoint_Worg_001_Random.GR2</span><span class='meta-item'><strong>Timeline 1 Emotion 1</strong>: Shot 2 [1.56s-4.64s] | @ 3.23s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline 1 Emotion 2</strong>: Shot 2 [1.56s-4.64s] | @ 3.77s | speaker 0 | Angry (8) | variation 2</span><span class='meta-item'><strong>Timeline 2 Phase Index</strong>: 2</span><span class='meta-item'><strong>Timeline 2 Dialog Node UUID</strong>: 448516bc-0b30-fcd2-340c-30576324a743</span><span class='meta-item'><strong>Timeline 2 Phase Duration</strong>: 8.55s</span><span class='meta-item'><strong>Timeline 2 Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline 2 Animation 1 Resource ID</strong>: a5aa24e8-2409-4e48-88c6-061d740fce40</span><span class='meta-item'><strong>Timeline 2 Animation 1 Resource File</strong>: Shared\Public\Shared\Content\Assets\Characters\Creatures\Worg\[PAK]_Body\_merged.lsf.lsx</span><span class='meta-item'><strong>Timeline 2 Animation 2 Resource ID</strong>: 17d6f422-87a5-1364-21af-0d4c6badd127</span><span class='meta-item'><strong>Timeline 2 Animation 2 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Cinematic/Act01/GOB/GOB_Checkpoint_Worg_001/WORG_Rig_DFLT_SCENE_GOB_Checkpoint_Worg_001_Random.GR2</span><span class='meta-item'><strong>Timeline 2 Emotion 1</strong>: Shot 2 [6.07s-8.6s] | @ 8.6s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline 2 Emotion 2</strong>: Shot 2 [6.07s-8.6s] | @ 8.6s | speaker 0 | Fear (16) | variation 1</span><span class='meta-item'><strong>Timeline 2 Emotion 3</strong>: Shot 1 [8.6s-12.22s] | @ 11.83s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline 2 Emotion 4</strong>: Shot 2 [12.22s-17.15s] | @ 12.37s | speaker 0 | Angry (8) | variation 2</span><span class='meta-item'><strong>Timeline 2 Emotion 5</strong>: Shot 2 [12.22s-17.15s] | @ 15.47s | speaker 0 | Fear (16) | variation 1</span><span class='meta-item'><strong>Timeline 2 Emotion 6</strong>: Shot 2 [12.22s-17.15s] | @ 16.3s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-16'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-11'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-11' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-11' aria-expanded='false' tabindex='0' data-detail-target='details-11' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>11.</span><span class='speaker-label npc'>Speaker 1</span><span>: </span><span class='dialog'>Can it! I know something Ragzlin will want to hear.</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span><span class='preview-inline'><span class='preview-token set'>DEN_GroveConflict_Knows_LeaderNameKing</span></span></span></span><div class='node-detail-panel' id='details-11' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='NPC talked about Dror Gagzlin, making it clear he&#x27;s one of the leaders'>DEN_GroveConflict_Knows_LeaderNameKing</span> <span class='asset-id'>{bcfbc49e-3461-44f0-964d-38a08ebf5d1f}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 2cdac6c8-afb6-ec03-2039-a7e4a785ad3f</span><span class='meta-item'><strong>Speaker</strong>: 1 (Speaker 1)</span><span class='meta-item'><strong>Text Handle</strong>: hc19261ccg541eg49d6g95f9gdb4fc44bb19a</span><span class='meta-item'><strong>Text UUID</strong>: 60d246ca-644e-a738-16a8-803c16c3f75d</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 4</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 2cdac6c8-afb6-ec03-2039-a7e4a785ad3f</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 21.03s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 5</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [17.16s-25.37s] | @ 25.37s | speaker 0 | Angry (8) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [17.16s-25.37s] | @ 25.37s | speaker 1 | Angry (8) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [25.37s-29.5s] | @ 25.91s | speaker 0 | Disgust (128) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [25.37s-29.5s] | @ 26.38s | speaker 1 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 1 [25.37s-29.5s] | @ 27.95s | speaker 1 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 1 [25.37s-29.5s] | @ 29.4s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 2 [29.5s-32.74s] | @ 30.95s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 2 [29.5s-32.74s] | @ 32.64s | speaker 1 | Thinking (4)</span><span class='meta-item'><strong>Timeline Emotion 9</strong>: Shot 3 [32.74s-40.08s] | @ 34.85s | speaker 1 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 10</strong>: Shot 3 [32.74s-40.08s] | @ 36.49s | speaker 1 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 11</strong>: Shot 3 [32.74s-40.08s] | @ 38.49s | speaker 1 | Happy (2) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 12</strong>: Shot 3 [32.74s-40.08s] | @ 39.98s | speaker 0 | Angry (8) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 13</strong>: Shot 4 [40.08s-43.34s] | @ 41.44s | speaker 0 | Confusion (1024)</span><span class='meta-item'><strong>Timeline Emotion 14</strong>: Shot 4 [40.08s-43.34s] | @ 43.24s | speaker 1 | Thinking (4) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 15</strong>: Shot 5 [43.34s-46.4s] | @ 44.67s | speaker 1 | Fear (16) | variation 2</span><span class='meta-item'><strong>Group ID</strong>: 2cdac6c8-afb6-ec03-2039-a7e4a785ad3f</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-11' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-26'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-26' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-26' aria-expanded='false' tabindex='0' data-detail-target='details-26' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>26.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Yeah? What&#x27;s that?</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span></span></span><div class='node-detail-panel' id='details-26' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 9f9d363e-b8ac-4f40-ef7d-bb596dd00bc3</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h242e466egb8e3g4eedgbf65g48301d0c42b4</span><span class='meta-item'><strong>Text UUID</strong>: 566dc31e-6821-4383-122d-fde8bb1ed0ea</span><span class='meta-item'><strong>Group ID</strong>: 2cdac6c8-afb6-ec03-2039-a7e4a785ad3f</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-26' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-19'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-19' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-19' aria-expanded='false' tabindex='0' data-detail-target='details-19' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>19.</span><span class='speaker-label npc'>Speaker 1</span><span>: </span><span class='dialog'>I been in some druids&#x27; grove. This one sprang me. Now move over, so I can tell Ragzlin myself!</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span></span></span><div class='node-detail-panel' id='details-19' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 65d67dc6-45c1-996d-2361-9fa7524024de</span><span class='meta-item'><strong>Speaker</strong>: 1 (Speaker 1)</span><span class='meta-item'><strong>Text Handle</strong>: h70279326g4672g40c2g8abfg600cddc7fc59</span><span class='meta-item'><strong>Text UUID</strong>: 0f18432c-31a3-9c27-3da5-b7dc4fb464f5</span><span class='meta-item'><strong>Group ID</strong>: 2cdac6c8-afb6-ec03-2039-a7e4a785ad3f</span><span class='meta-item'><strong>Group Index</strong>: 2</span></div></section></div></div></div><div class='node-branch' id='branch-19' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-27'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-27' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-27' aria-expanded='false' tabindex='0' data-detail-target='details-27' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>27.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Hold on. Where are the raiders?</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span></span></span><div class='node-detail-panel' id='details-27' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: a59fa30d-7071-c796-d46f-e7ccf4b5ae9d</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h842f8640gb5c0g4385g83f1g8e0604cb94df</span><span class='meta-item'><strong>Text UUID</strong>: 53a59ec4-13bf-cb4f-40f9-c346b4e26e00</span><span class='meta-item'><strong>Group ID</strong>: 2cdac6c8-afb6-ec03-2039-a7e4a785ad3f</span><span class='meta-item'><strong>Group Index</strong>: 3</span></div></section></div></div></div><div class='node-branch' id='branch-27' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-31'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-31' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-31' aria-expanded='false' tabindex='0' data-detail-target='details-31' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>31.</span><span class='speaker-label npc'>Speaker 1</span><span>: </span><span class='dialog'>Dead. Every last one.</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span></span></span><div class='node-detail-panel' id='details-31' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: c5ddc1cf-22ea-6e68-69aa-b64017d144b3</span><span class='meta-item'><strong>Speaker</strong>: 1 (Speaker 1)</span><span class='meta-item'><strong>Text Handle</strong>: h763519d5g9f4dg4f2egb394g6ab66db49b4a</span><span class='meta-item'><strong>Text UUID</strong>: 39439b0c-154a-96d3-13c9-15c9fa798b07</span><span class='meta-item'><strong>Group ID</strong>: 2cdac6c8-afb6-ec03-2039-a7e4a785ad3f</span><span class='meta-item'><strong>Group Index</strong>: 4</span></div></section></div></div></div><div class='node-branch' id='branch-31' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-25'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-25' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-25' aria-expanded='false' tabindex='0' data-detail-target='details-25' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>25.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Ragzlin&#x27;s other drow friend won&#x27;t be happy to hear <i>that</i>.</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span><span class='preview-inline'><span class='preview-token rule'>Drow</span><span class='preview-token set'>GOB_DrowCommander_Knows_DrowLeader</span></span></span></span><div class='node-detail-panel' id='details-25' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line rule-line'><div class='signal-heading'><span class='signal-label'>ruletag</span><span class='signal-scope'>type rule</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Drow|'>Drow</span> <span class='asset-id'>{a672ac1d-d088-451a-9537-3da4bf74466c}</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player heard about a drow being a boss around the goblin camp. Might not know the name (minthara), but upon meeting Minthara that&#x27;s enough to confront her'>GOB_DrowCommander_Knows_DrowLeader</span> <span class='asset-id'>{74279f61-c499-340a-ef38-d26816725bd9}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section'><h3>Text</h3><div class='text-block'><h3>Variant 1</h3><div class='inline-meta'>combine=0</div><ul class='rule-tree'><li title='|Drow|'><code>Drow</code></li></ul><div class='text-line'>Ragzlin&#x27;s other drow friend won&#x27;t be happy to hear <i>that</i>.</div><div class='line-meta'><code>h3eda0b87g0114g49e7g9f49g8c2f1d10c038</code> | <code>4cca9599-a468-fa69-6650-9fd168873e3d</code> | stub</div></div><div class='text-block'><h3>Variant 2</h3><div class='text-line'>Ragzlin&#x27;s drow friend won&#x27;t be happy to hear <i>that</i>.</div><div class='line-meta'><code>h54fb7748g43b0g4d94g8db8gee0e34106b83</code> | <code>2deb3767-cc33-f56f-b37b-d80155b355c2</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 9ef9ce55-365b-32a2-e341-658f05a8fd69</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h3eda0b87g0114g49e7g9f49g8c2f1d10c038</span><span class='meta-item'><strong>Text 1 UUID</strong>: 4cca9599-a468-fa69-6650-9fd168873e3d</span><span class='meta-item'><strong>Text 2 Handle</strong>: h54fb7748g43b0g4d94g8db8gee0e34106b83</span><span class='meta-item'><strong>Text 2 UUID</strong>: 2deb3767-cc33-f56f-b37b-d80155b355c2</span><span class='meta-item'><strong>Timeline 1 Phase Index</strong>: 8</span><span class='meta-item'><strong>Timeline 1 Dialog Node UUID</strong>: 9ef9ce55-365b-32a2-e341-658f05a8fd69</span><span class='meta-item'><strong>Timeline 1 Phase Duration</strong>: 4.55s</span><span class='meta-item'><strong>Timeline 1 Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline 1 Emotion 1</strong>: Shot 1 [67.62s-72.17s] | @ 67.62s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline 2 Phase Index</strong>: 11</span><span class='meta-item'><strong>Timeline 2 Dialog Node UUID</strong>: 9ef9ce55-365b-32a2-e341-658f05a8fd69</span><span class='meta-item'><strong>Timeline 2 Phase Duration</strong>: 3.67s</span><span class='meta-item'><strong>Timeline 2 Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline 2 Emotion 1</strong>: Shot 4 [85.5s-86.59s] | @ 86.59s | speaker 0 | Angry (8)</span></div></section></div></div></div><div class='node-branch' id='branch-25' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-13'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-13' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-13' aria-expanded='false' tabindex='0' data-detail-target='details-13' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>13.</span><span class='speaker-label npc'>Speaker 1</span><span>: </span><span class='dialog'>She&#x27;ll be happy enough when I tell her where them looters is holin&#x27; up. Let me through.</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span></span></span><div class='node-detail-panel' id='details-13' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 3c17ae63-1698-26d3-eb93-6839c8ba05c8</span><span class='meta-item'><strong>Speaker</strong>: 1 (Speaker 1)</span><span class='meta-item'><strong>Text Handle</strong>: h40e7223bgfd28g4e50g9ea9gc9ef0583a25b</span><span class='meta-item'><strong>Text UUID</strong>: ba2ca3f3-aa58-b2a6-f530-3f5efa41a0fb</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 5</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 3c17ae63-1698-26d3-eb93-6839c8ba05c8</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 5.3s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [46.4s-51.7s] | @ 46.4s | speaker 1 | Happy (2) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [46.4s-51.7s] | @ 48.96s | speaker 1 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [46.4s-51.7s] | @ 50.11s | speaker 1 | Angry (8) | variation 1</span></div></section></div></div></div><div class='node-branch' id='branch-13' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-8'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-8' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-8' aria-expanded='false' tabindex='0' data-detail-target='details-8' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>8.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Go on. I ain&#x27;t gonna hold up a drow.</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Olak turns to the player</span></span><span class='preview-inline'><span class='preview-token rule'>Drow</span></span></span></span><div class='node-detail-panel' id='details-8' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line rule-line'><div class='signal-heading'><span class='signal-label'>ruletag</span><span class='signal-scope'>type rule</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Drow|'>Drow</span> <span class='asset-id'>{a672ac1d-d088-451a-9537-3da4bf74466c}</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 22babc05-de03-d098-2e71-40f50bbceae3</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h2d4dbbf1gd4eag4e31gb9ddg677a87c0eb6e</span><span class='meta-item'><strong>Text UUID</strong>: 54979f8f-a63a-9b90-edfe-6d95b09e1423</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 14</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 22babc05-de03-d098-2e71-40f50bbceae3</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 11.16s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Timeline Stage Changes</strong>: Sazza_End (848994df-4ada-4dbc-b7dd-394f32a0638f) @ 114.33s</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [109.08s-110.91s] | @ 109.47s | speaker 2 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [109.08s-110.91s] | @ 109.65s | peanut slot 1 | Angry (8) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [109.08s-110.91s] | @ 109.7s | peanut slot 0 | Angry (8) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [109.08s-110.91s] | @ 110.37s | peanut slot 2 | Angry (8) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 3 [114.33s-120.24s] | @ 114.33s | speaker 1 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 3 [114.33s-120.24s] | @ 118.72s | speaker 1 | Happy (2) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 1 [120.24s-121.81s] | @ 120.24s | speaker 0 | Angry (8) | variation 1</span><span class='meta-item'><strong>Group ID</strong>: 22babc05-de03-d098-2e71-40f50bbceae3</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-8' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-23'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-23' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>23.</span><span class='speaker-label npc'>Speaker 1</span><span>: </span><span class='dialog'>C&#x27;mon! Gotta let the drow True Soul know where them looters is. We&#x27;ll be heroes!</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span><span class='preview-inline'><span class='preview-token set'>GOB_Checkpoint_State_GainedAccess</span><span class='preview-token set'>GOB_Checkpoint_State_GuidedByCapturedGoblin</span><span class='preview-token set'>GOB_Checkpoint_Event_MoveToCamp</span></span></span></span><div class='node-detail-panel' id='details-23' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player got access to the Goblin Camp'>GOB_Checkpoint_State_GainedAccess</span> <span class='asset-id'>{46279ae3-9662-01b0-25a5-a46e1b80d057}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='GOB_Checkpoint_State_GuidedByCapturedGoblindescription'>GOB_Checkpoint_State_GuidedByCapturedGoblin</span> <span class='asset-id'>{f3fb9ac9-eda2-15a0-87a2-44c96cc59f7d}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Speaker 1</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The captured goblins start moving to the Camp, to the Drow Commander'>GOB_Checkpoint_Event_MoveToCamp</span> <span class='asset-id'>{d7f21056-f1aa-4b4e-5626-c44de303d407}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 7f6f4ca9-1b3a-6dee-5385-43a6ca66c5b3</span><span class='meta-item'><strong>Speaker</strong>: 1 (Speaker 1)</span><span class='meta-item'><strong>Text Handle</strong>: h10e5cc10g902bg434cg8d97gc16e81a91428</span><span class='meta-item'><strong>Text UUID</strong>: 405272ee-84cb-7797-4a85-69eaa934b36a</span><span class='meta-item'><strong>End Node</strong>: True</span><span class='meta-item'><strong>Group ID</strong>: 22babc05-de03-d098-2e71-40f50bbceae3</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-35'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-35' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-35' aria-expanded='false' tabindex='0' data-detail-target='details-35' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>35.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Hold on, now.</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Olak turns to the player</span></span><span class='preview-inline'><span class='preview-token check'>!GOB_Checkpoint_State_GainedAccess</span></span></span></span><div class='node-detail-panel' id='details-35' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player got access to the Goblin Camp'>GOB_Checkpoint_State_GainedAccess</span> <span class='asset-id'>{46279ae3-9662-01b0-25a5-a46e1b80d057}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: da23928f-1413-af14-c714-e9cdc5f304bc</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h10adeb2dg5fcbg4a5dg92c2g621eb09d3810</span><span class='meta-item'><strong>Text UUID</strong>: 4053c8e0-f20f-ad3a-a6c1-7a5f7cfcb17f</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 10</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: da23928f-1413-af14-c714-e9cdc5f304bc</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 7.53s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 4</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 2 [81.19s-83.77s] | @ 81.19s | speaker 0 | Fear (16)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 2 [81.19s-83.77s] | @ 81.19s | speaker 2 | Thinking (4) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 2 [81.19s-83.77s] | @ 81.45s | peanut slot 2 | Thinking (4) | variation 2 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 2 [81.19s-83.77s] | @ 81.62s | peanut slot 0 | Thinking (4) | variation 2 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 2 [81.19s-83.77s] | @ 81.85s | peanut slot 1 | Thinking (4) | variation 2 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 2 [81.19s-83.77s] | @ 83.34s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 3 [83.77s-85.5s] | @ 84.6s | speaker 2 | Thinking (4)</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 3 [83.77s-85.5s] | @ 84.69s | peanut slot 1 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 9</strong>: Shot 3 [83.77s-85.5s] | @ 84.74s | peanut slot 0 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Timeline Emotion 10</strong>: Shot 3 [83.77s-85.5s] | @ 85.02s | peanut slot 2 | Thinking (4) | mimicry</span><span class='meta-item'><strong>Group ID</strong>: da23928f-1413-af14-c714-e9cdc5f304bc</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-35' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-32'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-32' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-32' aria-expanded='false' tabindex='0' data-detail-target='details-32' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>32.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Is it true, what Saz says? You helped her escape that grove?</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span></span></span><div class='node-detail-panel' id='details-32' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: cbb8d91b-3680-630c-764d-2dc3b5be34b6</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h3fb7693eg723eg4540ga4fbge41b001a4aa8</span><span class='meta-item'><strong>Text UUID</strong>: db637e3b-276c-faaa-1456-729557907e4f</span><span class='meta-item'><strong>Group ID</strong>: da23928f-1413-af14-c714-e9cdc5f304bc</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-32' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-7'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-7' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-7' aria-expanded='false' tabindex='0' data-detail-target='details-7' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>7.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Yes - I don&#x27;t believe in keeping prisoners.</span></span></span></span><div class='node-detail-panel' id='details-7' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 20d8d969-5b75-c79a-fd35-cb106556ee41</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hc353ebfeg7826g4332gbb34g57b078915179</span><span class='meta-item'><strong>Text UUID</strong>: 9436db6c-5625-38df-6ea7-15737ca443ce</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-7' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-29'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-29' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-29' aria-expanded='false' tabindex='0' data-detail-target='details-29' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>29.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Heh. Then behave while you&#x27;re inside. Our people don&#x27;t mind it one bit.</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span></span></span><div class='node-detail-panel' id='details-29' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: b29508d9-7eec-32c8-e671-979995fc3079</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h9f55e0d4g95a8g4743g892dg976de0c17192</span><span class='meta-item'><strong>Text UUID</strong>: 6ec0e524-e1a2-6126-3db5-d8e2c1433d0e</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 9</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: b29508d9-7eec-32c8-e671-979995fc3079</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 6.89s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [72.17s-79.06s] | @ 72.17s | speaker 0 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [72.17s-79.06s] | @ 75.79s | speaker 0 | Angry (8) | variation 1</span></div></section></div></div></div><div class='node-branch' id='branch-29' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-6'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-6' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-6' aria-expanded='false' tabindex='0' data-detail-target='details-6' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>6.</span><span class='speaker-label npc'>Speaker 1</span><span>: </span><span class='dialog'>That&#x27;s enough outta you.</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span></span></span><div class='node-detail-panel' id='details-6' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 1a62b995-4a73-b5fd-13f8-b6b3c15d9a01</span><span class='meta-item'><strong>Speaker</strong>: 1 (Speaker 1)</span><span class='meta-item'><strong>Text Handle</strong>: h0dd02f0cgb925g4f48gb768g27cbdc07a355</span><span class='meta-item'><strong>Text UUID</strong>: 563db481-466b-0d7d-d8d9-009317c216de</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 13</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 1a62b995-4a73-b5fd-13f8-b6b3c15d9a01</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 7.26s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Stage Changes</strong>: Sazza_End (848994df-4ada-4dbc-b7dd-394f32a0638f) @ 103.55s</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 2 [103.55s-109.08s] | @ 103.55s | speaker 1 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 2 [103.55s-109.08s] | @ 104.59s | speaker 1 | Happy (2) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 2 [103.55s-109.08s] | @ 106.91s | speaker 1 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 2 [103.55s-109.08s] | @ 108.22s | speaker 1 | Happy (2) | variation 1</span><span class='meta-item'><strong>Group ID</strong>: 1a62b995-4a73-b5fd-13f8-b6b3c15d9a01</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-6' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-28'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-28' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>28.</span><span class='speaker-label npc'>Speaker 1</span><span>: </span><span class='dialog'>C&#x27;mon! Gotta let the drow know where them looters is. We&#x27;ll be heroes!</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span><span class='preview-inline'><span class='preview-token set'>GOB_Checkpoint_State_GainedAccess</span><span class='preview-token set'>GOB_Checkpoint_State_GuidedByCapturedGoblin</span><span class='preview-token set'>GOB_Checkpoint_Event_MoveToCamp</span></span></span></span><div class='node-detail-panel' id='details-28' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player got access to the Goblin Camp'>GOB_Checkpoint_State_GainedAccess</span> <span class='asset-id'>{46279ae3-9662-01b0-25a5-a46e1b80d057}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='GOB_Checkpoint_State_GuidedByCapturedGoblindescription'>GOB_Checkpoint_State_GuidedByCapturedGoblin</span> <span class='asset-id'>{f3fb9ac9-eda2-15a0-87a2-44c96cc59f7d}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Speaker 1</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The captured goblins start moving to the Camp, to the Drow Commander'>GOB_Checkpoint_Event_MoveToCamp</span> <span class='asset-id'>{d7f21056-f1aa-4b4e-5626-c44de303d407}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: a6d09170-be44-4a16-d0d1-7d5da9cb113b</span><span class='meta-item'><strong>Speaker</strong>: 1 (Speaker 1)</span><span class='meta-item'><strong>Text Handle</strong>: h64a531f9g0a72g4dddg8191gc9192538811c</span><span class='meta-item'><strong>Text UUID</strong>: ba0bd789-5c34-62e6-2252-3a647156ac01</span><span class='meta-item'><strong>End Node</strong>: True</span><span class='meta-item'><strong>Group ID</strong>: 1a62b995-4a73-b5fd-13f8-b6b3c15d9a01</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-10'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-10' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-10' aria-expanded='false' tabindex='0' data-detail-target='details-10' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>10.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>Just hoping she&#x27;ll prove useful.</span></span></span></span><div class='node-detail-panel' id='details-10' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 2bd92974-2797-4606-915b-ab632e99009f</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: hd862d9a3g7a8cg4737gad85g732605fae46a</span><span class='meta-item'><strong>Text UUID</strong>: 0d162f4e-9ac9-77a1-1bbb-70e6e54a6883</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-10' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-14'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-14' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-14' aria-expanded='false' tabindex='0' data-detail-target='details-14' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>14.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Behave yourself. Saz&#x27;s vouchin&#x27; for you. You mess up, you <i>and </i>Saz&#x27;ll get it.<i></i></span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span></span></span><div class='node-detail-panel' id='details-14' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 3c4171c7-3930-a7ef-1445-b41d863187f3</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h9517077ag4abbg44bagaf47g2464db7147a1</span><span class='meta-item'><strong>Text UUID</strong>: 37f47c1a-0e68-eb81-e2b0-7894869acae5</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 6</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 3c4171c7-3930-a7ef-1445-b41d863187f3</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 7.45s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [51.7s-59.15s] | @ 51.7s | speaker 0 | Thinking (4) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [51.7s-59.15s] | @ 53.16s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [51.7s-59.15s] | @ 56.67s | speaker 0 | Angry (8)</span></div></section></div></div></div><div class='node-branch' id='branch-14' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-6'>Node 6</a> <span class='repeat-speaker speaker-label npc'>(Speaker 1)</span> <span class='dialog'>That&#x27;s enough outta you.</span></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-18'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-18' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-18' aria-expanded='false' tabindex='0' data-detail-target='details-18' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>18.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'><i>Shrug and say nothing.</i></span></span></span></span><div class='node-detail-panel' id='details-18' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 5f8aade8-0552-8d56-30ae-8368ef0d040b</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h90d00019g858bg4c09g97f3g7bdc19172917</span><span class='meta-item'><strong>Text UUID</strong>: a2c4a1f5-7422-8ddd-1809-ba45bda8c849</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-18' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-5'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-5' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-5' aria-expanded='false' tabindex='0' data-detail-target='details-5' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>5.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Quiet type, eh? Good. Keep outta trouble, or you <i>and </i>Saz&#x27;ll get it.</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span></span></span><div class='node-detail-panel' id='details-5' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 118035c0-9bbb-2d1a-8cfa-05c284354d29</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: hf014c833g13fcg4f00gbabcgc33f2ced3ba1</span><span class='meta-item'><strong>Text UUID</strong>: 6b2da173-7d3b-0cae-59bf-fe6c1ff10466</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 3</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 118035c0-9bbb-2d1a-8cfa-05c284354d29</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 8.22s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 1</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [17.16s-25.37s] | @ 17.16s | speaker 0 | Happy (2)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [17.16s-25.37s] | @ 19.38s | speaker 0 | Happy (2) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [17.16s-25.37s] | @ 20.6s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [17.16s-25.37s] | @ 22.83s | speaker 0 | Angry (8) | variation 2</span></div></section></div></div></div><div class='node-branch' id='branch-5' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-6'>Node 6</a> <span class='repeat-speaker speaker-label npc'>(Speaker 1)</span> <span class='dialog'>That&#x27;s enough outta you.</span></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-38'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-38' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-38' aria-expanded='false' tabindex='0' data-detail-target='details-38' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>38.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I&#x27;m only keeping her around in case I get hungry.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>Bestial</span></span></span></span><div class='node-detail-panel' id='details-38' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 2 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='Race group (aarakocra, kenku, lizardfolk, tabaxi, tortle)'>Bestial</span> <span class='asset-id'>{92aae5aa-4595-4f1c-96d2-9e2499d35c6f}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: deab7496-bb67-aea2-0e3e-59a7c651148d</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h97345a9bgca19g4569gb7e2ga84f3bdc8657</span><span class='meta-item'><strong>Text UUID</strong>: 2b24e9f7-5cfc-75e6-93aa-386a7fd79fc7</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-38' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-20'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-20' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>20.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-14'>Node 14</a></span></span></span></span><div class='node-detail-panel' id='details-20' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 6ae32b47-5753-5624-a65f-c0f4b9202c23</span><span class='meta-item'><strong>Jump Target</strong>: Node 14 (3c4171c7-3930-a7ef-1445-b41d863187f3)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-12'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-12' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-12' aria-expanded='false' tabindex='0' data-detail-target='details-12' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>12.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>My reasons are of no concern to you.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>Lae&#x27;zel</span></span></span></span><div class='node-detail-panel' id='details-12' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 2 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='| Lae&#x27;zel, the Gith Companion |'>Lae&#x27;zel</span> <span class='asset-id'>{b5682d1d-c395-489c-9675-1f9b0c328ea5}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 2d36f833-e11d-0c27-ca11-a8fd4e5cf644</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h8c9d1081gc8ebg4f14ga2d2ge0d4b202c430</span><span class='meta-item'><strong>Text UUID</strong>: 97d9e42b-497f-2777-4576-036a5845b122</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-12' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-33'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-33' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>33.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-14'>Node 14</a></span></span></span></span><div class='node-detail-panel' id='details-33' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: d03db6ab-2696-e3b6-a977-ba0cdc4b951c</span><span class='meta-item'><strong>Jump Target</strong>: Node 14 (3c4171c7-3930-a7ef-1445-b41d863187f3)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-1'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-1' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-1' aria-expanded='false' tabindex='0' data-detail-target='details-1' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>1.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>True enough. I couldn&#x27;t resist her charming company.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>Shadowheart</span></span></span></span><div class='node-detail-panel' id='details-1' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 2 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Really Shadowheart|'>Shadowheart</span> <span class='asset-id'>{642d2aee-e3df-47e3-9f47-bbcd441bb9e0}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 044f61df-1a9e-9350-7f1d-ed51554e74b2</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: he66e9b21gfc24g4e4cg86f2g77286826422f</span><span class='meta-item'><strong>Text UUID</strong>: 04263c64-8d7b-d493-2a24-fb75de741240</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-1' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-39'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-39' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>39.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-14'>Node 14</a></span></span></span></span><div class='node-detail-panel' id='details-39' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: ed92471e-f97c-8923-d9ba-e5401fbbe0b7</span><span class='meta-item'><strong>Jump Target</strong>: Node 14 (3c4171c7-3930-a7ef-1445-b41d863187f3)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-24'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-24' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-24' aria-expanded='false' tabindex='0' data-detail-target='details-24' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>24.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I enjoy making new friends.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>Wyll</span></span></span></span><div class='node-detail-panel' id='details-24' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 2 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='|Really Wyll, superhero warlock|'>Wyll</span> <span class='asset-id'>{5f40def5-d3ec-4698-a367-01a339888956}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 971f1852-ef4c-4685-08ca-67f495f1e957</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h0c7aaeeag3716g4a37gad40g6dfbd469edd3</span><span class='meta-item'><strong>Text UUID</strong>: 311af7d6-3fb4-ad88-993c-05feda8f0f72</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-24' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-9'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-9' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>9.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-29'>Node 29</a></span></span></span></span><div class='node-detail-panel' id='details-9' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 273dceb4-35d1-24f0-e398-a29b9c798f36</span><span class='meta-item'><strong>Jump Target</strong>: Node 29 (b29508d9-7eec-32c8-e671-979995fc3079)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-4'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-4' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-4' aria-expanded='false' tabindex='0' data-detail-target='details-4' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>4.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>I just hate seeing animals in cages.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>Astarion</span></span></span></span><div class='node-detail-panel' id='details-4' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 2 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='| Really Astarion, Vampire companion |'>Astarion</span> <span class='asset-id'>{ffd08582-7396-4cac-bcd4-8f9cd0fd8ef3}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 0e7dff00-b4fb-2ccc-1a72-bad984b07738</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h8bd5e567g3f45g4f21gb2cbgbf50be2e82e3</span><span class='meta-item'><strong>Text UUID</strong>: 919e202a-aad9-5a2d-94d9-0db09a963093</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-4' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-17'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-17' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>17.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-14'>Node 14</a></span></span></span></span><div class='node-detail-panel' id='details-17' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 4b60b954-de13-a937-7b32-59b94ab052af</span><span class='meta-item'><strong>Jump Target</strong>: Node 14 (3c4171c7-3930-a7ef-1445-b41d863187f3)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-21'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-21' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-21' aria-expanded='false' tabindex='0' data-detail-target='details-21' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>21.</span><span class='speaker-label player'>Player</span><span>: </span><span class='dialog'>It was a daring escape. Slew thirteen druids bare-handed, Sazza and I.</span></span></span><span class='node-previews'><span class='preview-inline'><span class='preview-token check'>Bard</span></span></span></span><div class='node-detail-panel' id='details-21' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Tag | speaker 2 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='An inspiring magician whose power echoes the music of creation.'>Bard</span> <span class='asset-id'>{d93434bd-6b71-4789-b128-ee24156057cc}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagQuestion</span><span class='meta-item'><strong>UUID</strong>: 6c949381-4cf0-dfe0-0150-9e507d1e1cec</span><span class='meta-item'><strong>Speaker</strong>: 2 (Player)</span><span class='meta-item'><strong>Text Handle</strong>: h43efc241g8448g4b48gabafgd801db45f6e7</span><span class='meta-item'><strong>Text UUID</strong>: 39e83541-fcba-425e-bce1-88d148a7fac8</span><span class='meta-item'><strong>Show Once</strong>: True</span></div></section></div></div></div><div class='node-branch' id='branch-21' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-22'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-22' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-22' aria-expanded='false' tabindex='0' data-detail-target='details-22' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>22.</span><span class='speaker-label npc'>Speaker 1</span><span>: </span><span class='dialog'>Err... Yeah, that&#x27;s right!</span></span></span></span><div class='node-detail-panel' id='details-22' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 7545dd9a-e97a-5423-58c2-a0c8951bf0a7</span><span class='meta-item'><strong>Speaker</strong>: 1 (Speaker 1)</span><span class='meta-item'><strong>Text Handle</strong>: he0d3e73dgc721g4ad3g9b54g34c281306515</span><span class='meta-item'><strong>Text UUID</strong>: 35600ab1-ce3e-4825-88c3-523cdca19912</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 7</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 7545dd9a-e97a-5423-58c2-a0c8951bf0a7</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 8.47s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 4</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [59.15s-62.3s] | @ 59.15s | speaker 1 | Confusion (1024)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [59.15s-62.3s] | @ 60.51s | speaker 1 | Happy (2) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 2 [62.3s-64.18s] | @ 62.51s | speaker 0 | Happy (2) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 2 [62.3s-64.18s] | @ 63.56s | speaker 0 | Confusion (1024) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 3 [64.18s-65.89s] | @ 64.43s | speaker 2 | Disgust (128) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 3 [64.18s-65.89s] | @ 64.74s | peanut slot 1 | Disgust (128) | variation 2 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 3 [64.18s-65.89s] | @ 64.92s | peanut slot 2 | Disgust (128) | variation 2 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 3 [64.18s-65.89s] | @ 65.17s | peanut slot 0 | Disgust (128) | variation 2 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 9</strong>: Shot 4 [65.89s-67.62s] | @ 66.55s | speaker 0 | Disgust (128) | variation 1</span><span class='meta-item'><strong>Group ID</strong>: 7545dd9a-e97a-5423-58c2-a0c8951bf0a7</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-22' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-34'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-34' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-34' aria-expanded='false' tabindex='0' data-detail-target='details-34' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>34.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Hah! A <i>ranga</i> and Sazza killing druids? Pull the other one.</span></span></span></span><div class='node-detail-panel' id='details-34' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: d3aae7a1-9858-3bcc-4fd0-c5cc07a3e2a4</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h1a42e998g3004g4033g9231g9d684cc45df3</span><span class='meta-item'><strong>Text UUID</strong>: 71ea9b18-3926-4295-beb8-7c0d6312a933</span><span class='meta-item'><strong>Group ID</strong>: 7545dd9a-e97a-5423-58c2-a0c8951bf0a7</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div><div class='node-branch' id='branch-34' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-3'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-3' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>3.</span><span class='node-kind'>Jump to</span> <span class='nodelink'><a href='#node-6'>Node 6</a></span></span></span></span><div class='node-detail-panel' id='details-3' hidden='until-found'><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: Jump</span><span class='meta-item'><strong>UUID</strong>: 0876b110-41c9-fa69-6006-23841e3c4980</span><span class='meta-item'><strong>Jump Target</strong>: Node 6 (1a62b995-4a73-b5fd-13f8-b6b3c15d9a01)</span><span class='meta-item'><strong>Jump Target Point</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-30'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-30' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-30' aria-expanded='false' tabindex='0' data-detail-target='details-30' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>30.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>Go on ahead. Already met your little friend. Two of you can go celebrate together.</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Olak turns to the player</span></span><span class='preview-inline'><span class='preview-token check'>GOB_Checkpoint_State_GainedAccess</span><span class='preview-token check'>!GOB_Checkpoint_State_PretendedToBeTrueSouls</span></span></span></span><div class='node-detail-panel' id='details-30' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player got access to the Goblin Camp'>GOB_Checkpoint_State_GainedAccess</span> <span class='asset-id'>{46279ae3-9662-01b0-25a5-a46e1b80d057}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='The player pretended to be a True Soul to get access to the camp'>GOB_Checkpoint_State_PretendedToBeTrueSouls</span> <span class='asset-id'>{b4a02fb9-e711-0331-c163-a23fe10ee268}</span> <span class='asset-state'>= False</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: c43581b1-7a10-d35b-6a0d-82553520f02f</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h50ee23fag7046g47b9gbab5g6e00f653a9ce</span><span class='meta-item'><strong>Text UUID</strong>: 0e826585-337b-01bc-d268-a821a184072c</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 15</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: c43581b1-7a10-d35b-6a0d-82553520f02f</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 11.82s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Timeline Stage Changes</strong>: Sazza_End (848994df-4ada-4dbc-b7dd-394f32a0638f) @ 126.52s</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: 1641fb7b-4033-93f2-19d9-45551e74f9ed</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Public/Shared/Assets/Characters/_Anims/_Creatures/Goblins/_Male/GOB_M_Rig/GOB_M_Rig_1HS_IDLE_Still_Peace_01.GR2</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 2 [121.81s-126.52s] | @ 121.86s | speaker 0 | Disgust (128) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 2 [121.81s-126.52s] | @ 124.09s | speaker 0 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 2 [121.81s-126.52s] | @ 125.55s | speaker 0 | Disgust (128) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 3 [126.52s-132.06s] | @ 126.52s | speaker 1 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 3 [126.52s-132.06s] | @ 127.32s | speaker 1 | Happy (2) | variation 2</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 3 [126.52s-132.06s] | @ 129.41s | speaker 1 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 3 [126.52s-132.06s] | @ 130.46s | speaker 1 | Happy (2) | variation 1</span><span class='meta-item'><strong>Group ID</strong>: c43581b1-7a10-d35b-6a0d-82553520f02f</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-30' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-36'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-36' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>36.</span><span class='speaker-label npc'>Speaker 1</span><span>: </span><span class='dialog'>C&#x27;mon! Gotta let the drow know where them looters is. We&#x27;ll be heroes!</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span><span class='preview-inline'><span class='preview-token set'>GOB_Checkpoint_Event_MoveToCamp</span></span></span></span><div class='node-detail-panel' id='details-36' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Speaker 1</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The captured goblins start moving to the Camp, to the Drow Commander'>GOB_Checkpoint_Event_MoveToCamp</span> <span class='asset-id'>{d7f21056-f1aa-4b4e-5626-c44de303d407}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: dbce8523-0732-2d45-f05c-761fb03522fc</span><span class='meta-item'><strong>Speaker</strong>: 1 (Speaker 1)</span><span class='meta-item'><strong>Text Handle</strong>: h1fd4d744g19acg45f0g8b5cg9748bf5a81b1</span><span class='meta-item'><strong>Text UUID</strong>: f916a9d7-7277-8b8d-04d0-5376e907f6af</span><span class='meta-item'><strong>End Node</strong>: True</span><span class='meta-item'><strong>Group ID</strong>: c43581b1-7a10-d35b-6a0d-82553520f02f</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-15'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-15' data-branch-expanded='false' aria-hidden='true'>+</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-15' aria-expanded='false' tabindex='0' data-detail-target='details-15' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>15.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>I ain&#x27;t gonna hold up a True Soul.</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Olak turns to the player</span></span><span class='preview-inline'><span class='preview-token check'>GOB_Checkpoint_State_GainedAccess</span><span class='preview-token check'>GOB_Checkpoint_State_PretendedToBeTrueSouls</span></span></span></span><div class='node-detail-panel' id='details-15' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player got access to the Goblin Camp'>GOB_Checkpoint_State_GainedAccess</span> <span class='asset-id'>{46279ae3-9662-01b0-25a5-a46e1b80d057}</span> <span class='asset-state'>= True</span></li><li class='signal-item'><span class='asset-name' title='The player pretended to be a True Soul to get access to the camp'>GOB_Checkpoint_State_PretendedToBeTrueSouls</span> <span class='asset-id'>{b4a02fb9-e711-0331-c163-a23fe10ee268}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 3f114a42-3e6a-ee03-8795-a4e4bd20c992</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h671beae6g8d4ag4ea1g8473gf9a52af5c8bd</span><span class='meta-item'><strong>Text UUID</strong>: 96acd893-eb58-4874-92c3-f8ab42a9a03c</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 12</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 3f114a42-3e6a-ee03-8795-a4e4bd20c992</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 11.56s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 3</span><span class='meta-item'><strong>Timeline Stage Changes</strong>: Sazza_End (848994df-4ada-4dbc-b7dd-394f32a0638f) @ 92.58s</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 1 [90.26s-92.58s] | @ 90.26s | speaker 2 | Angry (8) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 1 [90.26s-92.58s] | @ 90.47s | peanut slot 1 | Angry (8) | variation 1 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 3</strong>: Shot 1 [90.26s-92.58s] | @ 90.51s | peanut slot 2 | Angry (8) | variation 1 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 4</strong>: Shot 1 [90.26s-92.58s] | @ 90.65s | peanut slot 0 | Angry (8) | variation 1 | mimicry</span><span class='meta-item'><strong>Timeline Emotion 5</strong>: Shot 3 [95.99s-101.82s] | @ 96s | speaker 1 | Surprise (64)</span><span class='meta-item'><strong>Timeline Emotion 6</strong>: Shot 3 [95.99s-101.82s] | @ 97.1s | speaker 1 | Happy (2) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 7</strong>: Shot 3 [95.99s-101.82s] | @ 99.49s | speaker 1 | Surprise (64) | variation 1</span><span class='meta-item'><strong>Timeline Emotion 8</strong>: Shot 1 [101.82s-103.55s] | @ 101.82s | speaker 1 | Angry (8)</span><span class='meta-item'><strong>Group ID</strong>: 3f114a42-3e6a-ee03-8795-a4e4bd20c992</span><span class='meta-item'><strong>Group Index</strong>: 0</span></div></section></div></div></div><div class='node-branch' id='branch-15' hidden='until-found'><ul class='child-list'><li class='node-item'><div class='node-shell' id='node-2'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-2' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>2.</span><span class='speaker-label npc'>Speaker 1</span><span>: </span><span class='dialog'>C&#x27;mon! Gotta let the drow know where them looters is. We&#x27;ll be heroes!</span> <span class='end'>[End]</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span><span class='preview-inline'><span class='preview-token set'>GOB_Checkpoint_Event_MoveToCamp</span></span></span></span><div class='node-detail-panel' id='details-2' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Object | speaker 1 Speaker 1</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The captured goblins start moving to the Camp, to the Drow Commander'>GOB_Checkpoint_Event_MoveToCamp</span> <span class='asset-id'>{d7f21056-f1aa-4b4e-5626-c44de303d407}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 07c79e11-7764-4992-cfd8-4d217bdffbf6</span><span class='meta-item'><strong>Speaker</strong>: 1 (Speaker 1)</span><span class='meta-item'><strong>Text Handle</strong>: h309ae893g5676g421fgab96g00da908c303a</span><span class='meta-item'><strong>Text UUID</strong>: b60f17a8-49e9-b425-cdc6-069f74346fff</span><span class='meta-item'><strong>End Node</strong>: True</span><span class='meta-item'><strong>Group ID</strong>: 3f114a42-3e6a-ee03-8795-a4e4bd20c992</span><span class='meta-item'><strong>Group Index</strong>: 1</span></div></section></div></div></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li></ul></div></div></li><li class='node-item'><div class='node-shell' id='node-37'><div class='node-row'><span class='tree-toggle-marker' data-branch-target='branch-37' data-branch-expanded='true' aria-hidden='true'>-</span><div class='node-content'><span class='node-summary has-children is-interactive has-details is-interactive' data-branch-target='branch-37' aria-expanded='true' tabindex='0' data-detail-target='details-37' data-detail-expanded='false'><span class='node-main-row'><span class='node-main'><span class='node-number'>37.</span><span class='speaker-label npc'>Speaker 0</span><span>: </span><span class='dialog'>How&#x27;d a rat like you get in with a True Soul?</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>&lt;placeholder&gt;</span></span><span class='preview-inline'><span class='preview-token check'>GOB_Checkpoint_State_PretendedToBeTrueSouls</span><span class='preview-token set'>GOB_Checkpoint_Guard01_HasMet</span></span></span></span><div class='node-detail-panel' id='details-37' hidden='until-found'><section class='section section-signals'><h3>Flags and Tags</h3><div class='signal-line checkflag-line'><div class='signal-heading'><span class='signal-label'>check</span><span class='signal-scope'>type Global</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player pretended to be a True Soul to get access to the camp'>GOB_Checkpoint_State_PretendedToBeTrueSouls</span> <span class='asset-id'>{b4a02fb9-e711-0331-c163-a23fe10ee268}</span> <span class='asset-state'>= True</span></li></ul></div><div class='signal-line setflag-line'><div class='signal-heading'><span class='signal-label'>set</span><span class='signal-scope'>type Dialog | speaker 2 Player</span></div><ul class='signal-list'><li class='signal-item'><span class='asset-name' title='The player talked to the main guard'>GOB_Checkpoint_Guard01_HasMet</span> <span class='asset-id'>{43f28c01-263a-1ee2-8e26-c82cb184c9fe}</span> <span class='asset-state'>= True</span></li></ul></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: ddf2ef11-41e6-095f-a55c-2e3de26b6f5f</span><span class='meta-item'><strong>Speaker</strong>: 0 (Speaker 0)</span><span class='meta-item'><strong>Text Handle</strong>: h2a891490gab18g471fg9653g2091a6dfdc0b</span><span class='meta-item'><strong>Text UUID</strong>: 63d7691f-8ba0-9f68-e004-a9a18a280a6e</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 1</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: ddf2ef11-41e6-095f-a55c-2e3de26b6f5f</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 3.96s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 2</span><span class='meta-item'><strong>Timeline Animation 1 Resource ID</strong>: a5aa24e8-2409-4e48-88c6-061d740fce40</span><span class='meta-item'><strong>Timeline Animation 1 Resource File</strong>: Shared\Public\Shared\Content\Assets\Characters\Creatures\Worg\[PAK]_Body\_merged.lsf.lsx</span><span class='meta-item'><strong>Timeline Emotion 1</strong>: Shot 2 [6.07s-8.6s] | @ 7.63s | speaker 0 | Angry (8)</span><span class='meta-item'><strong>Timeline Emotion 2</strong>: Shot 2 [6.07s-8.6s] | @ 8.17s | speaker 0 | Angry (8) | variation 2</span><span class='meta-item'><strong>Root</strong>: True</span><span class='meta-item'><strong>Unmapped Attributes</strong>: addressedspeaker</span></div></section></div></div></div><div class='node-branch' id='branch-37'><ul class='child-list'><li class='node-item'><div class='repeat'>See <a href='#node-11'>Node 11</a> <span class='repeat-speaker speaker-label npc'>(Speaker 1)</span> <span class='dialog'>Can it! I know something Ragzlin will want to hear.</span></div></li></ul></div></div></li></ul>
+        
+      </div>
+    </section>
+  </div>
+  <div class="tree-scrollbar-proxy" hidden>
+    <div class="tree-scrollbar-proxy-inner"></div>
+  </div>
+  <script>
+    function getNodeDetailPanel(shell) {
+      if (!shell) {
+        return null;
+      }
+      const content = shell.querySelector(":scope > .node-row > .node-content");
+      if (!content) {
+        return null;
+      }
+      return Array.from(content.children).find((child) => child.classList && child.classList.contains("node-detail-panel")) || null;
+    }
+    function getNodeDetailToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-detail-target]");
+    }
+    function getNodeBranchToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-branch-target]");
+    }
+    function getNodeBranchMarker(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .tree-toggle-marker[data-branch-target]");
+    }
+    const jumpHighlightTimers = new WeakMap();
+    const nodeSummaryClickTimers = new WeakMap();
+    const NODE_DETAIL_DOUBLE_CLICK_MS = 160;
+    const SUPPORTS_UNTIL_FOUND = document.documentElement.classList.contains("supports-until-found");
+    const treeShell = document.querySelector(".tree-shell");
+    const treeShellInner = treeShell ? treeShell.querySelector(".tree-shell-inner") : null;
+    const treeScrollbarProxy = document.querySelector(".tree-scrollbar-proxy");
+    const treeScrollbarProxyInner = treeScrollbarProxy
+      ? treeScrollbarProxy.querySelector(".tree-scrollbar-proxy-inner")
+      : null;
+    let syncingTreeScroll = false;
+    let syncingProxyScroll = false;
+    if (!SUPPORTS_UNTIL_FOUND) {
+      document.querySelectorAll("[hidden='until-found']").forEach((element) => {
+        element.setAttribute("hidden", "");
+      });
+    }
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+    function hideCollapsible(target) {
+      if (!target) {
+        return;
+      }
+      if (SUPPORTS_UNTIL_FOUND) {
+        target.setAttribute("hidden", "until-found");
+        return;
+      }
+      target.setAttribute("hidden", "");
+    }
+    function setToggleButtonState(button, active) {
+      if (!button) {
+        return;
+      }
+      button.classList.toggle("is-active", active);
+      const hideLabel = button.dataset.hideLabel;
+      const showLabel = button.dataset.showLabel;
+      if (hideLabel && showLabel) {
+        button.textContent = active ? showLabel : hideLabel;
+      }
+    }
+    function syncAllDetailsToggle() {
+      const button = document.querySelector("button[data-toggle-details='all']");
+      if (!button) {
+        return;
+      }
+      const panels = Array.from(document.querySelectorAll(".node-detail-panel"));
+      const allOpen = panels.length > 0 && panels.every((panel) => !panel.hasAttribute("hidden"));
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function syncAllBranchesToggle() {
+      const button = document.querySelector("button[data-toggle-branches='all']");
+      if (!button) {
+        return;
+      }
+      const branchMarkers = Array.from(document.querySelectorAll(".tree-toggle-marker[data-branch-target]"));
+      const allOpen = branchMarkers.length > 0 && branchMarkers.every((marker) => marker.dataset.branchExpanded === "true");
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function updateTreeScrollbarProxy() {
+      if (!treeShell || !treeShellInner || !treeScrollbarProxy || !treeScrollbarProxyInner) {
+        return;
+      }
+      const contentWidth = treeShellInner.scrollWidth;
+      const viewportWidth = treeShell.clientWidth;
+      const needsProxy = contentWidth > viewportWidth + 1;
+      if (!needsProxy) {
+        treeScrollbarProxy.hidden = true;
+        return;
+      }
+      const rect = treeShell.getBoundingClientRect();
+      treeScrollbarProxy.hidden = false;
+      treeScrollbarProxy.style.left = `${Math.max(0, rect.left)}px`;
+      treeScrollbarProxy.style.width = `${Math.max(0, rect.width)}px`;
+      treeScrollbarProxyInner.style.width = `${contentWidth}px`;
+      if (!syncingTreeScroll && Math.abs(treeScrollbarProxy.scrollLeft - treeShell.scrollLeft) > 1) {
+        syncingProxyScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingProxyScroll = false;
+      }
+    }
+    function resetTreeScrollToStart() {
+      document.querySelectorAll(".tree-shell").forEach((shell) => {
+        shell.scrollLeft = 0;
+      });
+      if (treeScrollbarProxy) {
+        treeScrollbarProxy.scrollLeft = 0;
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setBranchOpen(control, openState, syncState = true) {
+      if (!control) {
+        return;
+      }
+      const targetId = control.dataset.branchTarget;
+      const target = targetId ? document.getElementById(targetId) : null;
+      if (!target) {
+        return;
+      }
+      const shell = control.closest(".node-shell");
+      const marker = shell ? getNodeBranchMarker(shell) : null;
+      const summary = shell ? getNodeBranchToggle(shell) : null;
+      if (openState) {
+        target.removeAttribute("hidden");
+      } else {
+        hideCollapsible(target);
+      }
+      if (marker) {
+        marker.dataset.branchExpanded = openState ? "true" : "false";
+        marker.textContent = openState ? "-" : "+";
+      }
+      if (summary) {
+        summary.setAttribute("aria-expanded", openState ? "true" : "false");
+      }
+      if (syncState) {
+        syncAllBranchesToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setDetailOpen(shell, openState, syncState = true) {
+      const panel = getNodeDetailPanel(shell);
+      const toggle = getNodeDetailToggle(shell);
+      if (!panel) {
+        return;
+      }
+      if (openState) {
+        panel.removeAttribute("hidden");
+      } else {
+        hideCollapsible(panel);
+      }
+      if (toggle) {
+        toggle.dataset.detailExpanded = openState ? "true" : "false";
+      }
+      if (syncState) {
+        syncAllDetailsToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setAllBranches(openState) {
+      document.querySelectorAll(".tree-toggle-marker[data-branch-target]").forEach((marker) => { setBranchOpen(marker, openState, false); });
+      syncAllBranchesToggle();
+    }
+    function setAllNodeDetails(openState) {
+      document.querySelectorAll(".node-shell").forEach((shell) => {
+        if (getNodeDetailPanel(shell)) {
+          setDetailOpen(shell, openState, false);
+        }
+      });
+      syncAllDetailsToggle();
+    }
+    function openParents(target) {
+      let current = target;
+      while (current) {
+        if (current.classList && current.classList.contains("node-branch")) {
+          const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${current.id}"]`);
+          setBranchOpen(marker, true);
+        }
+        current = current.parentElement;
+      }
+    }
+    function highlightJumpTarget(target) {
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      if (!shell) {
+        return;
+      }
+      const existingTimer = jumpHighlightTimers.get(shell);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+      shell.classList.add("jump-highlight");
+      const timeoutId = window.setTimeout(() => {
+        shell.classList.remove("jump-highlight");
+        jumpHighlightTimers.delete(shell);
+      }, 5000);
+      jumpHighlightTimers.set(shell, timeoutId);
+    }
+    function getStickyScrollOffset() {
+      const toolbar = document.querySelector(".toolbar");
+      if (!toolbar) {
+        return 8;
+      }
+      return Math.ceil(toolbar.getBoundingClientRect().height) + 8;
+    }
+    function scrollNodeTargetIntoView(target) {
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      const scrollTarget = shell || target;
+      if (!scrollTarget) {
+        return;
+      }
+      const offset = getStickyScrollOffset();
+      const top = window.scrollY + scrollTarget.getBoundingClientRect().top - offset;
+      window.scrollTo({ top: Math.max(0, top), behavior: "auto" });
+    }
+    function revealAndFocusNodeTarget(target, href = "") {
+      if (!target) {
+        return;
+      }
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      openParents(shell || target);
+      if (href) {
+        history.replaceState(null, "", href);
+      }
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollNodeTargetIntoView(target);
+          highlightJumpTarget(target);
+          updateTreeScrollbarProxy();
+        });
+      });
+    }
+    if (treeShell && treeScrollbarProxy) {
+      treeShell.addEventListener("scroll", () => {
+        if (syncingProxyScroll) {
+          return;
+        }
+        syncingTreeScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingTreeScroll = false;
+      });
+      treeScrollbarProxy.addEventListener("scroll", () => {
+        if (syncingTreeScroll) {
+          return;
+        }
+        syncingProxyScroll = true;
+        treeShell.scrollLeft = treeScrollbarProxy.scrollLeft;
+        syncingProxyScroll = false;
+      });
+    }
+    document.addEventListener("click", (event) => {
+      const allBranchesButton = event.target.closest("button[data-toggle-branches='all']");
+      if (allBranchesButton) {
+        const isOpen = allBranchesButton.dataset.active === "true";
+        setAllBranches(!isOpen);
+        return;
+      }
+      const allDetailsButton = event.target.closest("button[data-toggle-details='all']");
+      if (allDetailsButton) {
+        const isOpen = allDetailsButton.dataset.active === "true";
+        setAllNodeDetails(!isOpen);
+        return;
+      }
+      const button = event.target.closest("button[data-toggle-class]");
+      if (button) {
+        const active = document.body.classList.toggle(button.dataset.toggleClass);
+        setToggleButtonState(button, active);
+        return;
+      }
+      const link = event.target.closest("a[href^='#node-']");
+      if (link) {
+        event.preventDefault();
+        const target = document.querySelector(link.getAttribute("href"));
+        if (target) {
+          revealAndFocusNodeTarget(target, link.getAttribute("href"));
+        }
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (summary) {
+        const branchTarget = summary.dataset.branchTarget;
+        const shell = summary.closest(".node-shell");
+        if (!shell) {
+          return;
+        }
+        if (!branchTarget) {
+          if (summary.dataset.detailTarget) {
+            const isOpen = summary.dataset.detailExpanded === "true";
+            setDetailOpen(shell, !isOpen);
+          }
+          return;
+        }
+        const existingTimer = nodeSummaryClickTimers.get(summary);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+          nodeSummaryClickTimers.delete(summary);
+          event.preventDefault();
+          const isOpen = summary.dataset.detailExpanded === "true";
+          setDetailOpen(shell, !isOpen);
+          return;
+        }
+        const timerId = window.setTimeout(() => {
+          nodeSummaryClickTimers.delete(summary);
+          const isOpen = summary.getAttribute("aria-expanded") === "true";
+          setBranchOpen(summary, !isOpen);
+          if (isOpen) {
+            const panel = getNodeDetailPanel(shell);
+            if (panel && !panel.hasAttribute("hidden")) {
+              setDetailOpen(shell, false);
+            }
+          }
+        }, NODE_DETAIL_DOUBLE_CLICK_MS);
+        nodeSummaryClickTimers.set(summary, timerId);
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (!summary) {
+        return;
+      }
+      event.preventDefault();
+      const shell = summary.closest(".node-shell");
+      if (!shell) {
+        return;
+      }
+      if (summary.dataset.branchTarget) {
+        const isOpen = summary.getAttribute("aria-expanded") === "true";
+        setBranchOpen(summary, !isOpen);
+        if (isOpen) {
+          const panel = getNodeDetailPanel(shell);
+          if (panel && !panel.hasAttribute("hidden")) {
+            setDetailOpen(shell, false);
+          }
+        }
+        return;
+      }
+      if (summary.dataset.detailTarget) {
+        const isOpen = summary.dataset.detailExpanded === "true";
+        setDetailOpen(shell, !isOpen);
+      }
+    });
+    document.addEventListener("beforematch", (event) => {
+      const branch = event.target.closest(".node-branch");
+      if (branch && branch.id) {
+        const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${branch.id}"]`);
+        setBranchOpen(marker, true);
+      }
+      const panel = event.target.closest(".node-detail-panel");
+      if (panel) {
+        const shell = panel.closest(".node-shell");
+        if (shell) {
+          openParents(shell);
+          setDetailOpen(shell, true);
+        }
+      }
+    });
+    document.querySelectorAll("button[data-toggle-class]").forEach((button) => {
+      const active = document.body.classList.contains(button.dataset.toggleClass);
+      setToggleButtonState(button, active);
+    });
+    if (window.ResizeObserver && treeShell) {
+      const observer = new ResizeObserver(() => {
+        updateTreeScrollbarProxy();
+      });
+      observer.observe(treeShell);
+      if (treeShellInner) {
+        observer.observe(treeShellInner);
+      }
+    }
+    window.addEventListener("resize", updateTreeScrollbarProxy);
+    window.addEventListener("scroll", updateTreeScrollbarProxy, { passive: true });
+    window.addEventListener("pageshow", () => {
+      if (window.location.hash) {
+        updateTreeScrollbarProxy();
+        return;
+      }
+      resetTreeScrollToStart();
+      window.requestAnimationFrame(() => {
+        resetTreeScrollToStart();
+      });
+      window.setTimeout(() => {
+        resetTreeScrollToStart();
+      }, 0);
+    });
+    syncAllBranchesToggle();
+    document.querySelectorAll("button[data-toggle-details='all']").forEach((button) => {
+      const active = button.dataset.active === "true";
+      setToggleButtonState(button, active);
+    });
+    updateTreeScrollbarProxy();
+    if (window.location.hash) {
+      const target = document.querySelector(window.location.hash);
+      if (target) {
+        revealAndFocusNodeTarget(target, window.location.hash);
+      }
+    }
+  </script>
+  <script data-search-target-line>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const targetLine = params.get("line");
+      const targetHash = window.location.hash;
+
+      if (!targetLine || !targetHash) {
+        return;
+      }
+
+      const targetShell = document.querySelector(targetHash);
+      if (!targetShell) {
+        return;
+      }
+
+      if (typeof openParents === "function") {
+        openParents(targetShell);
+      }
+      if (typeof setDetailOpen === "function") {
+        setDetailOpen(targetShell, true);
+      }
+
+      const normalize = (value) =>
+        (value || "")
+          .toLowerCase()
+          .normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      const normalizedTargetLine = normalize(targetLine);
+      if (!normalizedTargetLine) {
+        return;
+      }
+
+      const lineElements = Array.from(targetShell.querySelectorAll(".text-line"));
+      const matchingLine = lineElements.find((element) => {
+        const lineText = normalize(element.textContent);
+        return (
+          lineText === normalizedTargetLine ||
+          lineText.includes(normalizedTargetLine) ||
+          normalizedTargetLine.includes(lineText)
+        );
+      });
+
+      if (!matchingLine) {
+        return;
+      }
+
+      matchingLine.classList.add("search-target-line");
+      requestAnimationFrame(() => {
+        matchingLine.scrollIntoView({ block: "center" });
+      });
+    })();
+  </script>
+</body>
+</html>

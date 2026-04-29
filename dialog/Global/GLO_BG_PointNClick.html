@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GLO_BG_PointNClick</title>
+  <script>
+    (function () {
+      const probe = document.createElement("div");
+      const supportsUntilFound = "onbeforematch" in probe;
+      document.documentElement.classList.add(
+        supportsUntilFound ? "supports-until-found" : "no-until-found"
+      );
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #182330;
+      --muted: #586477;
+      --line: #c7d2df;
+      --npc: #b91c1c;
+      --player: #15803d;
+      --system: #2563eb;
+      --rule: #2f6f44;
+      --tag: #0f766e;
+      --check: #7c3aed;
+      --set: #ea580c;
+      --roll: #6d28d9;
+      --approval: #0f766e;
+      --jump: #155eef;
+      --context: #475467;
+      --surface: #f3f6fa;
+      --surface-active: #e6edf5;
+      --surface-hover: #edf3f9;
+      --detail-surface: #e3ebf4;
+      --detail-border: #b4c2d4;
+      --focus: #90a4bc;
+      --highlight: #d9e5f5;
+      --scrollbar-proxy-bg: rgba(255, 255, 255, 0.94);
+      --mono: Consolas, "SFMono-Regular", Menlo, monospace;
+      --sans: Georgia, "Palatino Linotype", serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #fff;
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.35;
+      overflow-x: hidden;
+    }
+    a { color: var(--jump); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: none;
+      padding: 0;
+      border-radius: 0;
+    }
+    .page {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 0.55rem 0.9rem 1.8rem;
+      overflow-x: hidden;
+    }
+    .hero {
+      margin-bottom: 0.55rem;
+    }
+    .hero h1 {
+      margin: 0 0 0.2rem;
+      font-size: 1.4rem;
+      line-height: 1.15;
+    }
+    .source {
+      color: var(--muted);
+      font-size: 0.9rem;
+      word-break: break-all;
+      margin-bottom: 0.2rem;
+    }
+    .source-label {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.3rem;
+    }
+    .summary-line {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 0.35rem;
+    }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.45rem;
+      margin-bottom: 0.45rem;
+      padding: 0.35rem 0;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      overflow: visible;
+    }
+    .toolbar-scroll {
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: calc(100% - 7rem);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+    }
+    .controls {
+      display: inline-flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0.45rem;
+      white-space: nowrap;
+      font-size: 0.9rem;
+      min-width: max-content;
+      overflow: visible;
+    }
+    .controls button,
+    .controls summary,
+    .speaker-map > summary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 1.85rem;
+      padding: 0.12rem 0.5rem;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: var(--surface);
+      color: var(--jump);
+      font: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      list-style: none;
+      user-select: none;
+    }
+    .controls button.is-active,
+    .controls details[open] > summary,
+    .speaker-map[open] > summary {
+      background: var(--surface-active);
+      border-color: var(--focus);
+    }
+    .controls button:hover,
+    .controls summary:hover,
+    .speaker-map > summary:hover {
+      background: var(--surface-hover);
+      text-decoration: none;
+    }
+    .controls summary:focus,
+    .controls button:focus,
+    .speaker-map > summary:focus {
+      outline: 1px solid var(--focus);
+      outline-offset: 1px;
+    }
+    .speaker-map {
+      flex: 0 0 auto;
+      position: relative;
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .speaker-map summary,
+    .meta-block summary {
+      cursor: pointer;
+      color: var(--jump);
+      list-style: none;
+    }
+    .speaker-map summary::-webkit-details-marker,
+    .meta-block summary::-webkit-details-marker {
+      display: none;
+    }
+    .speaker-map[open] ul {
+      display: block;
+    }
+    .speaker-map ul {
+      display: none;
+      list-style: none;
+      margin: 0.3rem 0 0;
+      padding: 0.45rem 0.6rem;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 0.2rem);
+      min-width: 20rem;
+      max-width: min(34rem, calc(100vw - 2rem));
+      max-height: 24rem;
+      overflow: auto;
+      background: #fbfcfe;
+      border: 1px solid var(--line);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+      z-index: 30;
+    }
+    .speaker-map li + li {
+      margin-top: 0.1rem;
+    }
+    .speaker-index {
+      display: inline-block;
+      min-width: 2rem;
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 600;
+    }
+    .speaker-name {
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.25rem;
+    }
+    .inline-meta, .line-meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .tree-shell {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: visible;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-shell-inner {
+      width: max-content;
+      min-width: 100%;
+    }
+    .tree-scrollbar-proxy {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 1.1rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      background: var(--scrollbar-proxy-bg);
+      border-top: 1px solid var(--line);
+      z-index: 40;
+      scrollbar-gutter: stable both-edges;
+    }
+    .tree-scrollbar-proxy[hidden] {
+      display: none;
+    }
+    .tree-scrollbar-proxy-inner {
+      height: 1px;
+    }
+    .orphan-section {
+      width: auto;
+      min-width: 0;
+      margin-top: 1rem;
+      padding-top: 0.55rem;
+      border-top: 1px dotted var(--line);
+    }
+    .orphan-section h2 {
+      margin: 0 0 0.15rem;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+    .orphan-note {
+      margin: 0 0 0.35rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .root-list, .child-list {
+      list-style: none;
+      margin: 0;
+      padding-left: 0;
+      width: auto;
+      min-width: 0;
+    }
+    .child-list {
+      margin-left: 1.1rem;
+      padding-left: 0.85rem;
+      border-left: 1px dotted var(--line);
+    }
+    .node-item {
+      margin: 0.18rem 0;
+    }
+    details.node {
+      margin: 0;
+    }
+    details.node:target > summary .node-line {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    .node-leaf:target {
+      background: rgba(21, 94, 239, 0.08);
+      border-radius: 6px;
+    }
+    summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 0;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    summary::-webkit-details-marker {
+      display: none;
+    }
+    details.node > summary::before {
+      content: "▸";
+      display: inline-block;
+      width: 0.9rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      vertical-align: top;
+      padding-top: 0.12rem;
+    }
+    details.node[open] > summary::before {
+      content: "▾";
+    }
+    details.node.no-children > summary::before {
+      content: "•";
+    }
+    .node-line {
+      display: inline;
+      padding: 0.06rem 0.18rem;
+    }
+    .node-leaf {
+      display: inline-block;
+      padding: 0.06rem 0.18rem;
+      border-radius: 6px;
+    }
+    details.node > summary::before {
+      content: "+";
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    details.node[open] > summary::before {
+      content: "-";
+    }
+    details.node.no-children > summary::before {
+      content: ".";
+    }
+    .node-number {
+      font-family: var(--mono);
+      color: var(--jump);
+      font-weight: 700;
+    }
+    .speaker-label {
+      font-weight: 700;
+      margin-left: 0.2rem;
+    }
+    .speaker-label.npc { color: var(--npc); }
+    .speaker-label.player { color: var(--player); }
+    .speaker-label.system { color: var(--system); }
+    .dialog {
+      color: var(--ink);
+      margin-left: 0.2rem;
+    }
+    .node-kind {
+      color: var(--system);
+      margin-left: 0.2rem;
+    }
+    .ruletag {
+      color: var(--rule);
+      margin-left: 0.35rem;
+    }
+    .tags {
+      color: var(--tag);
+      margin-left: 0.35rem;
+    }
+    .checkflag {
+      color: var(--check);
+      margin-left: 0.35rem;
+    }
+    .setflag {
+      color: var(--set);
+      margin-left: 0.35rem;
+    }
+    .rolls {
+      color: var(--roll);
+      margin-left: 0.35rem;
+    }
+    .approval {
+      color: var(--approval);
+      margin-left: 0.35rem;
+    }
+    .nodelink {
+      color: var(--jump);
+      margin-left: 0.35rem;
+    }
+    .context {
+      color: var(--context);
+      margin-left: 0.3rem;
+      cursor: help;
+    }
+    .end {
+      color: #8b1e1e;
+      margin-left: 0.35rem;
+    }
+    .node-shell:target,
+    .node-leaf:target {
+      background: none;
+      border-radius: 0;
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-shell {
+      display: block;
+    }
+    .node-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.32rem;
+      width: max-content;
+      min-width: 100%;
+      transition: background-color 0.18s ease;
+    }
+    .node-shell.jump-highlight > .node-row {
+      background: var(--highlight);
+    }
+    .node-content {
+      min-width: 0;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker,
+    .tree-spacer {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 0.95rem;
+      height: 0.95rem;
+      margin-top: 0.08rem;
+      flex: 0 0 auto;
+    }
+    .tree-toggle-marker {
+      border: none;
+      background: none;
+      color: var(--muted);
+      padding: 0;
+      font: inherit;
+      font-weight: 800;
+      font-size: 1.18rem;
+      line-height: 1;
+      user-select: none;
+    }
+    .tree-spacer {
+      border: none;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .node-branch[hidden] {
+      display: none;
+    }
+    html.supports-until-found .node-branch[hidden='until-found'] {
+      display: block;
+    }
+    .repeat {
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+    .node-summary {
+      display: block;
+      cursor: default;
+    }
+    .node-summary.is-interactive {
+      cursor: pointer;
+    }
+    .node-summary.is-interactive:focus-visible {
+      outline: 1px dotted var(--line);
+      outline-offset: 2px;
+    }
+    .node-main-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.35rem;
+    }
+    .node-main {
+      display: block;
+      flex: 1 1 auto;
+      min-width: 0;
+      white-space: normal;
+      line-height: 1.28;
+      overflow-wrap: anywhere;
+    }
+    .node-leaf {
+      display: block;
+      border-radius: 0;
+    }
+    .node-number {
+      font-weight: 600;
+    }
+    .speaker-label {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind {
+      margin-left: 0;
+    }
+    .dialog,
+    .node-kind,
+    .nodelink {
+      overflow-wrap: anywhere;
+    }
+    .nodelink,
+    .end {
+      margin-left: 0;
+    }
+    .node-previews {
+      display: block;
+      margin: 0.12rem 0 0 1.1rem;
+      font-size: 0.88rem;
+      white-space: normal;
+      line-height: 1.28;
+    }
+    .preview-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.12rem 0.45rem;
+    }
+    .preview-token {
+      display: inline;
+      overflow-wrap: anywhere;
+    }
+    .preview-token.tag {
+      color: var(--tag);
+    }
+    .preview-token.rule {
+      color: var(--rule);
+    }
+    .preview-token.check {
+      color: var(--check);
+    }
+    .preview-token.set {
+      color: var(--set);
+    }
+    .preview-note {
+      display: block;
+      margin-top: 0.08rem;
+      color: var(--context);
+      overflow-wrap: anywhere;
+      font-weight: 700;
+    }
+    .preview-note-label {
+      color: var(--context);
+      font-weight: 700;
+    }
+    .preview-note-value {
+      color: #4f463f;
+      font-weight: 600;
+    }
+    .signal-line {
+      display: block;
+      margin: 0.14rem 0 0.2rem;
+    }
+    .signal-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem;
+    }
+    .signal-label {
+      font-weight: 700;
+    }
+    .signal-scope {
+      color: var(--muted);
+    }
+    .tag-line, .tag-line .signal-label { color: var(--tag); }
+    .rule-line, .rule-line .signal-label { color: var(--rule); }
+    .checkflag-line, .checkflag-line .signal-label { color: var(--check); }
+    .setflag-line, .setflag-line .signal-label { color: var(--set); }
+    .roll-line, .roll-line .signal-label { color: var(--roll); }
+    .approval-line, .approval-line .signal-label { color: var(--approval); }
+    .context-line, .context-line .signal-label { color: var(--context); }
+    .context-line .signal-heading {
+      font-weight: 700;
+    }
+    .context-line .signal-item {
+      color: #4f463f;
+    }
+    .signal-values {
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .signal-list {
+      list-style: none;
+      margin: 0.06rem 0 0 0.9rem;
+      padding: 0;
+    }
+    .signal-item {
+      margin: 0.1rem 0;
+      overflow-wrap: anywhere;
+    }
+    .signal-item::before {
+      content: "- ";
+      color: var(--muted);
+    }
+    .signal-body {
+      display: block;
+      margin: 0.06rem 0 0 0.9rem;
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .asset-name {
+      color: var(--ink);
+    }
+    .asset-id {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.92em;
+      overflow-wrap: anywhere;
+    }
+    .asset-state {
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .node-detail-panel {
+      margin: 0.08rem 0 0.18rem 1.1rem;
+      padding: 0.35rem 0.5rem;
+      border: 1px solid var(--detail-border);
+      background: var(--detail-surface);
+      border-radius: 0;
+      display: block;
+      gap: 0;
+      max-width: none;
+    }
+    .node-detail-panel[hidden] {
+      display: none;
+    }
+    html.supports-until-found .node-detail-panel[hidden='until-found'] {
+      display: block;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: none;
+    }
+    .section {
+      margin: 0.16rem 0;
+      padding: 0;
+      background: none;
+      border: none;
+    }
+    .section h3 {
+      margin: 0 0 0.22rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .node-detail-panel > .section + .section {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-block + .text-block {
+      margin-top: 0.35rem;
+      padding-top: 0.35rem;
+      border-top: 1px dotted var(--line);
+    }
+    .text-line {
+      font-size: 0.96rem;
+      margin-bottom: 0.15rem;
+    }
+    .text-line {
+      margin: 0.08rem 0;
+      font-size: inherit;
+      overflow-wrap: anywhere;
+    }
+    .badge-row, .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .badge, .meta-item {
+      display: block;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+    }
+    .meta-items {
+      margin: 0.12rem 0 0 0.85rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+      white-space: normal;
+    }
+    .meta-list {
+      display: block;
+      gap: 0;
+    }
+    .meta-item {
+      display: block;
+      margin: 0.06rem 0;
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 0;
+      font-size: 0.9rem;
+      overflow-wrap: anywhere;
+    }
+    .meta-item strong {
+      color: var(--ink);
+    }
+    .badge.flags { color: var(--check); }
+    .badge.tags { color: var(--tag); }
+    .flag-groups {
+      display: block;
+      gap: 0;
+    }
+    .flag-group-type {
+      display: inline-block;
+      color: var(--muted);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.15rem;
+    }
+    .rule-tree, .rule-tree ul {
+      margin: 0;
+      padding-left: 1rem;
+    }
+    .body-hide-flags .section-flags,
+    .body-hide-rules .section-rules,
+    .body-hide-details .section-metadata,
+    .body-hide-context .preview-note,
+    .body-hide-context .context-line,
+    .body-hide-context .node-line .context {
+      display: none;
+    }
+    .body-hide-flags .node-line .checkflag,
+    .body-hide-flags .node-line .setflag,
+    .body-hide-rules .node-line .ruletag {
+      display: none;
+    }
+    .body-hide-flags .checkflag-line,
+    .body-hide-flags .setflag-line {
+      display: none;
+    }
+    .body-hide-flags .preview-token.check,
+    .body-hide-flags .preview-token.set {
+      display: none;
+    }
+    .body-hide-context .context-line {
+      display: none;
+    }
+    .body-hide-numbers .node-number {
+      display: none;
+    }
+    .missing, .cycle {
+      padding: 0.2rem 0.35rem;
+      color: #8b1e1e;
+      background: rgba(139, 30, 30, 0.08);
+      border-radius: 6px;
+      display: inline-block;
+    }
+    .missing, .cycle {
+      padding: 0;
+      background: none;
+      border-radius: 0;
+      display: block;
+      overflow-wrap: anywhere;
+    }
+    @media (max-width: 920px) {
+      .page {
+        padding: 0.45rem 0.5rem 0.9rem;
+      }
+      .tree-shell {
+        padding: 0;
+      }
+    }
+  </style>
+  <style data-search-target-highlight>
+    .node-shell:target {
+      outline: 3px solid #c68b00;
+      background: #fff7db;
+      scroll-margin-top: 1rem;
+    }
+    .text-line.search-target-line {
+      background: #fff0a6;
+      border-radius: 2px;
+      padding: 0 0.08rem;
+    }
+  </style>
+</head>
+  <body class="body-hide-numbers">
+  <div class="page">
+    <header class="hero">
+      <h1>GLO_BG_PointNClick</h1>
+      <div class="source"><span class="source-label">Start Dialog UUID:</span><strong><code>79aac7d2-5499-69db-500c-edda84fdb4ac</code></strong></div><div class="source"><span class="source-label">Timeline File UUID:</span><strong><code>7e7cf013-b2c3-eed6-a78e-60d681968868</code></strong></div><div class="source"><span class="source-label">Dialog File UUID:</span><strong><code>7dd00d8a-d051-fced-f580-1f8650f0806b</code></strong></div><div class="source"><span class="source-label">Dialog:</span>Mods\Gustav\Story\DialogsBinary\Global\GLO_BG_PointNClick.lsf.lsx</div><div class="source"><span class="source-label">Timeline:</span>Public\Gustav\Timeline\Generated\GLO_BG_PointNClick.lsf.lsx</div><div class="source"><span class="source-label">Scene:</span>Public\Gustav\Timeline\Generated\GLO_BG_PointNClick_Scene.lsf.lsx</div>
+      <div class="summary-line">
+        category=Generic NPC Dialog | nodes=22 | roots=4
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-scroll">
+          <div class="controls">
+            <button type="button" data-toggle-branches="all" data-hide-label="Expand all" data-show-label="Collapse all" data-active="false">Expand all</button>
+            <button type="button" data-toggle-class="body-hide-flags" data-hide-label="Hide flags" data-show-label="Show flags">Hide flags</button>
+            <button type="button" data-toggle-details="all" data-hide-label="Show details" data-show-label="Hide details" data-active="false">Show details</button>
+            <button type="button" data-toggle-class="body-hide-context" data-hide-label="Hide notes" data-show-label="Show notes">Hide notes</button>
+            <button type="button" data-toggle-class="body-hide-numbers" data-hide-label="Hide node numbers" data-show-label="Show node numbers">Hide node numbers</button>
+          </div>
+        </div>
+        <details class="speaker-map">
+          <summary>Speakers</summary>
+          <ul></ul>
+        </details>
+      </div>
+    </header>
+    <section class="tree-shell">
+      <div class="tree-shell-inner">
+        <ul class="root-list"><li class='node-item'><div class='node-shell' id='node-6'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-6' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>6.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'> |PortraitClick ShadowHeart Normal v1 |</span></span></span></span><div class='node-detail-panel' id='details-6' hidden='until-found'><section class='section'><h3>Text</h3><div class='text-block'><div class='text-line'> |PortraitClick ShadowHeart Normal v1 |</div><div class='line-meta'><code>hd86c4a34g570bg4470gbbf0g0b1d1675d143</code> | <code>26b3ee94-8cd3-8971-7eae-61537f661c72</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Normal v2 |</div><div class='line-meta'><code>hcb089a26g68a5g4e07g8c24g23e56d613c31</code> | <code>bbe42e55-c37f-f4c6-9fea-88bb55e47ea5</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Normal v3 |</div><div class='line-meta'><code>h034fbbfag05d7g408cg88f3g4ffeacad6a68</code> | <code>4d1c37b2-42eb-b739-bc7c-9b8d84d5e476</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Normal v4 |</div><div class='line-meta'><code>h872b422eg9bf9g4786ga83dga1e044092e4c</code> | <code>b2fcd9a9-6d0b-7ab3-f53c-12f49ec85206</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Normal v5 |</div><div class='line-meta'><code>hcbabfd64g9584g4292gbf8fg4ff500fdefbf</code> | <code>324febe9-7c43-dfc8-369d-e6c42edc966d</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Normal v6 |</div><div class='line-meta'><code>h5321bc28g319dg4b7bg883age6b5cba86a54</code> | <code>c4445a25-29ca-7a8c-da83-f4037a17e060</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Normal v7 |</div><div class='line-meta'><code>ha68fc9f4g31dfg462bg8821g6bcc5e614576</code> | <code>46738ecd-6a0d-52e0-6bf2-ccf583bd65db</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Normal v8 |</div><div class='line-meta'><code>ha6ab215eg6e5bg42d0g97a9g6adfd763475f</code> | <code>ae4dd075-97af-414d-a7ab-f17088cf2bac</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Normal v9 |</div><div class='line-meta'><code>h6d5fe88agd0b5g4b92gbcdag5022caa43025</code> | <code>db4f6286-2999-31d5-8191-19e800c204dc</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Normal v10 |</div><div class='line-meta'><code>hd2dd1b09g79c3g4b11ga1c1gfdc89414edb2</code> | <code>23504423-5b6c-41c7-7b53-ab759ad304a5</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Normal v11 |</div><div class='line-meta'><code>h1c03c8b1g7413g46a7gb394gfb55ca383b83</code> | <code>a9b2b688-4fa4-08dd-f014-2caf479828ea</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Normal v12 |</div><div class='line-meta'><code>hf535f512g3632g4dbdgb6eeg77cb72189145</code> | <code>e55478e3-f060-45ce-aac8-beb3921b9e20</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Normal v13 |</div><div class='line-meta'><code>h84c42f61gb609g46ddg9d8dg52621eb8a050</code> | <code>9cc0d970-3b0f-38bb-ac5e-f5cce70e3c15</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Normal v14 |</div><div class='line-meta'><code>h2c974030gee69g4fa7g8608g3117bdb3ea56</code> | <code>6a76bcd7-26e4-fc74-94ab-77256be5770f</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Normal v15 |</div><div class='line-meta'><code>h00a38000g414fg48e9ga406g808ead180089</code> | <code>13c5c9c8-fd00-32f3-67ba-d8524e2b59fe</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Normal v16 |</div><div class='line-meta'><code>hea9ce5b0gb163g4e88g98a2g18f3bd809e4d</code> | <code>a04debbc-0dbb-7eff-b289-6587366be1b9</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Normal v17 |</div><div class='line-meta'><code>hc251fd90g1803g47c1gb4e8g43d6e530722f</code> | <code>12ffd143-51a3-5e93-25c8-57cad2394454</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Normal v18 |</div><div class='line-meta'><code>hc459b6ceg6900g4b81gb966g9d8b6a3af9be</code> | <code>d971f05e-8c1c-1346-f609-770110519ea6</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 5eee5745-1fd3-af60-44a8-2ec5bf261e7d</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Text 1 Handle</strong>: hd86c4a34g570bg4470gbbf0g0b1d1675d143</span><span class='meta-item'><strong>Text 1 UUID</strong>: 26b3ee94-8cd3-8971-7eae-61537f661c72</span><span class='meta-item'><strong>Text 2 Handle</strong>: hcb089a26g68a5g4e07g8c24g23e56d613c31</span><span class='meta-item'><strong>Text 2 UUID</strong>: bbe42e55-c37f-f4c6-9fea-88bb55e47ea5</span><span class='meta-item'><strong>Text 3 Handle</strong>: h034fbbfag05d7g408cg88f3g4ffeacad6a68</span><span class='meta-item'><strong>Text 3 UUID</strong>: 4d1c37b2-42eb-b739-bc7c-9b8d84d5e476</span><span class='meta-item'><strong>Text 4 Handle</strong>: h872b422eg9bf9g4786ga83dga1e044092e4c</span><span class='meta-item'><strong>Text 4 UUID</strong>: b2fcd9a9-6d0b-7ab3-f53c-12f49ec85206</span><span class='meta-item'><strong>Text 5 Handle</strong>: hcbabfd64g9584g4292gbf8fg4ff500fdefbf</span><span class='meta-item'><strong>Text 5 UUID</strong>: 324febe9-7c43-dfc8-369d-e6c42edc966d</span><span class='meta-item'><strong>Text 6 Handle</strong>: h5321bc28g319dg4b7bg883age6b5cba86a54</span><span class='meta-item'><strong>Text 6 UUID</strong>: c4445a25-29ca-7a8c-da83-f4037a17e060</span><span class='meta-item'><strong>Text 7 Handle</strong>: ha68fc9f4g31dfg462bg8821g6bcc5e614576</span><span class='meta-item'><strong>Text 7 UUID</strong>: 46738ecd-6a0d-52e0-6bf2-ccf583bd65db</span><span class='meta-item'><strong>Text 8 Handle</strong>: ha6ab215eg6e5bg42d0g97a9g6adfd763475f</span><span class='meta-item'><strong>Text 8 UUID</strong>: ae4dd075-97af-414d-a7ab-f17088cf2bac</span><span class='meta-item'><strong>Text 9 Handle</strong>: h6d5fe88agd0b5g4b92gbcdag5022caa43025</span><span class='meta-item'><strong>Text 9 UUID</strong>: db4f6286-2999-31d5-8191-19e800c204dc</span><span class='meta-item'><strong>Text 10 Handle</strong>: hd2dd1b09g79c3g4b11ga1c1gfdc89414edb2</span><span class='meta-item'><strong>Text 10 UUID</strong>: 23504423-5b6c-41c7-7b53-ab759ad304a5</span><span class='meta-item'><strong>Text 11 Handle</strong>: h1c03c8b1g7413g46a7gb394gfb55ca383b83</span><span class='meta-item'><strong>Text 11 UUID</strong>: a9b2b688-4fa4-08dd-f014-2caf479828ea</span><span class='meta-item'><strong>Text 12 Handle</strong>: hf535f512g3632g4dbdgb6eeg77cb72189145</span><span class='meta-item'><strong>Text 12 UUID</strong>: e55478e3-f060-45ce-aac8-beb3921b9e20</span><span class='meta-item'><strong>Text 13 Handle</strong>: h84c42f61gb609g46ddg9d8dg52621eb8a050</span><span class='meta-item'><strong>Text 13 UUID</strong>: 9cc0d970-3b0f-38bb-ac5e-f5cce70e3c15</span><span class='meta-item'><strong>Text 14 Handle</strong>: h2c974030gee69g4fa7g8608g3117bdb3ea56</span><span class='meta-item'><strong>Text 14 UUID</strong>: 6a76bcd7-26e4-fc74-94ab-77256be5770f</span><span class='meta-item'><strong>Text 15 Handle</strong>: h00a38000g414fg48e9ga406g808ead180089</span><span class='meta-item'><strong>Text 15 UUID</strong>: 13c5c9c8-fd00-32f3-67ba-d8524e2b59fe</span><span class='meta-item'><strong>Text 16 Handle</strong>: hea9ce5b0gb163g4e88g98a2g18f3bd809e4d</span><span class='meta-item'><strong>Text 16 UUID</strong>: a04debbc-0dbb-7eff-b289-6587366be1b9</span><span class='meta-item'><strong>Text 17 Handle</strong>: hc251fd90g1803g47c1gb4e8g43d6e530722f</span><span class='meta-item'><strong>Text 17 UUID</strong>: 12ffd143-51a3-5e93-25c8-57cad2394454</span><span class='meta-item'><strong>Text 18 Handle</strong>: hc459b6ceg6900g4b81gb966g9d8b6a3af9be</span><span class='meta-item'><strong>Text 18 UUID</strong>: d971f05e-8c1c-1346-f609-770110519ea6</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 2</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 5eee5745-1fd3-af60-44a8-2ec5bf261e7d</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-18'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-18' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>18.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'> |PortraitClick ShadowHeart Sneaking v1 |</span></span></span></span><div class='node-detail-panel' id='details-18' hidden='until-found'><section class='section'><h3>Text</h3><div class='text-block'><div class='text-line'> |PortraitClick ShadowHeart Sneaking v1 |</div><div class='line-meta'><code>h5118d6a4g45b7g4fdbg86e1g9e008c180183</code> | <code>6035dfaf-1d5b-d4cd-6eaa-231437e1b628</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Sneaking v2 |</div><div class='line-meta'><code>h7bc10bfdg4a10g41a6g841bgc127f7444e38</code> | <code>92eb6836-0aa8-aefb-5200-e8c40e2f9d56</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Sneaking v3 |</div><div class='line-meta'><code>hc7b078d3gb480g4a1agb897g7a4676fab9e4</code> | <code>aaf604fe-f548-8dfb-0b87-3b6eab7358ea</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Sneaking v4 |</div><div class='line-meta'><code>h6d154197ga4d4g4f92g88fcgef7a73fdbc09</code> | <code>bf819b26-191a-4dba-db85-2d3e8bd5ae02</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Sneaking v5 |</div><div class='line-meta'><code>hfbbbdfc6gfac4g4049ga78bgdd03f1897383</code> | <code>ae5a6835-de2d-f3cf-33d0-00555c82db60</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Sneaking v6 |</div><div class='line-meta'><code>h4bdf7534g438bg4ec2g8b05gf9a2d0a2f3bf</code> | <code>71776002-0776-4b74-eb7a-7e542a8ca435</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Sneaking v7 |</div><div class='line-meta'><code>haa42d056gb2efg44c0g8b42ge2a014c52327</code> | <code>d9eee983-6ffc-c619-bcbb-598af6f35a3b</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Sneaking v8 |</div><div class='line-meta'><code>h36984fc1g0ce4g4a58g8d3aga41603e7ceea</code> | <code>32ee10ff-3026-b9f9-c095-068ae06f3b12</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Sneaking v9 |</div><div class='line-meta'><code>h6ed2ab27g87cdg47dcgb1cdgf280200ff800</code> | <code>49ff637a-de66-bd9b-544e-04ea0b7e6bd3</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Sneaking v10 |</div><div class='line-meta'><code>h31d288cag2dcdg46a0gab0dgad949f85c1b2</code> | <code>8fd8bb9f-647c-b96a-7f4d-d28e073148cd</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Sneaking v11 |</div><div class='line-meta'><code>hfb1ebd2agf5ecg4662g9ddagd8fb4fb97185</code> | <code>c277d57f-3a55-9d66-8530-f50944518b83</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Sneaking v12 |</div><div class='line-meta'><code>h6a03e84egbafbg422eg97afg42c67da4a9ca</code> | <code>69ef7fce-8409-06cf-15c6-4e44cd0739a6</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Sneaking v13 |</div><div class='line-meta'><code>hf309528egeeacg4feag94b9ga8d2f4eea5f7</code> | <code>3ff464f1-000d-123b-a798-6facb391894a</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Sneaking v14 |</div><div class='line-meta'><code>h8b44dffag42ebg498bga5d9g121d2ca64901</code> | <code>a58a6b53-4cd8-cfc1-cce2-1cdb7d9a7ed0</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Sneaking v15 |</div><div class='line-meta'><code>h64129698g3be0g4f8ag9520g5dc0d621183d</code> | <code>6228fa35-ae45-e58f-ea71-5f5e65f3ff6d</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Sneaking v16 |</div><div class='line-meta'><code>h3d6429bdg474cg4d0egb93eg7c81a86d7e9c</code> | <code>e03dd5d8-4eb7-e66c-7d93-e9d2d107017b</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Sneaking v17 |</div><div class='line-meta'><code>h1b7afdc4g5e56g4faag8042gcc154da091d0</code> | <code>fa16be73-5803-31ef-7d2b-ecb7eb1d08f8</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart Sneaking v18 |<br></div><div class='line-meta'><code>hed6b62dagf7c5g481cga244gba4a6bc2dc32</code> | <code>146b4cd7-898f-41ee-c18e-63247d76766e</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: e6da3073-dbfe-32ab-9b3c-125a1e1e47df</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h5118d6a4g45b7g4fdbg86e1g9e008c180183</span><span class='meta-item'><strong>Text 1 UUID</strong>: 6035dfaf-1d5b-d4cd-6eaa-231437e1b628</span><span class='meta-item'><strong>Text 2 Handle</strong>: h7bc10bfdg4a10g41a6g841bgc127f7444e38</span><span class='meta-item'><strong>Text 2 UUID</strong>: 92eb6836-0aa8-aefb-5200-e8c40e2f9d56</span><span class='meta-item'><strong>Text 3 Handle</strong>: hc7b078d3gb480g4a1agb897g7a4676fab9e4</span><span class='meta-item'><strong>Text 3 UUID</strong>: aaf604fe-f548-8dfb-0b87-3b6eab7358ea</span><span class='meta-item'><strong>Text 4 Handle</strong>: h6d154197ga4d4g4f92g88fcgef7a73fdbc09</span><span class='meta-item'><strong>Text 4 UUID</strong>: bf819b26-191a-4dba-db85-2d3e8bd5ae02</span><span class='meta-item'><strong>Text 5 Handle</strong>: hfbbbdfc6gfac4g4049ga78bgdd03f1897383</span><span class='meta-item'><strong>Text 5 UUID</strong>: ae5a6835-de2d-f3cf-33d0-00555c82db60</span><span class='meta-item'><strong>Text 6 Handle</strong>: h4bdf7534g438bg4ec2g8b05gf9a2d0a2f3bf</span><span class='meta-item'><strong>Text 6 UUID</strong>: 71776002-0776-4b74-eb7a-7e542a8ca435</span><span class='meta-item'><strong>Text 7 Handle</strong>: haa42d056gb2efg44c0g8b42ge2a014c52327</span><span class='meta-item'><strong>Text 7 UUID</strong>: d9eee983-6ffc-c619-bcbb-598af6f35a3b</span><span class='meta-item'><strong>Text 8 Handle</strong>: h36984fc1g0ce4g4a58g8d3aga41603e7ceea</span><span class='meta-item'><strong>Text 8 UUID</strong>: 32ee10ff-3026-b9f9-c095-068ae06f3b12</span><span class='meta-item'><strong>Text 9 Handle</strong>: h6ed2ab27g87cdg47dcgb1cdgf280200ff800</span><span class='meta-item'><strong>Text 9 UUID</strong>: 49ff637a-de66-bd9b-544e-04ea0b7e6bd3</span><span class='meta-item'><strong>Text 10 Handle</strong>: h31d288cag2dcdg46a0gab0dgad949f85c1b2</span><span class='meta-item'><strong>Text 10 UUID</strong>: 8fd8bb9f-647c-b96a-7f4d-d28e073148cd</span><span class='meta-item'><strong>Text 11 Handle</strong>: hfb1ebd2agf5ecg4662g9ddagd8fb4fb97185</span><span class='meta-item'><strong>Text 11 UUID</strong>: c277d57f-3a55-9d66-8530-f50944518b83</span><span class='meta-item'><strong>Text 12 Handle</strong>: h6a03e84egbafbg422eg97afg42c67da4a9ca</span><span class='meta-item'><strong>Text 12 UUID</strong>: 69ef7fce-8409-06cf-15c6-4e44cd0739a6</span><span class='meta-item'><strong>Text 13 Handle</strong>: hf309528egeeacg4feag94b9ga8d2f4eea5f7</span><span class='meta-item'><strong>Text 13 UUID</strong>: 3ff464f1-000d-123b-a798-6facb391894a</span><span class='meta-item'><strong>Text 14 Handle</strong>: h8b44dffag42ebg498bga5d9g121d2ca64901</span><span class='meta-item'><strong>Text 14 UUID</strong>: a58a6b53-4cd8-cfc1-cce2-1cdb7d9a7ed0</span><span class='meta-item'><strong>Text 15 Handle</strong>: h64129698g3be0g4f8ag9520g5dc0d621183d</span><span class='meta-item'><strong>Text 15 UUID</strong>: 6228fa35-ae45-e58f-ea71-5f5e65f3ff6d</span><span class='meta-item'><strong>Text 16 Handle</strong>: h3d6429bdg474cg4d0egb93eg7c81a86d7e9c</span><span class='meta-item'><strong>Text 16 UUID</strong>: e03dd5d8-4eb7-e66c-7d93-e9d2d107017b</span><span class='meta-item'><strong>Text 17 Handle</strong>: h1b7afdc4g5e56g4faag8042gcc154da091d0</span><span class='meta-item'><strong>Text 17 UUID</strong>: fa16be73-5803-31ef-7d2b-ecb7eb1d08f8</span><span class='meta-item'><strong>Text 18 Handle</strong>: hed6b62dagf7c5g481cga244gba4a6bc2dc32</span><span class='meta-item'><strong>Text 18 UUID</strong>: 146b4cd7-898f-41ee-c18e-63247d76766e</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 1</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: e6da3073-dbfe-32ab-9b3c-125a1e1e47df</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-22'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-22' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>22.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'> |MoveTo ShadowHeart Normal v1 |</span></span></span></span><div class='node-detail-panel' id='details-22' hidden='until-found'><section class='section'><h3>Text</h3><div class='text-block'><div class='text-line'> |MoveTo ShadowHeart Normal v1 |</div><div class='line-meta'><code>h6c0c6557g8f9eg477fga583g9d8a9767da38</code> | <code>d22a3d18-1af8-4a1f-15d8-0911c2e1eda7</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Normal v2 |<br></div><div class='line-meta'><code>h4df9af80gc60cg46e3gbb52g1ff0ad422470</code> | <code>a92078dd-10e5-8526-b8f5-29d58ff8b6a5</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Normal v3 |<br><br></div><div class='line-meta'><code>h54196357gf250g4a73gb9f2g52f0fac092aa</code> | <code>b8636326-567c-ec70-1b60-e4514534df80</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Normal v4 |</div><div class='line-meta'><code>hc9cee42cgb91cg4edegbe93gf29d055d9936</code> | <code>408665c3-60b0-6c46-2db8-50ad00c97910</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Normal v5 |</div><div class='line-meta'><code>h8910fad4gcd3bg479dg97e8gfe95252fac17</code> | <code>8b784fea-4565-5c76-d105-0084eddb10e5</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Normal v6 |</div><div class='line-meta'><code>h3317c628gddb3g44d1ga7adgea9be7197cea</code> | <code>fec5a85c-1066-424b-5862-7b2f0bf60e67</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Normal v7 |</div><div class='line-meta'><code>h773deb53g809eg442dg9aa9g00a9211503ad</code> | <code>ad0dcb01-7075-ad1f-2349-23ef9e8c5370</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Normal v8 |</div><div class='line-meta'><code>h4c188d6cg7bf7g477cg9f9bg2bbdb0127eb1</code> | <code>a4869a61-3e7b-4f72-d77b-9b49505fbbda</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Normal v9 |</div><div class='line-meta'><code>ha8d85002ge8d3g4cc2g8d00ga4b761c72434</code> | <code>7226002e-7dbb-6bd3-603c-bec17578aba1</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Normal v10 |</div><div class='line-meta'><code>h69c638d6gc644g4c3bgbe1fga34f1a79f944</code> | <code>58feae6c-8a95-1f7e-b5bc-1737ac572ee9</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Normal v11 |</div><div class='line-meta'><code>h7d7931d6g97e2g4a7bgb4c9g77c771605136</code> | <code>ec62666d-a6a9-7f4e-0df0-b8563f967968</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Normal v12 |</div><div class='line-meta'><code>h006ea7cfg907bg4370ga8c2g2a117f1d9699</code> | <code>8cc894b9-9ae4-3920-93a8-1920812dcbe5</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Normal v13 |<br></div><div class='line-meta'><code>ha455e402gcc63g41f6g9adegb08679fab776</code> | <code>9f3df410-d82b-c459-423e-d599069ceb06</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Normal v14 |</div><div class='line-meta'><code>h4fa0006bg3942g4bc8g865cgc5f7eebd393c</code> | <code>36446e87-c046-1adf-17e3-8d1b2dbecc42</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Normal v15 |</div><div class='line-meta'><code>h6d110706g059dg4b6agb9d0gf9faa782177f</code> | <code>b5ab7dbb-f5a9-0ebd-5a5f-500e81f36c16</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Normal v16 |</div><div class='line-meta'><code>hd4b935beg343ag4ff2ga3ebg6000f8214151</code> | <code>95fa57bc-a0e3-32f9-0077-6ecd8487491b</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Normal v17 |</div><div class='line-meta'><code>he8dda49fg1436g4000g972cg317f7bf030ac</code> | <code>d12c0ee0-a17b-877b-c6e2-651e5bf8f3af</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Normal v18 |</div><div class='line-meta'><code>hfa0b0fefg268bg4e6dg9689g1372bc9775ec</code> | <code>4901217b-655b-123e-9b67-a360b037f9a9</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: fc70d247-3d0a-6006-698d-0b52a00e7998</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h6c0c6557g8f9eg477fga583g9d8a9767da38</span><span class='meta-item'><strong>Text 1 UUID</strong>: d22a3d18-1af8-4a1f-15d8-0911c2e1eda7</span><span class='meta-item'><strong>Text 2 Handle</strong>: h4df9af80gc60cg46e3gbb52g1ff0ad422470</span><span class='meta-item'><strong>Text 2 UUID</strong>: a92078dd-10e5-8526-b8f5-29d58ff8b6a5</span><span class='meta-item'><strong>Text 3 Handle</strong>: h54196357gf250g4a73gb9f2g52f0fac092aa</span><span class='meta-item'><strong>Text 3 UUID</strong>: b8636326-567c-ec70-1b60-e4514534df80</span><span class='meta-item'><strong>Text 4 Handle</strong>: hc9cee42cgb91cg4edegbe93gf29d055d9936</span><span class='meta-item'><strong>Text 4 UUID</strong>: 408665c3-60b0-6c46-2db8-50ad00c97910</span><span class='meta-item'><strong>Text 5 Handle</strong>: h8910fad4gcd3bg479dg97e8gfe95252fac17</span><span class='meta-item'><strong>Text 5 UUID</strong>: 8b784fea-4565-5c76-d105-0084eddb10e5</span><span class='meta-item'><strong>Text 6 Handle</strong>: h3317c628gddb3g44d1ga7adgea9be7197cea</span><span class='meta-item'><strong>Text 6 UUID</strong>: fec5a85c-1066-424b-5862-7b2f0bf60e67</span><span class='meta-item'><strong>Text 7 Handle</strong>: h773deb53g809eg442dg9aa9g00a9211503ad</span><span class='meta-item'><strong>Text 7 UUID</strong>: ad0dcb01-7075-ad1f-2349-23ef9e8c5370</span><span class='meta-item'><strong>Text 8 Handle</strong>: h4c188d6cg7bf7g477cg9f9bg2bbdb0127eb1</span><span class='meta-item'><strong>Text 8 UUID</strong>: a4869a61-3e7b-4f72-d77b-9b49505fbbda</span><span class='meta-item'><strong>Text 9 Handle</strong>: ha8d85002ge8d3g4cc2g8d00ga4b761c72434</span><span class='meta-item'><strong>Text 9 UUID</strong>: 7226002e-7dbb-6bd3-603c-bec17578aba1</span><span class='meta-item'><strong>Text 10 Handle</strong>: h69c638d6gc644g4c3bgbe1fga34f1a79f944</span><span class='meta-item'><strong>Text 10 UUID</strong>: 58feae6c-8a95-1f7e-b5bc-1737ac572ee9</span><span class='meta-item'><strong>Text 11 Handle</strong>: h7d7931d6g97e2g4a7bgb4c9g77c771605136</span><span class='meta-item'><strong>Text 11 UUID</strong>: ec62666d-a6a9-7f4e-0df0-b8563f967968</span><span class='meta-item'><strong>Text 12 Handle</strong>: h006ea7cfg907bg4370ga8c2g2a117f1d9699</span><span class='meta-item'><strong>Text 12 UUID</strong>: 8cc894b9-9ae4-3920-93a8-1920812dcbe5</span><span class='meta-item'><strong>Text 13 Handle</strong>: ha455e402gcc63g41f6g9adegb08679fab776</span><span class='meta-item'><strong>Text 13 UUID</strong>: 9f3df410-d82b-c459-423e-d599069ceb06</span><span class='meta-item'><strong>Text 14 Handle</strong>: h4fa0006bg3942g4bc8g865cgc5f7eebd393c</span><span class='meta-item'><strong>Text 14 UUID</strong>: 36446e87-c046-1adf-17e3-8d1b2dbecc42</span><span class='meta-item'><strong>Text 15 Handle</strong>: h6d110706g059dg4b6agb9d0gf9faa782177f</span><span class='meta-item'><strong>Text 15 UUID</strong>: b5ab7dbb-f5a9-0ebd-5a5f-500e81f36c16</span><span class='meta-item'><strong>Text 16 Handle</strong>: hd4b935beg343ag4ff2ga3ebg6000f8214151</span><span class='meta-item'><strong>Text 16 UUID</strong>: 95fa57bc-a0e3-32f9-0077-6ecd8487491b</span><span class='meta-item'><strong>Text 17 Handle</strong>: he8dda49fg1436g4000g972cg317f7bf030ac</span><span class='meta-item'><strong>Text 17 UUID</strong>: d12c0ee0-a17b-877b-c6e2-651e5bf8f3af</span><span class='meta-item'><strong>Text 18 Handle</strong>: hfa0b0fefg268bg4e6dg9689g1372bc9775ec</span><span class='meta-item'><strong>Text 18 UUID</strong>: 4901217b-655b-123e-9b67-a360b037f9a9</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 0</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: fc70d247-3d0a-6006-698d-0b52a00e7998</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-9'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-9' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>9.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'> |MoveTo ShadowHeart Sneaking v1 |</span></span></span></span><div class='node-detail-panel' id='details-9' hidden='until-found'><section class='section'><h3>Text</h3><div class='text-block'><div class='text-line'> |MoveTo ShadowHeart Sneaking v1 |</div><div class='line-meta'><code>hc4095035gbb82g4800g80c1g9ea5dbe47813</code> | <code>3aaf7b89-4b04-a32d-9ec3-4190a977b264</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Sneaking v2 |<br></div><div class='line-meta'><code>hf8f95613gd5b2g4c35g996bgff249ec31de9</code> | <code>97a6eace-33f3-6fcf-eee3-98ec378ba250</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Sneaking v3 |<br></div><div class='line-meta'><code>h6e83779bg0d91g4952g97cfgc51c6fbec073</code> | <code>18a01562-c2fd-b91b-9a0b-624704c4c2fc</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Sneaking v4 |<br></div><div class='line-meta'><code>h42d05aa0gf526g4386ga920g0fad9d6bcfdf</code> | <code>5fe97627-f552-9229-e288-2b29a6e143b1</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Sneaking v5 |</div><div class='line-meta'><code>hb64355dagbd6cg4b77gbdd3ge3bdcc4d7be2</code> | <code>f5518a64-317b-8e92-2c6f-1e5ae078f780</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Sneaking v6 |</div><div class='line-meta'><code>h8d570d79g5064g49d7ga012g88f7902719d6</code> | <code>dc3ec1ae-2b39-a16f-83f1-5c1f8695dbe4</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Sneaking v7 |</div><div class='line-meta'><code>hc6ac3959gb429g44b3ga767g3d0b0b9b8bfc</code> | <code>16f22e74-1e33-f188-60d8-679eae6a253a</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Sneaking v8 |</div><div class='line-meta'><code>h23b6b56ag1752g4cfeg8cdfg72b39bf13cb7</code> | <code>c9866296-c3ef-4ae7-7dcf-6152b5fdc482</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Sneaking v9 |</div><div class='line-meta'><code>hc6200d6fgb6dbg4108g9a3fg01f65ad8ae9b</code> | <code>0bb96a00-4cdc-1b30-dcbe-032be54015dd</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Sneaking v10 |</div><div class='line-meta'><code>hb8f41243g91ecg42degad7cg6e7ef4ebb5e9</code> | <code>2e44108e-3ec2-9acc-d615-aa97fd408fda</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Sneaking v11 |</div><div class='line-meta'><code>h752a8156g6d4dg4d77ga1c5g9ecbab97cbd6</code> | <code>46fd1297-4802-245c-fd3e-476c86e996cd</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Sneaking v12 |</div><div class='line-meta'><code>h1750ca8cg7915g474dg9417g8c1e2299d5c3</code> | <code>6bf8018e-9e2d-0bb1-b7f1-a063461462ea</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Sneaking v13 |</div><div class='line-meta'><code>h13095129g644ag454ag863dg8e3ebcb09ea9</code> | <code>fda9efeb-e272-38b6-f60b-a2e3c8508cf5</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Sneaking v14 |</div><div class='line-meta'><code>h25b9518cg2354g4456g8bbfge8714519c127</code> | <code>75cac4e1-9de4-cf55-9be6-9f0923c3f0c1</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Sneaking v15 |<br></div><div class='line-meta'><code>hcd331124geb46g4ed4g8174gf0a6c8b38d26</code> | <code>837202d2-307a-0879-1011-30668b200644</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Sneaking v16 |</div><div class='line-meta'><code>hc0abcc53gccd6g4a6bg92d0g3bc463fe0144</code> | <code>266fbd5c-f7f8-5789-56c0-7c27ccf3c860</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Sneaking v17 |</div><div class='line-meta'><code>h0d73bef8gdf61g4dc8g90c9gf4a6d8cb6df7</code> | <code>b35c04b8-a8e3-68a4-807b-494ca7932ad1</code> | stub</div><div class='text-line'> |MoveTo ShadowHeart Sneaking v18 |</div><div class='line-meta'><code>h3c1ee3baga84fg4572gb473ga71385095524</code> | <code>611784d1-1fa7-2fb5-8c9c-6e9c72a8a9f4</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagGreeting</span><span class='meta-item'><strong>UUID</strong>: 7509367a-b9ce-1254-2acf-d5988d9b67e2</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Text 1 Handle</strong>: hc4095035gbb82g4800g80c1g9ea5dbe47813</span><span class='meta-item'><strong>Text 1 UUID</strong>: 3aaf7b89-4b04-a32d-9ec3-4190a977b264</span><span class='meta-item'><strong>Text 2 Handle</strong>: hf8f95613gd5b2g4c35g996bgff249ec31de9</span><span class='meta-item'><strong>Text 2 UUID</strong>: 97a6eace-33f3-6fcf-eee3-98ec378ba250</span><span class='meta-item'><strong>Text 3 Handle</strong>: h6e83779bg0d91g4952g97cfgc51c6fbec073</span><span class='meta-item'><strong>Text 3 UUID</strong>: 18a01562-c2fd-b91b-9a0b-624704c4c2fc</span><span class='meta-item'><strong>Text 4 Handle</strong>: h42d05aa0gf526g4386ga920g0fad9d6bcfdf</span><span class='meta-item'><strong>Text 4 UUID</strong>: 5fe97627-f552-9229-e288-2b29a6e143b1</span><span class='meta-item'><strong>Text 5 Handle</strong>: hb64355dagbd6cg4b77gbdd3ge3bdcc4d7be2</span><span class='meta-item'><strong>Text 5 UUID</strong>: f5518a64-317b-8e92-2c6f-1e5ae078f780</span><span class='meta-item'><strong>Text 6 Handle</strong>: h8d570d79g5064g49d7ga012g88f7902719d6</span><span class='meta-item'><strong>Text 6 UUID</strong>: dc3ec1ae-2b39-a16f-83f1-5c1f8695dbe4</span><span class='meta-item'><strong>Text 7 Handle</strong>: hc6ac3959gb429g44b3ga767g3d0b0b9b8bfc</span><span class='meta-item'><strong>Text 7 UUID</strong>: 16f22e74-1e33-f188-60d8-679eae6a253a</span><span class='meta-item'><strong>Text 8 Handle</strong>: h23b6b56ag1752g4cfeg8cdfg72b39bf13cb7</span><span class='meta-item'><strong>Text 8 UUID</strong>: c9866296-c3ef-4ae7-7dcf-6152b5fdc482</span><span class='meta-item'><strong>Text 9 Handle</strong>: hc6200d6fgb6dbg4108g9a3fg01f65ad8ae9b</span><span class='meta-item'><strong>Text 9 UUID</strong>: 0bb96a00-4cdc-1b30-dcbe-032be54015dd</span><span class='meta-item'><strong>Text 10 Handle</strong>: hb8f41243g91ecg42degad7cg6e7ef4ebb5e9</span><span class='meta-item'><strong>Text 10 UUID</strong>: 2e44108e-3ec2-9acc-d615-aa97fd408fda</span><span class='meta-item'><strong>Text 11 Handle</strong>: h752a8156g6d4dg4d77ga1c5g9ecbab97cbd6</span><span class='meta-item'><strong>Text 11 UUID</strong>: 46fd1297-4802-245c-fd3e-476c86e996cd</span><span class='meta-item'><strong>Text 12 Handle</strong>: h1750ca8cg7915g474dg9417g8c1e2299d5c3</span><span class='meta-item'><strong>Text 12 UUID</strong>: 6bf8018e-9e2d-0bb1-b7f1-a063461462ea</span><span class='meta-item'><strong>Text 13 Handle</strong>: h13095129g644ag454ag863dg8e3ebcb09ea9</span><span class='meta-item'><strong>Text 13 UUID</strong>: fda9efeb-e272-38b6-f60b-a2e3c8508cf5</span><span class='meta-item'><strong>Text 14 Handle</strong>: h25b9518cg2354g4456g8bbfge8714519c127</span><span class='meta-item'><strong>Text 14 UUID</strong>: 75cac4e1-9de4-cf55-9be6-9f0923c3f0c1</span><span class='meta-item'><strong>Text 15 Handle</strong>: hcd331124geb46g4ed4g8174gf0a6c8b38d26</span><span class='meta-item'><strong>Text 15 UUID</strong>: 837202d2-307a-0879-1011-30668b200644</span><span class='meta-item'><strong>Text 16 Handle</strong>: hc0abcc53gccd6g4a6bg92d0g3bc463fe0144</span><span class='meta-item'><strong>Text 16 UUID</strong>: 266fbd5c-f7f8-5789-56c0-7c27ccf3c860</span><span class='meta-item'><strong>Text 17 Handle</strong>: h0d73bef8gdf61g4dc8g90c9gf4a6d8cb6df7</span><span class='meta-item'><strong>Text 17 UUID</strong>: b35c04b8-a8e3-68a4-807b-494ca7932ad1</span><span class='meta-item'><strong>Text 18 Handle</strong>: h3c1ee3baga84fg4572gb473ga71385095524</span><span class='meta-item'><strong>Text 18 UUID</strong>: 611784d1-1fa7-2fb5-8c9c-6e9c72a8a9f4</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 3</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 7509367a-b9ce-1254-2acf-d5988d9b67e2</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>Root</strong>: True</span></div></section></div></div></div></div></li></ul>
+        <section class='orphan-section'><h2>Orphaned Nodes (18 nodes in 18 branches)</h2><div class='orphan-note'>Not reached from any root node via child links.</div><ul class='root-list orphan-list'><li class='node-item'><div class='node-shell' id='node-1'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-1' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>1.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'> | TakeAction Shadowheart Sneaking v1|</span></span></span></span><div class='node-detail-panel' id='details-1' hidden='until-found'><section class='section'><h3>Text</h3><div class='text-block'><div class='text-line'> | TakeAction Shadowheart Sneaking v1|</div><div class='line-meta'><code>h031df30bg5ac7g4354g83d5g0da39d46c9b8</code> | <code>6656fa04-a000-e2a5-cd1b-6e52804a932f</code> | stub</div><div class='text-line'> | TakeAction Shadowheart Sneaking v2|<br></div><div class='line-meta'><code>hd8bc6037g1e9eg4b14ga215g41d3ad396780</code> | <code>df2adfcf-2c74-ad82-005b-ace6d1eb163d</code> | stub</div><div class='text-line'> | TakeAction Shadowheart Sneaking v3|</div><div class='line-meta'><code>hd7d163eag1fabg45f9ga000g1a0c6ccc37bc</code> | <code>95fe8497-8bcf-ae78-f26d-f6d83e31f422</code> | stub</div><div class='text-line'> | TakeAction Shadowheart Sneaking v4|<br><br></div><div class='line-meta'><code>h78de7c1eg84ebg42b2ga0f1g96ce733ecd92</code> | <code>454e0dff-84c3-e374-3431-b0030092c148</code> | stub</div><div class='text-line'> | TakeAction Shadowheart Sneaking v5|<br><br></div><div class='line-meta'><code>hf99a24a6gb8dfg47cfg886eg4cd4492fffbd</code> | <code>632518aa-37ee-fbaf-71a8-1dc600c016d4</code> | stub</div><div class='text-line'> | TakeAction Shadowheart Sneaking v6|</div><div class='line-meta'><code>h762603c7g604eg4159g84b8g367d2a453603</code> | <code>753d9606-4e87-fbc4-4c1e-184542e5cda6</code> | stub</div><div class='text-line'> | TakeAction Shadowheart Sneaking v7|<br></div><div class='line-meta'><code>h3afb87e1gaa38g434ag9063g1af95203a666</code> | <code>d9ed56e3-8a7f-a45f-e759-b56ded0acb8c</code> | stub</div><div class='text-line'> | TakeAction Shadowheart Sneaking v8|<br></div><div class='line-meta'><code>h708b577fgdd08g40dbg9b31g07d28baee9af</code> | <code>b664ebea-e3a3-0865-5bb0-55f49dd53a04</code> | stub</div><div class='text-line'> | TakeAction Shadowheart Sneaking v9|</div><div class='line-meta'><code>h48f134fdg1560g4af4ga41eg94660a1f7480</code> | <code>61045110-991e-5817-93c2-d8865bc2511b</code> | stub</div><div class='text-line'> | TakeAction Shadowheart Sneaking v10|<br></div><div class='line-meta'><code>ha038193dge766g43eegb489gc0f5aed3c4ba</code> | <code>b7de1250-124c-4e7d-3b24-b159a866f8b4</code> | stub</div><div class='text-line'> | TakeAction Shadowheart Sneaking v11|<br><br></div><div class='line-meta'><code>hafebc828gcf0fg4266g8d09gf74f668401ab</code> | <code>1a67cb22-14dd-c20e-6b48-64263259847e</code> | stub</div><div class='text-line'> | TakeAction Shadowheart Sneaking v12|<br></div><div class='line-meta'><code>hf6b7162bg5b57g41e4g92b7gd9f5d2556a34</code> | <code>6e1cacbe-490d-15f5-b1f1-90c1190206ba</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 1b5c3f21-b2fd-dea3-b042-237ab91ccd76</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h031df30bg5ac7g4354g83d5g0da39d46c9b8</span><span class='meta-item'><strong>Text 1 UUID</strong>: 6656fa04-a000-e2a5-cd1b-6e52804a932f</span><span class='meta-item'><strong>Text 2 Handle</strong>: hd8bc6037g1e9eg4b14ga215g41d3ad396780</span><span class='meta-item'><strong>Text 2 UUID</strong>: df2adfcf-2c74-ad82-005b-ace6d1eb163d</span><span class='meta-item'><strong>Text 3 Handle</strong>: hd7d163eag1fabg45f9ga000g1a0c6ccc37bc</span><span class='meta-item'><strong>Text 3 UUID</strong>: 95fe8497-8bcf-ae78-f26d-f6d83e31f422</span><span class='meta-item'><strong>Text 4 Handle</strong>: h78de7c1eg84ebg42b2ga0f1g96ce733ecd92</span><span class='meta-item'><strong>Text 4 UUID</strong>: 454e0dff-84c3-e374-3431-b0030092c148</span><span class='meta-item'><strong>Text 5 Handle</strong>: hf99a24a6gb8dfg47cfg886eg4cd4492fffbd</span><span class='meta-item'><strong>Text 5 UUID</strong>: 632518aa-37ee-fbaf-71a8-1dc600c016d4</span><span class='meta-item'><strong>Text 6 Handle</strong>: h762603c7g604eg4159g84b8g367d2a453603</span><span class='meta-item'><strong>Text 6 UUID</strong>: 753d9606-4e87-fbc4-4c1e-184542e5cda6</span><span class='meta-item'><strong>Text 7 Handle</strong>: h3afb87e1gaa38g434ag9063g1af95203a666</span><span class='meta-item'><strong>Text 7 UUID</strong>: d9ed56e3-8a7f-a45f-e759-b56ded0acb8c</span><span class='meta-item'><strong>Text 8 Handle</strong>: h708b577fgdd08g40dbg9b31g07d28baee9af</span><span class='meta-item'><strong>Text 8 UUID</strong>: b664ebea-e3a3-0865-5bb0-55f49dd53a04</span><span class='meta-item'><strong>Text 9 Handle</strong>: h48f134fdg1560g4af4ga41eg94660a1f7480</span><span class='meta-item'><strong>Text 9 UUID</strong>: 61045110-991e-5817-93c2-d8865bc2511b</span><span class='meta-item'><strong>Text 10 Handle</strong>: ha038193dge766g43eegb489gc0f5aed3c4ba</span><span class='meta-item'><strong>Text 10 UUID</strong>: b7de1250-124c-4e7d-3b24-b159a866f8b4</span><span class='meta-item'><strong>Text 11 Handle</strong>: hafebc828gcf0fg4266g8d09gf74f668401ab</span><span class='meta-item'><strong>Text 11 UUID</strong>: 1a67cb22-14dd-c20e-6b48-64263259847e</span><span class='meta-item'><strong>Text 12 Handle</strong>: hf6b7162bg5b57g41e4g92b7gd9f5d2556a34</span><span class='meta-item'><strong>Text 12 UUID</strong>: 6e1cacbe-490d-15f5-b1f1-90c1190206ba</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 19</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 1b5c3f21-b2fd-dea3-b042-237ab91ccd76</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-2'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-2' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>2.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'> |PortraitClick ShadowHeart SpamClick Sneaking v1 |</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Crazy line that triggers when we spam click the character. She will not react for x seconds after this line go wild</span></span></span></span><div class='node-detail-panel' id='details-2' hidden='until-found'><section class='section'><h3>Text</h3><div class='text-block'><div class='text-line'> |PortraitClick ShadowHeart SpamClick Sneaking v1 |</div><div class='line-meta'><code>hc0a54db9g1ef9g48fbg90d4gb0858c616f4a</code> | <code>1a238ab0-a2e4-a666-0427-1a1821ccd37e</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart SpamClick Sneaking v2 |</div><div class='line-meta'><code>he418cafbg2d0fg47ccga7bag696d16b7946b</code> | <code>0e1cace0-bfcf-c0d3-6eb7-7141d977fb13</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 258663f6-fb4b-11c8-2abb-1989d6a03275</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Text 1 Handle</strong>: hc0a54db9g1ef9g48fbg90d4gb0858c616f4a</span><span class='meta-item'><strong>Text 1 UUID</strong>: 1a238ab0-a2e4-a666-0427-1a1821ccd37e</span><span class='meta-item'><strong>Text 2 Handle</strong>: he418cafbg2d0fg47ccga7bag696d16b7946b</span><span class='meta-item'><strong>Text 2 UUID</strong>: 0e1cace0-bfcf-c0d3-6eb7-7141d977fb13</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 17</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 258663f6-fb4b-11c8-2abb-1989d6a03275</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-3'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-3' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>3.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'>|SpeakTo Shadowheart Sneaking v1 |</span></span></span></span><div class='node-detail-panel' id='details-3' hidden='until-found'><section class='section'><h3>Text</h3><div class='text-block'><div class='text-line'>|SpeakTo Shadowheart Sneaking v1 |</div><div class='line-meta'><code>h4a0bbcc3g69e0g4d30gbcd2g5eabda68344f</code> | <code>7ad5f6ca-2133-3074-5f35-75c5c889a9a9</code> | stub</div><div class='text-line'>|SpeakTo Shadowheart Sneaking v2 |</div><div class='line-meta'><code>h7f944d8age776g481bgb990g395c3b1fda94</code> | <code>f9ca83d6-9739-4500-077a-a1dad4d4a879</code> | stub</div><div class='text-line'>|SpeakTo Shadowheart Sneaking v3 |</div><div class='line-meta'><code>h13422e4fg6101g44ddgb0bdge8661a9af93a</code> | <code>4226ccf5-c2dc-745e-f569-e61814fff01a</code> | stub</div><div class='text-line'>|SpeakTo Shadowheart Sneaking v4 |<br></div><div class='line-meta'><code>ha4f7977bg8642g49f4g93dcge3be5468c5c6</code> | <code>a6c76e65-afe2-2725-b0a7-e88c8e383d0b</code> | stub</div><div class='text-line'>|SpeakTo Shadowheart Sneaking v5 |<br><br></div><div class='line-meta'><code>hef333726g9a41g46a3gaf05gd4ec050e915b</code> | <code>003be270-1e2c-ebff-884a-7c47b5d37573</code> | stub</div><div class='text-line'>|SpeakTo Shadowheart Sneaking v6 |</div><div class='line-meta'><code>hde681920g3553g4ac5ga2b6gd6f2e16ad686</code> | <code>b6934850-5ddc-6b92-a474-1ed197de7a62</code> | stub</div><div class='text-line'>|SpeakTo Shadowheart Sneaking v7 |</div><div class='line-meta'><code>h02f34894g0791g4184g8b2dg1de7c0d3cdfc</code> | <code>57b76108-a182-90d7-7ac0-e8cd0eeae3e7</code> | stub</div><div class='text-line'>|SpeakTo Shadowheart Sneaking v8 |</div><div class='line-meta'><code>h6b65b0beg2cb7g44e1ga486gc70b670b34af</code> | <code>0d5a4c10-0115-ce8c-33c4-462c8f2871ae</code> | stub</div><div class='text-line'>|SpeakTo Shadowheart Sneaking v9 |</div><div class='line-meta'><code>hd0c82423gf5b0g42e1g85a6gbf70c1b669ad</code> | <code>564d986f-c819-1d9d-c269-9aacbe67e86e</code> | stub</div><div class='text-line'>|SpeakTo Shadowheart Sneaking v10 |<br></div><div class='line-meta'><code>h873245f2g1731g4de1g9df8g15d501edb0c6</code> | <code>665a2fbd-e044-7057-a2ee-9c8f0bf66643</code> | stub</div><div class='text-line'>|SpeakTo Shadowheart Sneaking v11 |<br><br></div><div class='line-meta'><code>h8705354fg87d8g4183g8f4cgdfa0cd34fb41</code> | <code>7f21229f-b56b-a718-0ab8-646b8594adb1</code> | stub</div><div class='text-line'>|SpeakTo Shadowheart Sneaking v12 |</div><div class='line-meta'><code>hd7d0afdag10f3g4548ga8bcg1882a2703932</code> | <code>05ec8e6a-7978-b3ea-4eab-c9b2045e962f</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 26a226e7-babc-5088-dd1c-f142b6e6cf21</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h4a0bbcc3g69e0g4d30gbcd2g5eabda68344f</span><span class='meta-item'><strong>Text 1 UUID</strong>: 7ad5f6ca-2133-3074-5f35-75c5c889a9a9</span><span class='meta-item'><strong>Text 2 Handle</strong>: h7f944d8age776g481bgb990g395c3b1fda94</span><span class='meta-item'><strong>Text 2 UUID</strong>: f9ca83d6-9739-4500-077a-a1dad4d4a879</span><span class='meta-item'><strong>Text 3 Handle</strong>: h13422e4fg6101g44ddgb0bdge8661a9af93a</span><span class='meta-item'><strong>Text 3 UUID</strong>: 4226ccf5-c2dc-745e-f569-e61814fff01a</span><span class='meta-item'><strong>Text 4 Handle</strong>: ha4f7977bg8642g49f4g93dcge3be5468c5c6</span><span class='meta-item'><strong>Text 4 UUID</strong>: a6c76e65-afe2-2725-b0a7-e88c8e383d0b</span><span class='meta-item'><strong>Text 5 Handle</strong>: hef333726g9a41g46a3gaf05gd4ec050e915b</span><span class='meta-item'><strong>Text 5 UUID</strong>: 003be270-1e2c-ebff-884a-7c47b5d37573</span><span class='meta-item'><strong>Text 6 Handle</strong>: hde681920g3553g4ac5ga2b6gd6f2e16ad686</span><span class='meta-item'><strong>Text 6 UUID</strong>: b6934850-5ddc-6b92-a474-1ed197de7a62</span><span class='meta-item'><strong>Text 7 Handle</strong>: h02f34894g0791g4184g8b2dg1de7c0d3cdfc</span><span class='meta-item'><strong>Text 7 UUID</strong>: 57b76108-a182-90d7-7ac0-e8cd0eeae3e7</span><span class='meta-item'><strong>Text 8 Handle</strong>: h6b65b0beg2cb7g44e1ga486gc70b670b34af</span><span class='meta-item'><strong>Text 8 UUID</strong>: 0d5a4c10-0115-ce8c-33c4-462c8f2871ae</span><span class='meta-item'><strong>Text 9 Handle</strong>: hd0c82423gf5b0g42e1g85a6gbf70c1b669ad</span><span class='meta-item'><strong>Text 9 UUID</strong>: 564d986f-c819-1d9d-c269-9aacbe67e86e</span><span class='meta-item'><strong>Text 10 Handle</strong>: h873245f2g1731g4de1g9df8g15d501edb0c6</span><span class='meta-item'><strong>Text 10 UUID</strong>: 665a2fbd-e044-7057-a2ee-9c8f0bf66643</span><span class='meta-item'><strong>Text 11 Handle</strong>: h8705354fg87d8g4183g8f4cgdfa0cd34fb41</span><span class='meta-item'><strong>Text 11 UUID</strong>: 7f21229f-b56b-a718-0ab8-646b8594adb1</span><span class='meta-item'><strong>Text 12 Handle</strong>: hd7d0afdag10f3g4548ga8bcg1882a2703932</span><span class='meta-item'><strong>Text 12 UUID</strong>: 05ec8e6a-7978-b3ea-4eab-c9b2045e962f</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 16</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 26a226e7-babc-5088-dd1c-f142b6e6cf21</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-4'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-4' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>4.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'>|OpenLock Shadowheart Normal v1 |</span></span></span></span><div class='node-detail-panel' id='details-4' hidden='until-found'><section class='section'><h3>Text</h3><div class='text-block'><div class='text-line'>|OpenLock Shadowheart Normal v1 |</div><div class='line-meta'><code>hcdf0443cg9452g4c28gb144gb9d32d003ef7</code> | <code>680bae72-4889-7cde-f18f-10082ac330be</code> | stub</div><div class='text-line'>|OpenLock Shadowheart Normal v2 |</div><div class='line-meta'><code>h3b1a9decg77edg4fe7g9ddagb477be09974a</code> | <code>7e1c794a-e8df-c351-ee09-9c8f3afc6c13</code> | stub</div><div class='text-line'>|OpenLock Shadowheart Normal v3 |</div><div class='line-meta'><code>ha3392483g733fg48c5gb690gf7e53e55ef5a</code> | <code>07cdbd7f-abb4-5e63-edb0-6a963161272c</code> | stub</div><div class='text-line'>|OpenLock Shadowheart Normal v4 |</div><div class='line-meta'><code>hc2370d48g1e2ag4d63g990egdde694af1938</code> | <code>7b5b6bb8-55ad-9b88-3112-9492b1a933f2</code> | stub</div><div class='text-line'>|OpenLock Shadowheart Normal v5 |</div><div class='line-meta'><code>hc198aa42g58b7g4b65ga669ge320c2c4a89e</code> | <code>613bc5e5-fb36-ac9d-7328-d4740a44d680</code> | stub</div><div class='text-line'>|OpenLock Shadowheart Normal v6 |</div><div class='line-meta'><code>h884ba339g65e9g479fga5e5gbe90f2e9aec1</code> | <code>de152d82-1018-3137-f796-3cbb6769da51</code> | stub</div><div class='text-line'>|OpenLock Shadowheart Normal v7 |</div><div class='line-meta'><code>h30f45f71g6a33g46bbg9097ga637cd31e16c</code> | <code>8b9ba8db-4cea-2f26-4721-bc3c9180c70d</code> | stub</div><div class='text-line'>|OpenLock Shadowheart Normal v8 |</div><div class='line-meta'><code>h646835d4g95feg432cgb453gffdca6a551b4</code> | <code>b444cd95-f0ac-e474-32e8-5322f9fe5688</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 45823fab-95a3-3d2e-45e5-a03387c3938a</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Text 1 Handle</strong>: hcdf0443cg9452g4c28gb144gb9d32d003ef7</span><span class='meta-item'><strong>Text 1 UUID</strong>: 680bae72-4889-7cde-f18f-10082ac330be</span><span class='meta-item'><strong>Text 2 Handle</strong>: h3b1a9decg77edg4fe7g9ddagb477be09974a</span><span class='meta-item'><strong>Text 2 UUID</strong>: 7e1c794a-e8df-c351-ee09-9c8f3afc6c13</span><span class='meta-item'><strong>Text 3 Handle</strong>: ha3392483g733fg48c5gb690gf7e53e55ef5a</span><span class='meta-item'><strong>Text 3 UUID</strong>: 07cdbd7f-abb4-5e63-edb0-6a963161272c</span><span class='meta-item'><strong>Text 4 Handle</strong>: hc2370d48g1e2ag4d63g990egdde694af1938</span><span class='meta-item'><strong>Text 4 UUID</strong>: 7b5b6bb8-55ad-9b88-3112-9492b1a933f2</span><span class='meta-item'><strong>Text 5 Handle</strong>: hc198aa42g58b7g4b65ga669ge320c2c4a89e</span><span class='meta-item'><strong>Text 5 UUID</strong>: 613bc5e5-fb36-ac9d-7328-d4740a44d680</span><span class='meta-item'><strong>Text 6 Handle</strong>: h884ba339g65e9g479fga5e5gbe90f2e9aec1</span><span class='meta-item'><strong>Text 6 UUID</strong>: de152d82-1018-3137-f796-3cbb6769da51</span><span class='meta-item'><strong>Text 7 Handle</strong>: h30f45f71g6a33g46bbg9097ga637cd31e16c</span><span class='meta-item'><strong>Text 7 UUID</strong>: 8b9ba8db-4cea-2f26-4721-bc3c9180c70d</span><span class='meta-item'><strong>Text 8 Handle</strong>: h646835d4g95feg432cgb453gffdca6a551b4</span><span class='meta-item'><strong>Text 8 UUID</strong>: b444cd95-f0ac-e474-32e8-5322f9fe5688</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 15</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 45823fab-95a3-3d2e-45e5-a03387c3938a</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-5'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-5' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>5.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'> |PickPocketSuccess ShadowHeart Sneaking v1 |<br></span></span></span></span><div class='node-detail-panel' id='details-5' hidden='until-found'><section class='section'><h3>Text</h3><div class='text-block'><div class='text-line'> |PickPocketSuccess ShadowHeart Sneaking v1 |<br></div><div class='line-meta'><code>h353f62f7g9863g4efdgb634ge61c6e9b77a6</code> | <code>cc1421c6-812a-1295-d183-5690d05324fd</code> | stub</div><div class='text-line'> |PickPocketSuccess ShadowHeart Sneaking v2 |<br><br></div><div class='line-meta'><code>h82ce01e5g18a5g4ef5gbc02gce007ce4befd</code> | <code>51e14230-773c-c53a-ba7f-6847c2d1d302</code> | stub</div><div class='text-line'> |PickPocketSuccessShadowHeart Sneaking v3 |</div><div class='line-meta'><code>h5b6dec51g5b01g430cg85b2g9f120925f0ad</code> | <code>bace6b04-28f9-4518-d615-7172911fa508</code> | stub</div><div class='text-line'> |PickPocketSuccess ShadowHeart Sneaking v4 |<br><br><br></div><div class='line-meta'><code>h910069a6g4e26g4fa7ga40bg2682eecbf5ad</code> | <code>b7f767f4-9651-bea4-9e3c-2fdb40af2db1</code> | stub</div><div class='text-line'> |PickPocketSuccess ShadowHeart Sneaking v5 |</div><div class='line-meta'><code>h208ba498g6a16g46a2g8348g7dccbebb4fe9</code> | <code>3395b979-cf00-b54b-30a0-d07a39750af5</code> | stub</div><div class='text-line'> |PickPocketSuccess ShadowHeart Sneaking v6 |</div><div class='line-meta'><code>h17d95c8dg347fg4e99gb588g75a366c0cfa7</code> | <code>d48d783e-ac1b-6ffe-008a-3187f993d3a1</code> | stub</div><div class='text-line'> |PickPocketSuccess ShadowHeart Sneaking v7 |</div><div class='line-meta'><code>h1ea05658g78ebg4625g84d0g18a4aeffe759</code> | <code>3d96e690-b5f5-4fd1-b29b-87f3c615c19b</code> | stub</div><div class='text-line'> |PickPocketSuccess ShadowHeart Sneaking v8 |<br></div><div class='line-meta'><code>h1f568beag71ccg43f5g966eg99d407c12685</code> | <code>a63ad7c2-e5cb-71d5-a04a-c8d653f12f48</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 4a50a997-b40b-c428-d729-9495ee7a8ae1</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h353f62f7g9863g4efdgb634ge61c6e9b77a6</span><span class='meta-item'><strong>Text 1 UUID</strong>: cc1421c6-812a-1295-d183-5690d05324fd</span><span class='meta-item'><strong>Text 2 Handle</strong>: h82ce01e5g18a5g4ef5gbc02gce007ce4befd</span><span class='meta-item'><strong>Text 2 UUID</strong>: 51e14230-773c-c53a-ba7f-6847c2d1d302</span><span class='meta-item'><strong>Text 3 Handle</strong>: h5b6dec51g5b01g430cg85b2g9f120925f0ad</span><span class='meta-item'><strong>Text 3 UUID</strong>: bace6b04-28f9-4518-d615-7172911fa508</span><span class='meta-item'><strong>Text 4 Handle</strong>: h910069a6g4e26g4fa7ga40bg2682eecbf5ad</span><span class='meta-item'><strong>Text 4 UUID</strong>: b7f767f4-9651-bea4-9e3c-2fdb40af2db1</span><span class='meta-item'><strong>Text 5 Handle</strong>: h208ba498g6a16g46a2g8348g7dccbebb4fe9</span><span class='meta-item'><strong>Text 5 UUID</strong>: 3395b979-cf00-b54b-30a0-d07a39750af5</span><span class='meta-item'><strong>Text 6 Handle</strong>: h17d95c8dg347fg4e99gb588g75a366c0cfa7</span><span class='meta-item'><strong>Text 6 UUID</strong>: d48d783e-ac1b-6ffe-008a-3187f993d3a1</span><span class='meta-item'><strong>Text 7 Handle</strong>: h1ea05658g78ebg4625g84d0g18a4aeffe759</span><span class='meta-item'><strong>Text 7 UUID</strong>: 3d96e690-b5f5-4fd1-b29b-87f3c615c19b</span><span class='meta-item'><strong>Text 8 Handle</strong>: h1f568beag71ccg43f5g966eg99d407c12685</span><span class='meta-item'><strong>Text 8 UUID</strong>: a63ad7c2-e5cb-71d5-a04a-c8d653f12f48</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 14</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 4a50a997-b40b-c428-d729-9495ee7a8ae1</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-7'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-7' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>7.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'>|SpeakTo Shadowheart Normal v1 |</span></span></span></span><div class='node-detail-panel' id='details-7' hidden='until-found'><section class='section'><h3>Text</h3><div class='text-block'><div class='text-line'>|SpeakTo Shadowheart Normal v1 |</div><div class='line-meta'><code>h30013fd3gd845g4cd3g9692gf2021f343e3a</code> | <code>cd4a5250-fdcd-bbf7-b9fd-bc2bfb0ffe96</code> | stub</div><div class='text-line'>|SpeakTo Shadowheart Normal v2 |</div><div class='line-meta'><code>h675702eeg3591g460agaa1eg572b84a6ced9</code> | <code>e20c7f70-fc69-5792-8784-3cd8d327ea4e</code> | stub</div><div class='text-line'>|SpeakTo Shadowheart Normal v3 |</div><div class='line-meta'><code>h0459005bg41cbg4c72gac18ge92596ca626f</code> | <code>d3308aff-0ae0-5208-089c-0188265c56fd</code> | stub</div><div class='text-line'>|SpeakTo Shadowheart Normal v4 |<br></div><div class='line-meta'><code>h6df792b8gca78g46e5g8589g1b24a2e13f07</code> | <code>43358632-a307-8c93-e50d-525880f0ab4c</code> | stub</div><div class='text-line'>|SpeakTo Shadowheart Normal v5 |<br><br></div><div class='line-meta'><code>h42a74075gb213g40a4g84dcgde2488b64067</code> | <code>9e09886d-6e4e-d48c-44d2-1282012e38bc</code> | stub</div><div class='text-line'>|SpeakTo Shadowheart Normal v6 |</div><div class='line-meta'><code>h80ab97e2g7319g4452g93a1g4f32825c90ff</code> | <code>9000f915-ecaa-4684-38ba-2c7f59437db6</code> | stub</div><div class='text-line'>|SpeakTo Shadowheart Normal v7 |</div><div class='line-meta'><code>h5666557bg5d8eg4408g9a43g3f9d18aa6c07</code> | <code>7a311fc7-3411-3736-2066-cf999e8037ea</code> | stub</div><div class='text-line'>|SpeakTo Shadowheart Normal v8 |</div><div class='line-meta'><code>h2dbf44d0g1c89g4181g97f5gb97fa5e3834e</code> | <code>3dbc1623-e5a9-5da4-2d86-170ae14e7a0c</code> | stub</div><div class='text-line'>|SpeakTo Shadowheart Normal v9 |</div><div class='line-meta'><code>h37a95f96ge95bg4febg9739gc0adf0456d61</code> | <code>1787d97d-d731-47f2-a993-c61599f01d33</code> | stub</div><div class='text-line'>|SpeakTo Shadowheart Normal v10 |<br></div><div class='line-meta'><code>h5c5a9576gdd51g4105ga3c4g5a07f2dafe2a</code> | <code>6f632440-9ef2-f4c0-a62f-5680d6281e3d</code> | stub</div><div class='text-line'>|SpeakTo Shadowheart Normal v11 |<br><br></div><div class='line-meta'><code>h61093c82g1a03g47a3g8316gcab8d707e822</code> | <code>d74fdf31-b46f-d5ce-d342-c7ee4304bb44</code> | stub</div><div class='text-line'>|SpeakTo Shadowheart Normal v12 |</div><div class='line-meta'><code>h6a75fec2gc6c3g49b2g8207g44f951f1f524</code> | <code>4e006fd7-c128-f291-3509-3604c386ce2f</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 6d9274af-a256-a276-ed27-ec9b795aff4e</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h30013fd3gd845g4cd3g9692gf2021f343e3a</span><span class='meta-item'><strong>Text 1 UUID</strong>: cd4a5250-fdcd-bbf7-b9fd-bc2bfb0ffe96</span><span class='meta-item'><strong>Text 2 Handle</strong>: h675702eeg3591g460agaa1eg572b84a6ced9</span><span class='meta-item'><strong>Text 2 UUID</strong>: e20c7f70-fc69-5792-8784-3cd8d327ea4e</span><span class='meta-item'><strong>Text 3 Handle</strong>: h0459005bg41cbg4c72gac18ge92596ca626f</span><span class='meta-item'><strong>Text 3 UUID</strong>: d3308aff-0ae0-5208-089c-0188265c56fd</span><span class='meta-item'><strong>Text 4 Handle</strong>: h6df792b8gca78g46e5g8589g1b24a2e13f07</span><span class='meta-item'><strong>Text 4 UUID</strong>: 43358632-a307-8c93-e50d-525880f0ab4c</span><span class='meta-item'><strong>Text 5 Handle</strong>: h42a74075gb213g40a4g84dcgde2488b64067</span><span class='meta-item'><strong>Text 5 UUID</strong>: 9e09886d-6e4e-d48c-44d2-1282012e38bc</span><span class='meta-item'><strong>Text 6 Handle</strong>: h80ab97e2g7319g4452g93a1g4f32825c90ff</span><span class='meta-item'><strong>Text 6 UUID</strong>: 9000f915-ecaa-4684-38ba-2c7f59437db6</span><span class='meta-item'><strong>Text 7 Handle</strong>: h5666557bg5d8eg4408g9a43g3f9d18aa6c07</span><span class='meta-item'><strong>Text 7 UUID</strong>: 7a311fc7-3411-3736-2066-cf999e8037ea</span><span class='meta-item'><strong>Text 8 Handle</strong>: h2dbf44d0g1c89g4181g97f5gb97fa5e3834e</span><span class='meta-item'><strong>Text 8 UUID</strong>: 3dbc1623-e5a9-5da4-2d86-170ae14e7a0c</span><span class='meta-item'><strong>Text 9 Handle</strong>: h37a95f96ge95bg4febg9739gc0adf0456d61</span><span class='meta-item'><strong>Text 9 UUID</strong>: 1787d97d-d731-47f2-a993-c61599f01d33</span><span class='meta-item'><strong>Text 10 Handle</strong>: h5c5a9576gdd51g4105ga3c4g5a07f2dafe2a</span><span class='meta-item'><strong>Text 10 UUID</strong>: 6f632440-9ef2-f4c0-a62f-5680d6281e3d</span><span class='meta-item'><strong>Text 11 Handle</strong>: h61093c82g1a03g47a3g8316gcab8d707e822</span><span class='meta-item'><strong>Text 11 UUID</strong>: d74fdf31-b46f-d5ce-d342-c7ee4304bb44</span><span class='meta-item'><strong>Text 12 Handle</strong>: h6a75fec2gc6c3g49b2g8207g44f951f1f524</span><span class='meta-item'><strong>Text 12 UUID</strong>: 4e006fd7-c128-f291-3509-3604c386ce2f</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 13</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 6d9274af-a256-a276-ed27-ec9b795aff4e</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-8'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-8' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>8.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'> | Utility Shadowheart Sneaking v1|<br></span></span></span></span><div class='node-detail-panel' id='details-8' hidden='until-found'><section class='section'><h3>Text</h3><div class='text-block'><div class='text-line'> | Utility Shadowheart Sneaking v1|<br></div><div class='line-meta'><code>h72da62baga8feg4af3gbfc6gbb6938b3c8ce</code> | <code>c78d6ff2-70d4-15d2-e1b7-b5f995f754de</code> | stub</div><div class='text-line'> | Utility Shadowheart Sneaking v2|<br></div><div class='line-meta'><code>h3b5afa57gcd01g495agb9c5gaaf3a0862798</code> | <code>69bdec6c-c1fc-2c70-0ef8-d669bbddfb38</code> | stub</div><div class='text-line'> | Utility Shadowheart Sneaking v3|<br></div><div class='line-meta'><code>hdeecf378g2bb1g4c67gb8a3g75844e343c77</code> | <code>2c98b46a-140a-94ac-9342-82b0d847add5</code> | stub</div><div class='text-line'> | Utility Shadowheart Sneaking v4|<br></div><div class='line-meta'><code>h64746f43gebecg4969ga255g88c6700dc588</code> | <code>b97e54b9-95fa-d6b0-2cf6-9acf513d7dca</code> | stub</div><div class='text-line'> | Utility Shadowheart Sneaking v5|<br></div><div class='line-meta'><code>h115b7fe2g4fa7g4e37g879cgded261fd100e</code> | <code>8c4fcd48-9df7-9c42-bea9-c2fb1646f594</code> | stub</div><div class='text-line'> | Utility Shadowheart Sneaking v6|</div><div class='line-meta'><code>heb510f9egf0ddg4433ga2a7gf42d69f81790</code> | <code>4619ec3d-7035-82ec-e8be-f1cb9ca9dcef</code> | stub</div><div class='text-line'> | Utility Shadowheart Sneaking v7|</div><div class='line-meta'><code>hbaf74aedgaaf2g44dfgbc4fg716221e72042</code> | <code>52df730a-fef9-cb6a-d436-6115a5dafc60</code> | stub</div><div class='text-line'> | Utility Shadowheart Sneaking v8|</div><div class='line-meta'><code>hb8908439g75a5g409ag9dc3g35d3ef4b7dfd</code> | <code>4e28ea71-0a5d-98b0-c100-294cf3207c75</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 6edc4ca5-5ac2-e1ef-6312-181ad96cb085</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h72da62baga8feg4af3gbfc6gbb6938b3c8ce</span><span class='meta-item'><strong>Text 1 UUID</strong>: c78d6ff2-70d4-15d2-e1b7-b5f995f754de</span><span class='meta-item'><strong>Text 2 Handle</strong>: h3b5afa57gcd01g495agb9c5gaaf3a0862798</span><span class='meta-item'><strong>Text 2 UUID</strong>: 69bdec6c-c1fc-2c70-0ef8-d669bbddfb38</span><span class='meta-item'><strong>Text 3 Handle</strong>: hdeecf378g2bb1g4c67gb8a3g75844e343c77</span><span class='meta-item'><strong>Text 3 UUID</strong>: 2c98b46a-140a-94ac-9342-82b0d847add5</span><span class='meta-item'><strong>Text 4 Handle</strong>: h64746f43gebecg4969ga255g88c6700dc588</span><span class='meta-item'><strong>Text 4 UUID</strong>: b97e54b9-95fa-d6b0-2cf6-9acf513d7dca</span><span class='meta-item'><strong>Text 5 Handle</strong>: h115b7fe2g4fa7g4e37g879cgded261fd100e</span><span class='meta-item'><strong>Text 5 UUID</strong>: 8c4fcd48-9df7-9c42-bea9-c2fb1646f594</span><span class='meta-item'><strong>Text 6 Handle</strong>: heb510f9egf0ddg4433ga2a7gf42d69f81790</span><span class='meta-item'><strong>Text 6 UUID</strong>: 4619ec3d-7035-82ec-e8be-f1cb9ca9dcef</span><span class='meta-item'><strong>Text 7 Handle</strong>: hbaf74aedgaaf2g44dfgbc4fg716221e72042</span><span class='meta-item'><strong>Text 7 UUID</strong>: 52df730a-fef9-cb6a-d436-6115a5dafc60</span><span class='meta-item'><strong>Text 8 Handle</strong>: hb8908439g75a5g409ag9dc3g35d3ef4b7dfd</span><span class='meta-item'><strong>Text 8 UUID</strong>: 4e28ea71-0a5d-98b0-c100-294cf3207c75</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 12</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 6edc4ca5-5ac2-e1ef-6312-181ad96cb085</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-10'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-10' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>10.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'> |InventoryLimitReached ShadowHeart Sneaking v1 |<br></span></span></span></span><div class='node-detail-panel' id='details-10' hidden='until-found'><section class='section'><h3>Text</h3><div class='text-block'><div class='text-line'> |InventoryLimitReached ShadowHeart Sneaking v1 |<br></div><div class='line-meta'><code>h666e534fge74fg4165g8e13g046b1b961d8a</code> | <code>f3826067-127b-252e-3521-69276371cc5f</code> | stub</div><div class='text-line'> |InventoryLimitReached ShadowHeart Sneaking v2 |<br><br></div><div class='line-meta'><code>hb57b564dgc09eg4436g99a7g18242dddaebd</code> | <code>265251aa-9734-a269-ebb8-8d60f5e24352</code> | stub</div><div class='text-line'> |InventoryLimitReached ShadowHeart Sneaking v3 |<br><br><br></div><div class='line-meta'><code>h47bdb483gd01dg4dafgb4a5g4858266528dd</code> | <code>685d5a16-08b8-1998-3df6-27a822bfcb0f</code> | stub</div><div class='text-line'> |InventoryLimitReached ShadowHeart Sneaking v4 |<br><br><br></div><div class='line-meta'><code>h042b5c3dge03cg40e4gb20bg2ec8e14d60e4</code> | <code>70eef3b5-a5a2-7acd-369f-4612db37aad6</code> | stub</div><div class='text-line'> |InventoryLimitReached ShadowHeart Sneaking v5 |<br><br><br></div><div class='line-meta'><code>h7a1c064dg4ef1g4923g8131g70b3d1daa258</code> | <code>ddf9d35c-162d-5d78-2ba7-9a3829ae4fd9</code> | stub</div><div class='text-line'> |InventoryLimitReached ShadowHeart Sneaking v6 |</div><div class='line-meta'><code>h5f75b5d3g194ag4819gafe3gc2df7b1801f9</code> | <code>465ce93f-9995-7e49-8967-c64a24119536</code> | stub</div><div class='text-line'> |InventoryLimitReached ShadowHeart Sneaking v7 |</div><div class='line-meta'><code>hf3c00ad5g72afg492bgb061g2dfb69f0fbf0</code> | <code>d1d00001-bdc8-40aa-8e4f-bcae0dca2639</code> | stub</div><div class='text-line'> |InventoryLimitReached ShadowHeart Sneaking v8 |<br></div><div class='line-meta'><code>ha1cc675cgc80dg452egbd7fg3b51b86b1c42</code> | <code>1d9602a6-fead-4044-3396-f93412833840</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 7f5f7732-653a-2582-1a1a-862b3128c011</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h666e534fge74fg4165g8e13g046b1b961d8a</span><span class='meta-item'><strong>Text 1 UUID</strong>: f3826067-127b-252e-3521-69276371cc5f</span><span class='meta-item'><strong>Text 2 Handle</strong>: hb57b564dgc09eg4436g99a7g18242dddaebd</span><span class='meta-item'><strong>Text 2 UUID</strong>: 265251aa-9734-a269-ebb8-8d60f5e24352</span><span class='meta-item'><strong>Text 3 Handle</strong>: h47bdb483gd01dg4dafgb4a5g4858266528dd</span><span class='meta-item'><strong>Text 3 UUID</strong>: 685d5a16-08b8-1998-3df6-27a822bfcb0f</span><span class='meta-item'><strong>Text 4 Handle</strong>: h042b5c3dge03cg40e4gb20bg2ec8e14d60e4</span><span class='meta-item'><strong>Text 4 UUID</strong>: 70eef3b5-a5a2-7acd-369f-4612db37aad6</span><span class='meta-item'><strong>Text 5 Handle</strong>: h7a1c064dg4ef1g4923g8131g70b3d1daa258</span><span class='meta-item'><strong>Text 5 UUID</strong>: ddf9d35c-162d-5d78-2ba7-9a3829ae4fd9</span><span class='meta-item'><strong>Text 6 Handle</strong>: h5f75b5d3g194ag4819gafe3gc2df7b1801f9</span><span class='meta-item'><strong>Text 6 UUID</strong>: 465ce93f-9995-7e49-8967-c64a24119536</span><span class='meta-item'><strong>Text 7 Handle</strong>: hf3c00ad5g72afg492bgb061g2dfb69f0fbf0</span><span class='meta-item'><strong>Text 7 UUID</strong>: d1d00001-bdc8-40aa-8e4f-bcae0dca2639</span><span class='meta-item'><strong>Text 8 Handle</strong>: ha1cc675cgc80dg452egbd7fg3b51b86b1c42</span><span class='meta-item'><strong>Text 8 UUID</strong>: 1d9602a6-fead-4044-3396-f93412833840</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 11</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 7f5f7732-653a-2582-1a1a-862b3128c011</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-11'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-11' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>11.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'> |InventoryLimitReached ShadowHeart Normal v1 |<br></span></span></span></span><div class='node-detail-panel' id='details-11' hidden='until-found'><section class='section'><h3>Text</h3><div class='text-block'><div class='text-line'> |InventoryLimitReached ShadowHeart Normal v1 |<br></div><div class='line-meta'><code>hb192998fgc6f0g4b22gaa36g36f82a5c149c</code> | <code>6cf779d5-63e9-2c3f-d8fa-087cee650e67</code> | stub</div><div class='text-line'> |InventoryLimitReached ShadowHeart Normal v2 |<br><br></div><div class='line-meta'><code>hbf05aabfgf0cbg4511g96e3gd393810a404f</code> | <code>5fb02aaa-b2e9-0d05-1af4-ab404b7173e6</code> | stub</div><div class='text-line'> |InventoryLimitReached ShadowHeart Normal v3 |<br><br><br></div><div class='line-meta'><code>hacb2f638g0f10g4c53g8af5g110d06e2edb6</code> | <code>b9c87158-857d-83d4-03c4-3d5f692f0cba</code> | stub</div><div class='text-line'> |InventoryLimitReached ShadowHeart Normal v4 |<br><br><br></div><div class='line-meta'><code>hcc74d268g675fg401dg9cf6g079215806044</code> | <code>86469d0c-7f43-f635-348d-27cc47ab27ef</code> | stub</div><div class='text-line'> |InventoryLimitReached ShadowHeart Normal v5 |<br><br></div><div class='line-meta'><code>hbfd7a3d1g9e46g4495g9ddcg1baf88921def</code> | <code>eb2d4409-c812-305e-6489-5f58a3977139</code> | stub</div><div class='text-line'> |InventoryLimitReached ShadowHeart Normal v6 |</div><div class='line-meta'><code>hb9bab776g097eg4ca3ga792gaa85c741a699</code> | <code>009d282f-d724-0e46-e59d-c5ae644cf892</code> | stub</div><div class='text-line'> |InventoryLimitReached ShadowHeart Normal v7 |</div><div class='line-meta'><code>h6013470fg1443g4bc2g80bcg34b95fc5b6da</code> | <code>28c428df-bae2-f6d0-19d7-55d1d44db275</code> | stub</div><div class='text-line'> |InventoryLimitReached ShadowHeart Normal v8 |<br></div><div class='line-meta'><code>h1bd5fff3g8748g4c3ag80f9gc60211f29b82</code> | <code>03759e3f-47dc-bc48-1b91-4a92f37e39f7</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 88379189-7055-52c1-8cae-520b6d942a0c</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Text 1 Handle</strong>: hb192998fgc6f0g4b22gaa36g36f82a5c149c</span><span class='meta-item'><strong>Text 1 UUID</strong>: 6cf779d5-63e9-2c3f-d8fa-087cee650e67</span><span class='meta-item'><strong>Text 2 Handle</strong>: hbf05aabfgf0cbg4511g96e3gd393810a404f</span><span class='meta-item'><strong>Text 2 UUID</strong>: 5fb02aaa-b2e9-0d05-1af4-ab404b7173e6</span><span class='meta-item'><strong>Text 3 Handle</strong>: hacb2f638g0f10g4c53g8af5g110d06e2edb6</span><span class='meta-item'><strong>Text 3 UUID</strong>: b9c87158-857d-83d4-03c4-3d5f692f0cba</span><span class='meta-item'><strong>Text 4 Handle</strong>: hcc74d268g675fg401dg9cf6g079215806044</span><span class='meta-item'><strong>Text 4 UUID</strong>: 86469d0c-7f43-f635-348d-27cc47ab27ef</span><span class='meta-item'><strong>Text 5 Handle</strong>: hbfd7a3d1g9e46g4495g9ddcg1baf88921def</span><span class='meta-item'><strong>Text 5 UUID</strong>: eb2d4409-c812-305e-6489-5f58a3977139</span><span class='meta-item'><strong>Text 6 Handle</strong>: hb9bab776g097eg4ca3ga792gaa85c741a699</span><span class='meta-item'><strong>Text 6 UUID</strong>: 009d282f-d724-0e46-e59d-c5ae644cf892</span><span class='meta-item'><strong>Text 7 Handle</strong>: h6013470fg1443g4bc2g80bcg34b95fc5b6da</span><span class='meta-item'><strong>Text 7 UUID</strong>: 28c428df-bae2-f6d0-19d7-55d1d44db275</span><span class='meta-item'><strong>Text 8 Handle</strong>: h1bd5fff3g8748g4c3ag80f9gc60211f29b82</span><span class='meta-item'><strong>Text 8 UUID</strong>: 03759e3f-47dc-bc48-1b91-4a92f37e39f7</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 10</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 88379189-7055-52c1-8cae-520b6d942a0c</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-12'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-12' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>12.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'>|OpenLock Shadowheart Sneaking v1 |</span></span></span></span><div class='node-detail-panel' id='details-12' hidden='until-found'><section class='section'><h3>Text</h3><div class='text-block'><div class='text-line'>|OpenLock Shadowheart Sneaking v1 |</div><div class='line-meta'><code>hea0b5a64g74fcg4700g8f3dg384cfa790548</code> | <code>824e88fa-6bf4-18d0-430c-d903324a7443</code> | stub</div><div class='text-line'>|OpenLock Shadowheart Sneaking v2 |</div><div class='line-meta'><code>h2adf040cg219fg4f99g9c77g16dc45e06b0a</code> | <code>386f2010-8ca9-2771-9614-127d6f98f8f5</code> | stub</div><div class='text-line'>|OpenLock Shadowheart Sneaking v3 |</div><div class='line-meta'><code>hbe3ac4abgbeedg4650g97f1g31b797fea3f4</code> | <code>0f8bd6a8-ddbb-8b1a-1629-737b7624ee69</code> | stub</div><div class='text-line'>|OpenLock Shadowheart Sneaking v4 |</div><div class='line-meta'><code>h2be5e6d6g3edag4225g809fg21bf186c38fb</code> | <code>c1c2ecf2-4b59-d546-babe-62cffecca9a4</code> | stub</div><div class='text-line'>|OpenLock Shadowheart Sneaking v5 |</div><div class='line-meta'><code>h66550617ged34g48a7gafbbge625abbe2208</code> | <code>e1544581-ae88-2e82-4299-250e9fa9a62d</code> | stub</div><div class='text-line'>|OpenLock Shadowheart Sneaking v6 |</div><div class='line-meta'><code>h6fe0d3ddg0bb3g456fgaa89gea83fe68dad7</code> | <code>daa45878-6f59-eaa0-8697-05e641042c4e</code> | stub</div><div class='text-line'>|OpenLock Shadowheart Sneaking v7 |</div><div class='line-meta'><code>h7058a790ga6e9g4901g965agd1147d07d329</code> | <code>da97ce31-3c7a-1ac2-c897-4b4c01f3b2db</code> | stub</div><div class='text-line'>|OpenLock Shadowheart Sneaking v8 |</div><div class='line-meta'><code>hd013ee68gb5b7g400bg9f6eg8cb8f4815256</code> | <code>fc77e645-8beb-6905-5ca0-07d4123929af</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: 9ef0e654-e86d-8ccc-7848-d3d45b144973</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Text 1 Handle</strong>: hea0b5a64g74fcg4700g8f3dg384cfa790548</span><span class='meta-item'><strong>Text 1 UUID</strong>: 824e88fa-6bf4-18d0-430c-d903324a7443</span><span class='meta-item'><strong>Text 2 Handle</strong>: h2adf040cg219fg4f99g9c77g16dc45e06b0a</span><span class='meta-item'><strong>Text 2 UUID</strong>: 386f2010-8ca9-2771-9614-127d6f98f8f5</span><span class='meta-item'><strong>Text 3 Handle</strong>: hbe3ac4abgbeedg4650g97f1g31b797fea3f4</span><span class='meta-item'><strong>Text 3 UUID</strong>: 0f8bd6a8-ddbb-8b1a-1629-737b7624ee69</span><span class='meta-item'><strong>Text 4 Handle</strong>: h2be5e6d6g3edag4225g809fg21bf186c38fb</span><span class='meta-item'><strong>Text 4 UUID</strong>: c1c2ecf2-4b59-d546-babe-62cffecca9a4</span><span class='meta-item'><strong>Text 5 Handle</strong>: h66550617ged34g48a7gafbbge625abbe2208</span><span class='meta-item'><strong>Text 5 UUID</strong>: e1544581-ae88-2e82-4299-250e9fa9a62d</span><span class='meta-item'><strong>Text 6 Handle</strong>: h6fe0d3ddg0bb3g456fgaa89gea83fe68dad7</span><span class='meta-item'><strong>Text 6 UUID</strong>: daa45878-6f59-eaa0-8697-05e641042c4e</span><span class='meta-item'><strong>Text 7 Handle</strong>: h7058a790ga6e9g4901g965agd1147d07d329</span><span class='meta-item'><strong>Text 7 UUID</strong>: da97ce31-3c7a-1ac2-c897-4b4c01f3b2db</span><span class='meta-item'><strong>Text 8 Handle</strong>: hd013ee68gb5b7g400bg9f6eg8cb8f4815256</span><span class='meta-item'><strong>Text 8 UUID</strong>: fc77e645-8beb-6905-5ca0-07d4123929af</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 9</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: 9ef0e654-e86d-8ccc-7848-d3d45b144973</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-13'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-13' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>13.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'> | HealBuff Shadowheart Sneaking v1|</span> <span class='end'>[End]</span></span></span></span><div class='node-detail-panel' id='details-13' hidden='until-found'><section class='section'><h3>Text</h3><div class='text-block'><div class='text-line'> | HealBuff Shadowheart Sneaking v1|</div><div class='line-meta'><code>h19ac99b9g795ag41aagaea0g4d7ba7eed1e9</code> | <code>97e13624-4e36-0fdc-3b72-0b19ed156462</code> | stub</div><div class='text-line'> | HealBuff Shadowheart Sneaking v2|</div><div class='line-meta'><code>hc8fc9fb5gfd11g4e98gb882g892d9b45a3cd</code> | <code>7a485885-a14a-634b-f303-37ae8efd9999</code> | stub</div><div class='text-line'> | HealBuff Shadowheart Sneaking v3|<br></div><div class='line-meta'><code>hbf2fac45gc670g4f2dg99cbg87ebf81f1492</code> | <code>d419f711-06f1-0e4f-550d-6cc55735ea78</code> | stub</div><div class='text-line'> | HealBuff Shadowheart Sneaking v4|<br><br></div><div class='line-meta'><code>h7248aeb5g873eg4c1fg974fg84e592ca7f90</code> | <code>1e10bc26-aae1-3917-a823-a03102f21bec</code> | stub</div><div class='text-line'> | HealBuff Shadowheart Sneaking v5|<br><br></div><div class='line-meta'><code>h8d5e65bfg9b09g44a8ga12cg0f993e76bfce</code> | <code>59a1e459-d354-0d29-0704-148a9bbd38da</code> | stub</div><div class='text-line'> | HealBuff Shadowheart Sneaking v6|<br><br></div><div class='line-meta'><code>heacc1f17gd529g47beg90cag075cc5faa360</code> | <code>84bfc599-ebcf-d3c5-ebea-201187d266d5</code> | stub</div><div class='text-line'> | HealBuff Shadowheart Sneaking v7|</div><div class='line-meta'><code>h67545cb8gec03g453dg83b3g6dfd3d2a0173</code> | <code>0fcbcf3e-a4fe-7cdd-73ed-22d2a92d0e51</code> | stub</div><div class='text-line'> | HealBuff Shadowheart Sneaking v8|</div><div class='line-meta'><code>h8e10f098g5d35g44a0g9874gd1d67e3c4922</code> | <code>dbda7e92-6864-17a7-2e41-9e94edb6b4c9</code> | stub</div><div class='text-line'> | HealBuff Shadowheart Sneaking v9|</div><div class='line-meta'><code>hdfbcfffbgf9a4g427egbc3fg1b510a3ef58c</code> | <code>391c9823-0b25-53b3-5c33-ddbb43b5836d</code> | stub</div><div class='text-line'> | HealBuff Shadowheart Sneaking v10|<br></div><div class='line-meta'><code>hdb9833e3g09efg40e7g9a5bgbff70a558a4d</code> | <code>81def8b5-b594-cd02-e6a8-595c00751194</code> | stub</div><div class='text-line'> | HealBuff Shadowheart Sneaking v11|<br><br></div><div class='line-meta'><code>h2fbd29b0gd7f8g49a1g8b7fgc6cc5e9a1d81</code> | <code>671286df-ba62-5bd0-c737-7582da95d9d2</code> | stub</div><div class='text-line'> | HealBuff Shadowheart Sneaking v12|<br><br><br></div><div class='line-meta'><code>ha2afa337gdfadg4780g96b9g3a8533aa1627</code> | <code>0c8cac2a-ff44-e4bb-1380-33afeb028bee</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: ab293fae-5436-7948-ec38-ab141539a64c</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h19ac99b9g795ag41aagaea0g4d7ba7eed1e9</span><span class='meta-item'><strong>Text 1 UUID</strong>: 97e13624-4e36-0fdc-3b72-0b19ed156462</span><span class='meta-item'><strong>Text 2 Handle</strong>: hc8fc9fb5gfd11g4e98gb882g892d9b45a3cd</span><span class='meta-item'><strong>Text 2 UUID</strong>: 7a485885-a14a-634b-f303-37ae8efd9999</span><span class='meta-item'><strong>Text 3 Handle</strong>: hbf2fac45gc670g4f2dg99cbg87ebf81f1492</span><span class='meta-item'><strong>Text 3 UUID</strong>: d419f711-06f1-0e4f-550d-6cc55735ea78</span><span class='meta-item'><strong>Text 4 Handle</strong>: h7248aeb5g873eg4c1fg974fg84e592ca7f90</span><span class='meta-item'><strong>Text 4 UUID</strong>: 1e10bc26-aae1-3917-a823-a03102f21bec</span><span class='meta-item'><strong>Text 5 Handle</strong>: h8d5e65bfg9b09g44a8ga12cg0f993e76bfce</span><span class='meta-item'><strong>Text 5 UUID</strong>: 59a1e459-d354-0d29-0704-148a9bbd38da</span><span class='meta-item'><strong>Text 6 Handle</strong>: heacc1f17gd529g47beg90cag075cc5faa360</span><span class='meta-item'><strong>Text 6 UUID</strong>: 84bfc599-ebcf-d3c5-ebea-201187d266d5</span><span class='meta-item'><strong>Text 7 Handle</strong>: h67545cb8gec03g453dg83b3g6dfd3d2a0173</span><span class='meta-item'><strong>Text 7 UUID</strong>: 0fcbcf3e-a4fe-7cdd-73ed-22d2a92d0e51</span><span class='meta-item'><strong>Text 8 Handle</strong>: h8e10f098g5d35g44a0g9874gd1d67e3c4922</span><span class='meta-item'><strong>Text 8 UUID</strong>: dbda7e92-6864-17a7-2e41-9e94edb6b4c9</span><span class='meta-item'><strong>Text 9 Handle</strong>: hdfbcfffbgf9a4g427egbc3fg1b510a3ef58c</span><span class='meta-item'><strong>Text 9 UUID</strong>: 391c9823-0b25-53b3-5c33-ddbb43b5836d</span><span class='meta-item'><strong>Text 10 Handle</strong>: hdb9833e3g09efg40e7g9a5bgbff70a558a4d</span><span class='meta-item'><strong>Text 10 UUID</strong>: 81def8b5-b594-cd02-e6a8-595c00751194</span><span class='meta-item'><strong>Text 11 Handle</strong>: h2fbd29b0gd7f8g49a1g8b7fgc6cc5e9a1d81</span><span class='meta-item'><strong>Text 11 UUID</strong>: 671286df-ba62-5bd0-c737-7582da95d9d2</span><span class='meta-item'><strong>Text 12 Handle</strong>: ha2afa337gdfadg4780g96b9g3a8533aa1627</span><span class='meta-item'><strong>Text 12 UUID</strong>: 0c8cac2a-ff44-e4bb-1380-33afeb028bee</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 20</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: ab293fae-5436-7948-ec38-ab141539a64c</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-14'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-14' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>14.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'> | TakeAction Shadowheart Normal v1|</span></span></span></span><div class='node-detail-panel' id='details-14' hidden='until-found'><section class='section'><h3>Text</h3><div class='text-block'><div class='text-line'> | TakeAction Shadowheart Normal v1|</div><div class='line-meta'><code>h9feed1b6g1fd5g4610g8a29g9f8f1ab53a2a</code> | <code>236b5806-5985-1890-b75d-895e5c980fa4</code> | stub</div><div class='text-line'> | TakeAction Shadowheart Normal v2|<br></div><div class='line-meta'><code>hd9f3dc95g99cfg48f8gaf4fgf281283f1d9a</code> | <code>cd382bf9-888d-8ac0-eb64-b77a0fff15a4</code> | stub</div><div class='text-line'> | TakeAction Shadowheart Normal v3|<br><br></div><div class='line-meta'><code>hf50311acg66c1g4ab1g8012g4fbb7a4e8779</code> | <code>31501aa1-3ac1-c99f-de1b-dcb0d85d0a3b</code> | stub</div><div class='text-line'> | TakeAction Shadowheart Normal v4|<br><br></div><div class='line-meta'><code>h09c83e51g30fag442fg980agaddd419200f3</code> | <code>c48a82c1-8343-773c-8615-8d2b46b5c223</code> | stub</div><div class='text-line'> | TakeAction Shadowheart Normal v5|<br><br></div><div class='line-meta'><code>hdadcc4b2gc209g431agab9bg399f6431d296</code> | <code>1a74251a-e9c9-092d-580f-c64b39950b6d</code> | stub</div><div class='text-line'> | TakeAction Shadowheart Normal v6|</div><div class='line-meta'><code>h600394dcg2f80g4b73g9c93g56001ba5f8f5</code> | <code>1cda9ff4-b635-6b0b-d865-763423dc080d</code> | stub</div><div class='text-line'> | TakeAction Shadowheart Normal v7|<br></div><div class='line-meta'><code>h32c865b6gbaaeg4378gb7a2g499f088ee299</code> | <code>d53007f3-ba7d-7d7e-0a8f-3fee2f09aa38</code> | stub</div><div class='text-line'> | TakeAction Shadowheart Normal v8|<br></div><div class='line-meta'><code>h24e9b76cgdd1bg4498g9a7ag1f1f4939ea24</code> | <code>2f63c089-ebb9-d664-22ba-8c46fc4277a4</code> | stub</div><div class='text-line'> | TakeAction Shadowheart Normal v9|</div><div class='line-meta'><code>h5e1e535fgc5aag4ce4gb106g347d9c422ba4</code> | <code>7e8bc16a-aeeb-a42b-0ea0-da2a54625ad6</code> | stub</div><div class='text-line'> | TakeAction Shadowheart Normal v10|<br></div><div class='line-meta'><code>hd68d742bgfa89g4599gaa16g42f204cec4e2</code> | <code>47a674d9-24ba-29e0-b172-04c3da08e17f</code> | stub</div><div class='text-line'> | TakeAction Shadowheart Normal v11|<br><br></div><div class='line-meta'><code>h0166a5d6gac38g4daegaf6bg6cc0947f73c9</code> | <code>2faaf25f-2f0f-60cd-ae45-d840f4272da5</code> | stub</div><div class='text-line'> | TakeAction Shadowheart Normal v12|<br></div><div class='line-meta'><code>he57858e9g4043g437bga036gc9976ceadda5</code> | <code>262d8ae3-e544-d8af-1a87-7ace6ec380ee</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: bfbf976c-9006-7223-b8a2-67e245b48119</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h9feed1b6g1fd5g4610g8a29g9f8f1ab53a2a</span><span class='meta-item'><strong>Text 1 UUID</strong>: 236b5806-5985-1890-b75d-895e5c980fa4</span><span class='meta-item'><strong>Text 2 Handle</strong>: hd9f3dc95g99cfg48f8gaf4fgf281283f1d9a</span><span class='meta-item'><strong>Text 2 UUID</strong>: cd382bf9-888d-8ac0-eb64-b77a0fff15a4</span><span class='meta-item'><strong>Text 3 Handle</strong>: hf50311acg66c1g4ab1g8012g4fbb7a4e8779</span><span class='meta-item'><strong>Text 3 UUID</strong>: 31501aa1-3ac1-c99f-de1b-dcb0d85d0a3b</span><span class='meta-item'><strong>Text 4 Handle</strong>: h09c83e51g30fag442fg980agaddd419200f3</span><span class='meta-item'><strong>Text 4 UUID</strong>: c48a82c1-8343-773c-8615-8d2b46b5c223</span><span class='meta-item'><strong>Text 5 Handle</strong>: hdadcc4b2gc209g431agab9bg399f6431d296</span><span class='meta-item'><strong>Text 5 UUID</strong>: 1a74251a-e9c9-092d-580f-c64b39950b6d</span><span class='meta-item'><strong>Text 6 Handle</strong>: h600394dcg2f80g4b73g9c93g56001ba5f8f5</span><span class='meta-item'><strong>Text 6 UUID</strong>: 1cda9ff4-b635-6b0b-d865-763423dc080d</span><span class='meta-item'><strong>Text 7 Handle</strong>: h32c865b6gbaaeg4378gb7a2g499f088ee299</span><span class='meta-item'><strong>Text 7 UUID</strong>: d53007f3-ba7d-7d7e-0a8f-3fee2f09aa38</span><span class='meta-item'><strong>Text 8 Handle</strong>: h24e9b76cgdd1bg4498g9a7ag1f1f4939ea24</span><span class='meta-item'><strong>Text 8 UUID</strong>: 2f63c089-ebb9-d664-22ba-8c46fc4277a4</span><span class='meta-item'><strong>Text 9 Handle</strong>: h5e1e535fgc5aag4ce4gb106g347d9c422ba4</span><span class='meta-item'><strong>Text 9 UUID</strong>: 7e8bc16a-aeeb-a42b-0ea0-da2a54625ad6</span><span class='meta-item'><strong>Text 10 Handle</strong>: hd68d742bgfa89g4599gaa16g42f204cec4e2</span><span class='meta-item'><strong>Text 10 UUID</strong>: 47a674d9-24ba-29e0-b172-04c3da08e17f</span><span class='meta-item'><strong>Text 11 Handle</strong>: h0166a5d6gac38g4daegaf6bg6cc0947f73c9</span><span class='meta-item'><strong>Text 11 UUID</strong>: 2faaf25f-2f0f-60cd-ae45-d840f4272da5</span><span class='meta-item'><strong>Text 12 Handle</strong>: he57858e9g4043g437bga036gc9976ceadda5</span><span class='meta-item'><strong>Text 12 UUID</strong>: 262d8ae3-e544-d8af-1a87-7ace6ec380ee</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 8</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: bfbf976c-9006-7223-b8a2-67e245b48119</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-15'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-15' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>15.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'>|Pickpocket Shadowheart Normal v1 |</span></span></span></span><div class='node-detail-panel' id='details-15' hidden='until-found'><section class='section'><h3>Text</h3><div class='text-block'><div class='text-line'>|Pickpocket Shadowheart Normal v1 |</div><div class='line-meta'><code>hf47e3d7bg0c17g4d91ga615g55e77b3771e9</code> | <code>6b3a4f3a-05d7-de75-f134-1497cd52d1a0</code> | stub</div><div class='text-line'>|Pickpocket Shadowheart Normal v2 |</div><div class='line-meta'><code>h93132d8bgfab5g45b7g8e1dg19a6e43fbae9</code> | <code>74417629-622a-2399-d593-5d4696e4fc38</code> | stub</div><div class='text-line'>|Pickpocket Shadowheart Normal v3 |</div><div class='line-meta'><code>h6e3bd21fg62a7g4479g91bag1bf5d4c66780</code> | <code>516b51ab-8e5b-3da2-52d5-b68cbb8b1eae</code> | stub</div><div class='text-line'>|Pickpocket Shadowheart Normal v4 |</div><div class='line-meta'><code>h3f6fb0bbgf618g4806gb096g19d57f5c9a4e</code> | <code>632b10c8-3d55-4a03-6f04-820459a8e4de</code> | stub</div><div class='text-line'>|Pickpocket Shadowheart Normal v5 |</div><div class='line-meta'><code>hf4270404g5fcfg4735ga07fg76eeb1103d9f</code> | <code>5dd6b34e-7611-1e1b-a0b3-3dfeaadac819</code> | stub</div><div class='text-line'>|Pickpocket Shadowheart Normal v6 |</div><div class='line-meta'><code>h5ddca7d6g2d3dg4340gba2eg76f26afe4ff7</code> | <code>e6fa8350-a0a0-fe66-549d-91fb34f7f809</code> | stub</div><div class='text-line'>|Pickpocket Shadowheart Normal v7 |</div><div class='line-meta'><code>h9ccc917bgb2e9g4393g8826gf0ea62f57b1e</code> | <code>d60f1c96-54e9-deba-b850-f71fa699ceb4</code> | stub</div><div class='text-line'>|Pickpocket Shadowheart Normal v8 |</div><div class='line-meta'><code>hefd330fage79eg4b64gb778gad3fb602fb8d</code> | <code>45b436b0-7ad7-7e90-5342-adfb4f06b923</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: d1a2ce56-3fb6-bf56-db3a-00a2d582661b</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Text 1 Handle</strong>: hf47e3d7bg0c17g4d91ga615g55e77b3771e9</span><span class='meta-item'><strong>Text 1 UUID</strong>: 6b3a4f3a-05d7-de75-f134-1497cd52d1a0</span><span class='meta-item'><strong>Text 2 Handle</strong>: h93132d8bgfab5g45b7g8e1dg19a6e43fbae9</span><span class='meta-item'><strong>Text 2 UUID</strong>: 74417629-622a-2399-d593-5d4696e4fc38</span><span class='meta-item'><strong>Text 3 Handle</strong>: h6e3bd21fg62a7g4479g91bag1bf5d4c66780</span><span class='meta-item'><strong>Text 3 UUID</strong>: 516b51ab-8e5b-3da2-52d5-b68cbb8b1eae</span><span class='meta-item'><strong>Text 4 Handle</strong>: h3f6fb0bbgf618g4806gb096g19d57f5c9a4e</span><span class='meta-item'><strong>Text 4 UUID</strong>: 632b10c8-3d55-4a03-6f04-820459a8e4de</span><span class='meta-item'><strong>Text 5 Handle</strong>: hf4270404g5fcfg4735ga07fg76eeb1103d9f</span><span class='meta-item'><strong>Text 5 UUID</strong>: 5dd6b34e-7611-1e1b-a0b3-3dfeaadac819</span><span class='meta-item'><strong>Text 6 Handle</strong>: h5ddca7d6g2d3dg4340gba2eg76f26afe4ff7</span><span class='meta-item'><strong>Text 6 UUID</strong>: e6fa8350-a0a0-fe66-549d-91fb34f7f809</span><span class='meta-item'><strong>Text 7 Handle</strong>: h9ccc917bgb2e9g4393g8826gf0ea62f57b1e</span><span class='meta-item'><strong>Text 7 UUID</strong>: d60f1c96-54e9-deba-b850-f71fa699ceb4</span><span class='meta-item'><strong>Text 8 Handle</strong>: hefd330fage79eg4b64gb778gad3fb602fb8d</span><span class='meta-item'><strong>Text 8 UUID</strong>: 45b436b0-7ad7-7e90-5342-adfb4f06b923</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 7</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: d1a2ce56-3fb6-bf56-db3a-00a2d582661b</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-16'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-16' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>16.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'> |HideSuccess ShadowHeart Sneaking v1 |</span></span></span></span><div class='node-detail-panel' id='details-16' hidden='until-found'><section class='section'><h3>Text</h3><div class='text-block'><div class='text-line'> |HideSuccess ShadowHeart Sneaking v1 |</div><div class='line-meta'><code>h4d7f146cg982cg4fd0ga37cge25ca781c971</code> | <code>0122ff67-db99-b01f-a8ac-ce95242278c7</code> | stub</div><div class='text-line'> |HideSuccess ShadowHeart Sneaking v2 |<br></div><div class='line-meta'><code>h12d80b15g1ae9g4273gacb8g53ce0643c238</code> | <code>09954d08-d927-ec49-39be-87cff3470173</code> | stub</div><div class='text-line'> |HideSuccess ShadowHeart Sneaking v3 |<br></div><div class='line-meta'><code>hcf9d4be5g67eeg4f23g8f2cg388f03454378</code> | <code>fd2402f7-0c54-1bd8-0505-53e0c0ed0f15</code> | stub</div><div class='text-line'> |HideSuccess ShadowHeart Sneaking v4 |<br></div><div class='line-meta'><code>h34bf9361g20edg4c58gb252g0a964f41b619</code> | <code>c5ff17d5-2fbe-801d-cb12-619fa747cf01</code> | stub</div><div class='text-line'> |HideSuccess ShadowHeart Sneaking v5 |<br><br></div><div class='line-meta'><code>h17dce402ge91bg4312g931ag834293920388</code> | <code>daa080d7-9b32-7147-7b43-87742163495a</code> | stub</div><div class='text-line'> |HideSuccess ShadowHeart Sneaking v6 |<br><br><br></div><div class='line-meta'><code>hbfa3811cg78ffg4b47g95e1g529473ac0714</code> | <code>a40384d7-a084-5f68-994c-d0c063711e03</code> | stub</div><div class='text-line'> |HideSuccess ShadowHeart Sneaking v7 |<br></div><div class='line-meta'><code>h10ed6d91gad00g43f8g8827g77f7b3c5703a</code> | <code>17cf633a-ce36-127a-b5f2-0f8b7cf3ca46</code> | stub</div><div class='text-line'> |HideSuccess ShadowHeart Sneaking v8 |</div><div class='line-meta'><code>hfa7fe21cgeed3g4d06gb7d0gab8194852135</code> | <code>31dc931d-abbc-1dce-a079-6e31d0eb391d</code> | stub</div><div class='text-line'> |HideSuccess ShadowHeart Sneaking v9 |</div><div class='line-meta'><code>h6d5cceb4gc053g4701g90bbg5710ddbb3c98</code> | <code>fef102a0-3067-0ada-1c9c-1c7cdd3a27f9</code> | stub</div><div class='text-line'> |HideSuccess ShadowHeart Sneaking v10 |</div><div class='line-meta'><code>h5197b26bg8aaeg471egae5fg05b71bfdc38a</code> | <code>b3349901-13a8-8efb-1554-43a25b18bdd5</code> | stub</div><div class='text-line'> |HideSuccess ShadowHeart Sneaking v11 |<br></div><div class='line-meta'><code>h3c9f69e6g82cdg4384gb97ege1034e78c453</code> | <code>738a422c-5f09-298e-3d90-2994a75d6821</code> | stub</div><div class='text-line'> |HideSuccess ShadowHeart Sneaking v12 |</div><div class='line-meta'><code>h3c6aae5dge984g4457g9668gb689d90447e2</code> | <code>3f4b6a8f-b0a0-e6fa-5acf-b770379ff5b1</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: d49d5e5e-328b-2224-67ab-68b445a8d5e1</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h4d7f146cg982cg4fd0ga37cge25ca781c971</span><span class='meta-item'><strong>Text 1 UUID</strong>: 0122ff67-db99-b01f-a8ac-ce95242278c7</span><span class='meta-item'><strong>Text 2 Handle</strong>: h12d80b15g1ae9g4273gacb8g53ce0643c238</span><span class='meta-item'><strong>Text 2 UUID</strong>: 09954d08-d927-ec49-39be-87cff3470173</span><span class='meta-item'><strong>Text 3 Handle</strong>: hcf9d4be5g67eeg4f23g8f2cg388f03454378</span><span class='meta-item'><strong>Text 3 UUID</strong>: fd2402f7-0c54-1bd8-0505-53e0c0ed0f15</span><span class='meta-item'><strong>Text 4 Handle</strong>: h34bf9361g20edg4c58gb252g0a964f41b619</span><span class='meta-item'><strong>Text 4 UUID</strong>: c5ff17d5-2fbe-801d-cb12-619fa747cf01</span><span class='meta-item'><strong>Text 5 Handle</strong>: h17dce402ge91bg4312g931ag834293920388</span><span class='meta-item'><strong>Text 5 UUID</strong>: daa080d7-9b32-7147-7b43-87742163495a</span><span class='meta-item'><strong>Text 6 Handle</strong>: hbfa3811cg78ffg4b47g95e1g529473ac0714</span><span class='meta-item'><strong>Text 6 UUID</strong>: a40384d7-a084-5f68-994c-d0c063711e03</span><span class='meta-item'><strong>Text 7 Handle</strong>: h10ed6d91gad00g43f8g8827g77f7b3c5703a</span><span class='meta-item'><strong>Text 7 UUID</strong>: 17cf633a-ce36-127a-b5f2-0f8b7cf3ca46</span><span class='meta-item'><strong>Text 8 Handle</strong>: hfa7fe21cgeed3g4d06gb7d0gab8194852135</span><span class='meta-item'><strong>Text 8 UUID</strong>: 31dc931d-abbc-1dce-a079-6e31d0eb391d</span><span class='meta-item'><strong>Text 9 Handle</strong>: h6d5cceb4gc053g4701g90bbg5710ddbb3c98</span><span class='meta-item'><strong>Text 9 UUID</strong>: fef102a0-3067-0ada-1c9c-1c7cdd3a27f9</span><span class='meta-item'><strong>Text 10 Handle</strong>: h5197b26bg8aaeg471egae5fg05b71bfdc38a</span><span class='meta-item'><strong>Text 10 UUID</strong>: b3349901-13a8-8efb-1554-43a25b18bdd5</span><span class='meta-item'><strong>Text 11 Handle</strong>: h3c9f69e6g82cdg4384gb97ege1034e78c453</span><span class='meta-item'><strong>Text 11 UUID</strong>: 738a422c-5f09-298e-3d90-2994a75d6821</span><span class='meta-item'><strong>Text 12 Handle</strong>: h3c6aae5dge984g4457g9668gb689d90447e2</span><span class='meta-item'><strong>Text 12 UUID</strong>: 3f4b6a8f-b0a0-e6fa-5acf-b770379ff5b1</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 6</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: d49d5e5e-328b-2224-67ab-68b445a8d5e1</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-17'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-17' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>17.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'> |PortraitClick ShadowHeart SpamClick v1 |</span></span></span><span class='node-previews'><span class='preview-note'><span class='preview-note-label'>note:</span> <span class='preview-note-value'>Crazy line that triggers when we spam click the character. She will not react for x seconds after this line go wild</span></span></span></span><div class='node-detail-panel' id='details-17' hidden='until-found'><section class='section'><h3>Text</h3><div class='text-block'><div class='text-line'> |PortraitClick ShadowHeart SpamClick v1 |</div><div class='line-meta'><code>he89bd8c0g9ccbg431cgb04bg42a57a8511b1</code> | <code>809ed574-1576-f2b5-8fbf-aba0284d0990</code> | stub</div><div class='text-line'> |PortraitClick ShadowHeart SpamClick v2 |</div><div class='line-meta'><code>h76cf583dg1105g414fg810bg38aaaf213134</code> | <code>b0b9b9e6-bc46-3897-ca61-adb71017bfdc</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: db2bf559-f1b6-1f03-fc5c-e97f68a72c45</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Text 1 Handle</strong>: he89bd8c0g9ccbg431cgb04bg42a57a8511b1</span><span class='meta-item'><strong>Text 1 UUID</strong>: 809ed574-1576-f2b5-8fbf-aba0284d0990</span><span class='meta-item'><strong>Text 2 Handle</strong>: h76cf583dg1105g414fg810bg38aaaf213134</span><span class='meta-item'><strong>Text 2 UUID</strong>: b0b9b9e6-bc46-3897-ca61-adb71017bfdc</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 5</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: db2bf559-f1b6-1f03-fc5c-e97f68a72c45</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-19'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-19' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>19.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'> | Utility Shadowheart Normal v1|<br></span></span></span></span><div class='node-detail-panel' id='details-19' hidden='until-found'><section class='section'><h3>Text</h3><div class='text-block'><div class='text-line'> | Utility Shadowheart Normal v1|<br></div><div class='line-meta'><code>hea75e0d7g0582g4386gbdf2g88115cb2db49</code> | <code>5dd6e9cb-451b-bfc5-bde2-8ecec3dd0f4f</code> | stub</div><div class='text-line'> | UtilityAction Shadowheart Normal v2|<br></div><div class='line-meta'><code>hb9e30b0bg1a35g4269g8858geac49970eceb</code> | <code>8504cf34-3110-7669-eb9a-3d94127dc9b3</code> | stub</div><div class='text-line'> | Utility Shadowheart Normal v3|<br></div><div class='line-meta'><code>h68e7931bg6389g431bgb441g79b521286ac2</code> | <code>bccb3d76-6dd6-6b04-afe6-59365e85e078</code> | stub</div><div class='text-line'> | Utility Shadowheart Normal v4|<br></div><div class='line-meta'><code>h2eb13709g4011g4e3ag99c7g80ebc2de3647</code> | <code>6fe49f80-28af-462d-08e9-43bd882b1225</code> | stub</div><div class='text-line'> | Utility Shadowheart Normal v5|<br></div><div class='line-meta'><code>hc7a425d3g21dag446dgab14g0813a8454b10</code> | <code>f908fad3-5280-ef71-c80c-f14235d098fc</code> | stub</div><div class='text-line'> | Utility Shadowheart Normal v6|</div><div class='line-meta'><code>h35fcdd66gb7c4g4d63ga27cg885352d10a14</code> | <code>a99ed326-999b-5a39-f543-a83eddfbf154</code> | stub</div><div class='text-line'> | Utility Shadowheart Normal v7|</div><div class='line-meta'><code>h0bbc598eg6338g4035gaaaag50c352b4743f</code> | <code>095fff35-cf18-6833-3c2e-b0551483b4c5</code> | stub</div><div class='text-line'> | Utility Shadowheart Normal v8|</div><div class='line-meta'><code>hf783a586g2d77g451fgb48cgd9f8b74b9eb3</code> | <code>a5530c8a-16fd-77eb-2b3c-4e6f1051ebb8</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: eb1c74f8-3513-e1a5-4342-f040a44bbe1f</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Text 1 Handle</strong>: hea75e0d7g0582g4386gbdf2g88115cb2db49</span><span class='meta-item'><strong>Text 1 UUID</strong>: 5dd6e9cb-451b-bfc5-bde2-8ecec3dd0f4f</span><span class='meta-item'><strong>Text 2 Handle</strong>: hb9e30b0bg1a35g4269g8858geac49970eceb</span><span class='meta-item'><strong>Text 2 UUID</strong>: 8504cf34-3110-7669-eb9a-3d94127dc9b3</span><span class='meta-item'><strong>Text 3 Handle</strong>: h68e7931bg6389g431bgb441g79b521286ac2</span><span class='meta-item'><strong>Text 3 UUID</strong>: bccb3d76-6dd6-6b04-afe6-59365e85e078</span><span class='meta-item'><strong>Text 4 Handle</strong>: h2eb13709g4011g4e3ag99c7g80ebc2de3647</span><span class='meta-item'><strong>Text 4 UUID</strong>: 6fe49f80-28af-462d-08e9-43bd882b1225</span><span class='meta-item'><strong>Text 5 Handle</strong>: hc7a425d3g21dag446dgab14g0813a8454b10</span><span class='meta-item'><strong>Text 5 UUID</strong>: f908fad3-5280-ef71-c80c-f14235d098fc</span><span class='meta-item'><strong>Text 6 Handle</strong>: h35fcdd66gb7c4g4d63ga27cg885352d10a14</span><span class='meta-item'><strong>Text 6 UUID</strong>: a99ed326-999b-5a39-f543-a83eddfbf154</span><span class='meta-item'><strong>Text 7 Handle</strong>: h0bbc598eg6338g4035gaaaag50c352b4743f</span><span class='meta-item'><strong>Text 7 UUID</strong>: 095fff35-cf18-6833-3c2e-b0551483b4c5</span><span class='meta-item'><strong>Text 8 Handle</strong>: hf783a586g2d77g451fgb48cgd9f8b74b9eb3</span><span class='meta-item'><strong>Text 8 UUID</strong>: a5530c8a-16fd-77eb-2b3c-4e6f1051ebb8</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 4</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: eb1c74f8-3513-e1a5-4342-f040a44bbe1f</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-20'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-20' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>20.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'> | HealBuff Shadowheart Normal v1|</span> <span class='end'>[End]</span></span></span></span><div class='node-detail-panel' id='details-20' hidden='until-found'><section class='section'><h3>Text</h3><div class='text-block'><div class='text-line'> | HealBuff Shadowheart Normal v1|</div><div class='line-meta'><code>h5bc50494ga7ddg4bffgab17g8330c60e0c8e</code> | <code>469d7f4f-1c0a-339f-5474-216f61c5abe6</code> | stub</div><div class='text-line'> | HealBuff Shadowheart Normal v2|</div><div class='line-meta'><code>hc56f0ee6gfac9g4174gb2f8ge9fdf21b8766</code> | <code>0896f388-6c51-53ba-f32c-fda0e9f7ff5a</code> | stub</div><div class='text-line'> | HealBuff Shadowheart Normal v3|<br></div><div class='line-meta'><code>hd0aea0e5g0284g4b53g84b2gbd63bc1db0b7</code> | <code>77b999bd-c248-66ba-c0c9-81efdeed4f36</code> | stub</div><div class='text-line'> | HealBuff Shadowheart Normal v4|<br><br></div><div class='line-meta'><code>h33534bafg4792g4f9fgbe1fg63b1bc9d375f</code> | <code>bfd16b07-76fd-b6b6-9711-b1b27d78e2a4</code> | stub</div><div class='text-line'> | HealBuff Shadowheart Normal v5|<br><br></div><div class='line-meta'><code>h9494e306ge5b2g4a1bgbc16gc0bc10fad437</code> | <code>18b41836-cceb-2bcd-ce51-19c915697c76</code> | stub</div><div class='text-line'> | HealBuff Shadowheart Normal v6|<br><br></div><div class='line-meta'><code>h8f02a305g188dg42abg8841geec8e7f87d03</code> | <code>e66af54d-9db2-1c62-f020-c9b0b7c36d92</code> | stub</div><div class='text-line'> | HealBuff Shadowheart Normal v7|</div><div class='line-meta'><code>h9e58212ag8fa1g4f11ga1aagb80dd50c2a90</code> | <code>2d9f77e2-c2ef-7b8c-16f8-e235d5607bf7</code> | stub</div><div class='text-line'> | HealBuff Shadowheart Normal v8|</div><div class='line-meta'><code>h74305335g0268g4444gbb75gd3c0867f43e1</code> | <code>c6862f6b-f2bc-e216-ab9e-574a19a927b8</code> | stub</div><div class='text-line'> | HealBuff Shadowheart Normal v9|</div><div class='line-meta'><code>h5b5ed7edgd9c8g4c19gaca1g98e8e5db496d</code> | <code>cc928f46-5654-8e7f-c893-cc8eecfab7bc</code> | stub</div><div class='text-line'> | HealBuff Shadowheart Normal v10|<br></div><div class='line-meta'><code>h21c7d2a8g1d09g49f4g9fbegfc2f42f39420</code> | <code>31829e6f-b7bf-636f-5d1b-71058380419d</code> | stub</div><div class='text-line'> | HealBuff Shadowheart Normal v11|<br><br></div><div class='line-meta'><code>hc0a459a9g0e22g47c7gaa5dgef1e7f208334</code> | <code>a9665bb8-856c-c69c-a8ea-49488c8e181a</code> | stub</div><div class='text-line'> | HealBuff Shadowheart Normal v12|<br><br><br></div><div class='line-meta'><code>h08ee074fg7c19g4b83gad64g1086bfe25d34</code> | <code>b2c08d98-61d3-a97c-5923-fdf9340ef75a</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: ed07cab8-76f1-4d3b-8793-2be37bb3b039</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h5bc50494ga7ddg4bffgab17g8330c60e0c8e</span><span class='meta-item'><strong>Text 1 UUID</strong>: 469d7f4f-1c0a-339f-5474-216f61c5abe6</span><span class='meta-item'><strong>Text 2 Handle</strong>: hc56f0ee6gfac9g4174gb2f8ge9fdf21b8766</span><span class='meta-item'><strong>Text 2 UUID</strong>: 0896f388-6c51-53ba-f32c-fda0e9f7ff5a</span><span class='meta-item'><strong>Text 3 Handle</strong>: hd0aea0e5g0284g4b53g84b2gbd63bc1db0b7</span><span class='meta-item'><strong>Text 3 UUID</strong>: 77b999bd-c248-66ba-c0c9-81efdeed4f36</span><span class='meta-item'><strong>Text 4 Handle</strong>: h33534bafg4792g4f9fgbe1fg63b1bc9d375f</span><span class='meta-item'><strong>Text 4 UUID</strong>: bfd16b07-76fd-b6b6-9711-b1b27d78e2a4</span><span class='meta-item'><strong>Text 5 Handle</strong>: h9494e306ge5b2g4a1bgbc16gc0bc10fad437</span><span class='meta-item'><strong>Text 5 UUID</strong>: 18b41836-cceb-2bcd-ce51-19c915697c76</span><span class='meta-item'><strong>Text 6 Handle</strong>: h8f02a305g188dg42abg8841geec8e7f87d03</span><span class='meta-item'><strong>Text 6 UUID</strong>: e66af54d-9db2-1c62-f020-c9b0b7c36d92</span><span class='meta-item'><strong>Text 7 Handle</strong>: h9e58212ag8fa1g4f11ga1aagb80dd50c2a90</span><span class='meta-item'><strong>Text 7 UUID</strong>: 2d9f77e2-c2ef-7b8c-16f8-e235d5607bf7</span><span class='meta-item'><strong>Text 8 Handle</strong>: h74305335g0268g4444gbb75gd3c0867f43e1</span><span class='meta-item'><strong>Text 8 UUID</strong>: c6862f6b-f2bc-e216-ab9e-574a19a927b8</span><span class='meta-item'><strong>Text 9 Handle</strong>: h5b5ed7edgd9c8g4c19gaca1g98e8e5db496d</span><span class='meta-item'><strong>Text 9 UUID</strong>: cc928f46-5654-8e7f-c893-cc8eecfab7bc</span><span class='meta-item'><strong>Text 10 Handle</strong>: h21c7d2a8g1d09g49f4g9fbegfc2f42f39420</span><span class='meta-item'><strong>Text 10 UUID</strong>: 31829e6f-b7bf-636f-5d1b-71058380419d</span><span class='meta-item'><strong>Text 11 Handle</strong>: hc0a459a9g0e22g47c7gaa5dgef1e7f208334</span><span class='meta-item'><strong>Text 11 UUID</strong>: a9665bb8-856c-c69c-a8ea-49488c8e181a</span><span class='meta-item'><strong>Text 12 Handle</strong>: h08ee074fg7c19g4b83gad64g1086bfe25d34</span><span class='meta-item'><strong>Text 12 UUID</strong>: b2c08d98-61d3-a97c-5923-fdf9340ef75a</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 21</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: ed07cab8-76f1-4d3b-8793-2be37bb3b039</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span><span class='meta-item'><strong>End Node</strong>: True</span></div></section></div></div></div></div></li><li class='node-item'><div class='node-shell' id='node-21'><div class='node-row'><span class='tree-spacer' aria-hidden='true'>&bull;</span><div class='node-content'><span class='node-summary has-details is-interactive' data-detail-target='details-21' data-detail-expanded='false' tabindex='0'><span class='node-main-row'><span class='node-main'><span class='node-number'>21.</span><span class='speaker-label npc'>No Speaker</span><span>: </span><span class='dialog'>|Pickpocket Shadowheart Sneaking v1 |</span></span></span></span><div class='node-detail-panel' id='details-21' hidden='until-found'><section class='section'><h3>Text</h3><div class='text-block'><div class='text-line'>|Pickpocket Shadowheart Sneaking v1 |</div><div class='line-meta'><code>h1e130ee8g9037g4612gb533g170228f37e4f</code> | <code>9afebefd-d5c5-043e-c5bb-c11c20867d83</code> | stub</div><div class='text-line'>|Pickpocket Shadowheart Sneaking v2 |</div><div class='line-meta'><code>had1a29eeg426cg440bg8ca4g75d0e27b7d5d</code> | <code>df300b4e-e26f-7dde-5861-6c196e1011b2</code> | stub</div><div class='text-line'>|Pickpocket Shadowheart Sneaking v3 |</div><div class='line-meta'><code>ha1f23487g5f0dg47aegbc60g68f7ae0daff5</code> | <code>78031bd4-8485-8d17-02f3-a8aa79d074da</code> | stub</div><div class='text-line'>|Pickpocket Shadowheart Sneaking v4 |</div><div class='line-meta'><code>h5de1dd82ga5dfg4974g9e9ag5d8630d19676</code> | <code>5804e1a6-942c-9504-db4d-fb42d1320676</code> | stub</div><div class='text-line'>|Pickpocket Shadowheart Sneaking v5 |</div><div class='line-meta'><code>he12dd1cagebcag4ac0g85eeg36fe2cb95e64</code> | <code>a66ad240-8eac-fccb-94c7-138bc8d5722e</code> | stub</div><div class='text-line'>|Pickpocket Shadowheart Sneaking v6 |</div><div class='line-meta'><code>ha445a289g0781g4c37gba89g3dd5e3e6fe09</code> | <code>8a8fb0e8-bce5-def6-5305-4bd87541d750</code> | stub</div><div class='text-line'>|Pickpocket Shadowheart Normal v7 |</div><div class='line-meta'><code>h4be44cbeg0e1dg44e9gbd14gd9941f6365a1</code> | <code>aa23f347-1b9c-6bbf-c64c-566d68daf84f</code> | stub</div><div class='text-line'>|Pickpocket Shadowheart Normal v8 |</div><div class='line-meta'><code>h6f9d9058g72ccg45adgb7dcgdfd13c3ddfe0</code> | <code>2ad60f3b-772e-57b2-5db5-f29126ed6707</code> | stub</div></div></section><section class='section section-metadata'><h3>Metadata</h3><div class='meta-list'><span class='meta-item'><strong>Node Type</strong>: TagAnswer</span><span class='meta-item'><strong>UUID</strong>: f4358488-77b0-a9c6-8d07-83f68ca97c54</span><span class='meta-item'><strong>Speaker</strong>: -1 (No Speaker)</span><span class='meta-item'><strong>Text 1 Handle</strong>: h1e130ee8g9037g4612gb533g170228f37e4f</span><span class='meta-item'><strong>Text 1 UUID</strong>: 9afebefd-d5c5-043e-c5bb-c11c20867d83</span><span class='meta-item'><strong>Text 2 Handle</strong>: had1a29eeg426cg440bg8ca4g75d0e27b7d5d</span><span class='meta-item'><strong>Text 2 UUID</strong>: df300b4e-e26f-7dde-5861-6c196e1011b2</span><span class='meta-item'><strong>Text 3 Handle</strong>: ha1f23487g5f0dg47aegbc60g68f7ae0daff5</span><span class='meta-item'><strong>Text 3 UUID</strong>: 78031bd4-8485-8d17-02f3-a8aa79d074da</span><span class='meta-item'><strong>Text 4 Handle</strong>: h5de1dd82ga5dfg4974g9e9ag5d8630d19676</span><span class='meta-item'><strong>Text 4 UUID</strong>: 5804e1a6-942c-9504-db4d-fb42d1320676</span><span class='meta-item'><strong>Text 5 Handle</strong>: he12dd1cagebcag4ac0g85eeg36fe2cb95e64</span><span class='meta-item'><strong>Text 5 UUID</strong>: a66ad240-8eac-fccb-94c7-138bc8d5722e</span><span class='meta-item'><strong>Text 6 Handle</strong>: ha445a289g0781g4c37gba89g3dd5e3e6fe09</span><span class='meta-item'><strong>Text 6 UUID</strong>: 8a8fb0e8-bce5-def6-5305-4bd87541d750</span><span class='meta-item'><strong>Text 7 Handle</strong>: h4be44cbeg0e1dg44e9gbd14gd9941f6365a1</span><span class='meta-item'><strong>Text 7 UUID</strong>: aa23f347-1b9c-6bbf-c64c-566d68daf84f</span><span class='meta-item'><strong>Text 8 Handle</strong>: h6f9d9058g72ccg45adgb7dcgdfd13c3ddfe0</span><span class='meta-item'><strong>Text 8 UUID</strong>: 2ad60f3b-772e-57b2-5db5-f29126ed6707</span><span class='meta-item'><strong>Timeline Phase Index</strong>: 18</span><span class='meta-item'><strong>Timeline Dialog Node UUID</strong>: f4358488-77b0-a9c6-8d07-83f68ca97c54</span><span class='meta-item'><strong>Timeline Phase Duration</strong>: 1s</span><span class='meta-item'><strong>Timeline Phase Shots</strong>: 0</span></div></section></div></div></div></div></li></ul></section>
+      </div>
+    </section>
+  </div>
+  <div class="tree-scrollbar-proxy" hidden>
+    <div class="tree-scrollbar-proxy-inner"></div>
+  </div>
+  <script>
+    function getNodeDetailPanel(shell) {
+      if (!shell) {
+        return null;
+      }
+      const content = shell.querySelector(":scope > .node-row > .node-content");
+      if (!content) {
+        return null;
+      }
+      return Array.from(content.children).find((child) => child.classList && child.classList.contains("node-detail-panel")) || null;
+    }
+    function getNodeDetailToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-detail-target]");
+    }
+    function getNodeBranchToggle(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .node-content .node-summary[data-branch-target]");
+    }
+    function getNodeBranchMarker(shell) {
+      if (!shell) {
+        return null;
+      }
+      return shell.querySelector(":scope > .node-row > .tree-toggle-marker[data-branch-target]");
+    }
+    const jumpHighlightTimers = new WeakMap();
+    const nodeSummaryClickTimers = new WeakMap();
+    const NODE_DETAIL_DOUBLE_CLICK_MS = 160;
+    const SUPPORTS_UNTIL_FOUND = document.documentElement.classList.contains("supports-until-found");
+    const treeShell = document.querySelector(".tree-shell");
+    const treeShellInner = treeShell ? treeShell.querySelector(".tree-shell-inner") : null;
+    const treeScrollbarProxy = document.querySelector(".tree-scrollbar-proxy");
+    const treeScrollbarProxyInner = treeScrollbarProxy
+      ? treeScrollbarProxy.querySelector(".tree-scrollbar-proxy-inner")
+      : null;
+    let syncingTreeScroll = false;
+    let syncingProxyScroll = false;
+    if (!SUPPORTS_UNTIL_FOUND) {
+      document.querySelectorAll("[hidden='until-found']").forEach((element) => {
+        element.setAttribute("hidden", "");
+      });
+    }
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+    function hideCollapsible(target) {
+      if (!target) {
+        return;
+      }
+      if (SUPPORTS_UNTIL_FOUND) {
+        target.setAttribute("hidden", "until-found");
+        return;
+      }
+      target.setAttribute("hidden", "");
+    }
+    function setToggleButtonState(button, active) {
+      if (!button) {
+        return;
+      }
+      button.classList.toggle("is-active", active);
+      const hideLabel = button.dataset.hideLabel;
+      const showLabel = button.dataset.showLabel;
+      if (hideLabel && showLabel) {
+        button.textContent = active ? showLabel : hideLabel;
+      }
+    }
+    function syncAllDetailsToggle() {
+      const button = document.querySelector("button[data-toggle-details='all']");
+      if (!button) {
+        return;
+      }
+      const panels = Array.from(document.querySelectorAll(".node-detail-panel"));
+      const allOpen = panels.length > 0 && panels.every((panel) => !panel.hasAttribute("hidden"));
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function syncAllBranchesToggle() {
+      const button = document.querySelector("button[data-toggle-branches='all']");
+      if (!button) {
+        return;
+      }
+      const branchMarkers = Array.from(document.querySelectorAll(".tree-toggle-marker[data-branch-target]"));
+      const allOpen = branchMarkers.length > 0 && branchMarkers.every((marker) => marker.dataset.branchExpanded === "true");
+      button.dataset.active = allOpen ? "true" : "false";
+      setToggleButtonState(button, allOpen);
+    }
+    function updateTreeScrollbarProxy() {
+      if (!treeShell || !treeShellInner || !treeScrollbarProxy || !treeScrollbarProxyInner) {
+        return;
+      }
+      const contentWidth = treeShellInner.scrollWidth;
+      const viewportWidth = treeShell.clientWidth;
+      const needsProxy = contentWidth > viewportWidth + 1;
+      if (!needsProxy) {
+        treeScrollbarProxy.hidden = true;
+        return;
+      }
+      const rect = treeShell.getBoundingClientRect();
+      treeScrollbarProxy.hidden = false;
+      treeScrollbarProxy.style.left = `${Math.max(0, rect.left)}px`;
+      treeScrollbarProxy.style.width = `${Math.max(0, rect.width)}px`;
+      treeScrollbarProxyInner.style.width = `${contentWidth}px`;
+      if (!syncingTreeScroll && Math.abs(treeScrollbarProxy.scrollLeft - treeShell.scrollLeft) > 1) {
+        syncingProxyScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingProxyScroll = false;
+      }
+    }
+    function resetTreeScrollToStart() {
+      document.querySelectorAll(".tree-shell").forEach((shell) => {
+        shell.scrollLeft = 0;
+      });
+      if (treeScrollbarProxy) {
+        treeScrollbarProxy.scrollLeft = 0;
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setBranchOpen(control, openState, syncState = true) {
+      if (!control) {
+        return;
+      }
+      const targetId = control.dataset.branchTarget;
+      const target = targetId ? document.getElementById(targetId) : null;
+      if (!target) {
+        return;
+      }
+      const shell = control.closest(".node-shell");
+      const marker = shell ? getNodeBranchMarker(shell) : null;
+      const summary = shell ? getNodeBranchToggle(shell) : null;
+      if (openState) {
+        target.removeAttribute("hidden");
+      } else {
+        hideCollapsible(target);
+      }
+      if (marker) {
+        marker.dataset.branchExpanded = openState ? "true" : "false";
+        marker.textContent = openState ? "-" : "+";
+      }
+      if (summary) {
+        summary.setAttribute("aria-expanded", openState ? "true" : "false");
+      }
+      if (syncState) {
+        syncAllBranchesToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setDetailOpen(shell, openState, syncState = true) {
+      const panel = getNodeDetailPanel(shell);
+      const toggle = getNodeDetailToggle(shell);
+      if (!panel) {
+        return;
+      }
+      if (openState) {
+        panel.removeAttribute("hidden");
+      } else {
+        hideCollapsible(panel);
+      }
+      if (toggle) {
+        toggle.dataset.detailExpanded = openState ? "true" : "false";
+      }
+      if (syncState) {
+        syncAllDetailsToggle();
+      }
+      updateTreeScrollbarProxy();
+    }
+    function setAllBranches(openState) {
+      document.querySelectorAll(".tree-toggle-marker[data-branch-target]").forEach((marker) => { setBranchOpen(marker, openState, false); });
+      syncAllBranchesToggle();
+    }
+    function setAllNodeDetails(openState) {
+      document.querySelectorAll(".node-shell").forEach((shell) => {
+        if (getNodeDetailPanel(shell)) {
+          setDetailOpen(shell, openState, false);
+        }
+      });
+      syncAllDetailsToggle();
+    }
+    function openParents(target) {
+      let current = target;
+      while (current) {
+        if (current.classList && current.classList.contains("node-branch")) {
+          const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${current.id}"]`);
+          setBranchOpen(marker, true);
+        }
+        current = current.parentElement;
+      }
+    }
+    function highlightJumpTarget(target) {
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      if (!shell) {
+        return;
+      }
+      const existingTimer = jumpHighlightTimers.get(shell);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+      shell.classList.add("jump-highlight");
+      const timeoutId = window.setTimeout(() => {
+        shell.classList.remove("jump-highlight");
+        jumpHighlightTimers.delete(shell);
+      }, 5000);
+      jumpHighlightTimers.set(shell, timeoutId);
+    }
+    function getStickyScrollOffset() {
+      const toolbar = document.querySelector(".toolbar");
+      if (!toolbar) {
+        return 8;
+      }
+      return Math.ceil(toolbar.getBoundingClientRect().height) + 8;
+    }
+    function scrollNodeTargetIntoView(target) {
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      const scrollTarget = shell || target;
+      if (!scrollTarget) {
+        return;
+      }
+      const offset = getStickyScrollOffset();
+      const top = window.scrollY + scrollTarget.getBoundingClientRect().top - offset;
+      window.scrollTo({ top: Math.max(0, top), behavior: "auto" });
+    }
+    function revealAndFocusNodeTarget(target, href = "") {
+      if (!target) {
+        return;
+      }
+      const shell = target && target.classList && target.classList.contains("node-shell")
+        ? target
+        : target ? target.closest(".node-shell") : null;
+      openParents(shell || target);
+      if (href) {
+        history.replaceState(null, "", href);
+      }
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollNodeTargetIntoView(target);
+          highlightJumpTarget(target);
+          updateTreeScrollbarProxy();
+        });
+      });
+    }
+    if (treeShell && treeScrollbarProxy) {
+      treeShell.addEventListener("scroll", () => {
+        if (syncingProxyScroll) {
+          return;
+        }
+        syncingTreeScroll = true;
+        treeScrollbarProxy.scrollLeft = treeShell.scrollLeft;
+        syncingTreeScroll = false;
+      });
+      treeScrollbarProxy.addEventListener("scroll", () => {
+        if (syncingTreeScroll) {
+          return;
+        }
+        syncingProxyScroll = true;
+        treeShell.scrollLeft = treeScrollbarProxy.scrollLeft;
+        syncingProxyScroll = false;
+      });
+    }
+    document.addEventListener("click", (event) => {
+      const allBranchesButton = event.target.closest("button[data-toggle-branches='all']");
+      if (allBranchesButton) {
+        const isOpen = allBranchesButton.dataset.active === "true";
+        setAllBranches(!isOpen);
+        return;
+      }
+      const allDetailsButton = event.target.closest("button[data-toggle-details='all']");
+      if (allDetailsButton) {
+        const isOpen = allDetailsButton.dataset.active === "true";
+        setAllNodeDetails(!isOpen);
+        return;
+      }
+      const button = event.target.closest("button[data-toggle-class]");
+      if (button) {
+        const active = document.body.classList.toggle(button.dataset.toggleClass);
+        setToggleButtonState(button, active);
+        return;
+      }
+      const link = event.target.closest("a[href^='#node-']");
+      if (link) {
+        event.preventDefault();
+        const target = document.querySelector(link.getAttribute("href"));
+        if (target) {
+          revealAndFocusNodeTarget(target, link.getAttribute("href"));
+        }
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (summary) {
+        const branchTarget = summary.dataset.branchTarget;
+        const shell = summary.closest(".node-shell");
+        if (!shell) {
+          return;
+        }
+        if (!branchTarget) {
+          if (summary.dataset.detailTarget) {
+            const isOpen = summary.dataset.detailExpanded === "true";
+            setDetailOpen(shell, !isOpen);
+          }
+          return;
+        }
+        const existingTimer = nodeSummaryClickTimers.get(summary);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+          nodeSummaryClickTimers.delete(summary);
+          event.preventDefault();
+          const isOpen = summary.dataset.detailExpanded === "true";
+          setDetailOpen(shell, !isOpen);
+          return;
+        }
+        const timerId = window.setTimeout(() => {
+          nodeSummaryClickTimers.delete(summary);
+          const isOpen = summary.getAttribute("aria-expanded") === "true";
+          setBranchOpen(summary, !isOpen);
+          if (isOpen) {
+            const panel = getNodeDetailPanel(shell);
+            if (panel && !panel.hasAttribute("hidden")) {
+              setDetailOpen(shell, false);
+            }
+          }
+        }, NODE_DETAIL_DOUBLE_CLICK_MS);
+        nodeSummaryClickTimers.set(summary, timerId);
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+      if (!summary) {
+        return;
+      }
+      event.preventDefault();
+      const shell = summary.closest(".node-shell");
+      if (!shell) {
+        return;
+      }
+      if (summary.dataset.branchTarget) {
+        const isOpen = summary.getAttribute("aria-expanded") === "true";
+        setBranchOpen(summary, !isOpen);
+        if (isOpen) {
+          const panel = getNodeDetailPanel(shell);
+          if (panel && !panel.hasAttribute("hidden")) {
+            setDetailOpen(shell, false);
+          }
+        }
+        return;
+      }
+      if (summary.dataset.detailTarget) {
+        const isOpen = summary.dataset.detailExpanded === "true";
+        setDetailOpen(shell, !isOpen);
+      }
+    });
+    document.addEventListener("beforematch", (event) => {
+      const branch = event.target.closest(".node-branch");
+      if (branch && branch.id) {
+        const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${branch.id}"]`);
+        setBranchOpen(marker, true);
+      }
+      const panel = event.target.closest(".node-detail-panel");
+      if (panel) {
+        const shell = panel.closest(".node-shell");
+        if (shell) {
+          openParents(shell);
+          setDetailOpen(shell, true);
+        }
+      }
+    });
+    document.querySelectorAll("button[data-toggle-class]").forEach((button) => {
+      const active = document.body.classList.contains(button.dataset.toggleClass);
+      setToggleButtonState(button, active);
+    });
+    if (window.ResizeObserver && treeShell) {
+      const observer = new ResizeObserver(() => {
+        updateTreeScrollbarProxy();
+      });
+      observer.observe(treeShell);
+      if (treeShellInner) {
+        observer.observe(treeShellInner);
+      }
+    }
+    window.addEventListener("resize", updateTreeScrollbarProxy);
+    window.addEventListener("scroll", updateTreeScrollbarProxy, { passive: true });
+    window.addEventListener("pageshow", () => {
+      if (window.location.hash) {
+        updateTreeScrollbarProxy();
+        return;
+      }
+      resetTreeScrollToStart();
+      window.requestAnimationFrame(() => {
+        resetTreeScrollToStart();
+      });
+      window.setTimeout(() => {
+        resetTreeScrollToStart();
+      }, 0);
+    });
+    syncAllBranchesToggle();
+    document.querySelectorAll("button[data-toggle-details='all']").forEach((button) => {
+      const active = button.dataset.active === "true";
+      setToggleButtonState(button, active);
+    });
+    updateTreeScrollbarProxy();
+    if (window.location.hash) {
+      const target = document.querySelector(window.location.hash);
+      if (target) {
+        revealAndFocusNodeTarget(target, window.location.hash);
+      }
+    }
+  </script>
+  <script data-search-target-line>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const targetLine = params.get("line");
+      const targetHash = window.location.hash;
+
+      if (!targetLine || !targetHash) {
+        return;
+      }
+
+      const targetShell = document.querySelector(targetHash);
+      if (!targetShell) {
+        return;
+      }
+
+      if (typeof openParents === "function") {
+        openParents(targetShell);
+      }
+      if (typeof setDetailOpen === "function") {
+        setDetailOpen(targetShell, true);
+      }
+
+      const normalize = (value) =>
+        (value || "")
+          .toLowerCase()
+          .normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      const normalizedTargetLine = normalize(targetLine);
+      if (!normalizedTargetLine) {
+        return;
+      }
+
+      const lineElements = Array.from(targetShell.querySelectorAll(".text-line"));
+      const matchingLine = lineElements.find((element) => {
+        const lineText = normalize(element.textContent);
+        return (
+          lineText === normalizedTargetLine ||
+          lineText.includes(normalizedTargetLine) ||
+          normalizedTargetLine.includes(lineText)
+        );
+      });
+
+      if (!matchingLine) {
+        return;
+      }
+
+      matchingLine.classList.add("search-target-line");
+      requestAnimationFrame(() => {
+        matchingLine.scrollIntoView({ block: "center" });
+      });
+    })();
+  </script>
+</body>
+</html>
