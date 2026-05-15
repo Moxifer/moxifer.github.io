@@ -5,6 +5,7 @@ import json
 import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from html import escape, unescape
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Iterable
@@ -14,6 +15,19 @@ TEXT_CLASSES = {"text-line", "dialog"}
 SPEAKER_CLASSES = {"speaker-name", "speaker-label"}
 SKIP_TAGS = {"script", "style"}
 IGNORE_CLASSES = {"repeat"}
+PREVIEW_META_BLOCK_START = "  <!-- dialog-preview-meta:start -->\n"
+PREVIEW_META_BLOCK_END = "  <!-- dialog-preview-meta:end -->\n"
+PREVIEW_META_RE = re.compile(
+    r"\s*<!-- dialog-preview-meta:start -->.*?<!-- dialog-preview-meta:end -->\s*",
+    re.DOTALL,
+)
+SYNOPSIS_BLOCK_RE = re.compile(
+    r'<div[^>]*class="[^"]*\bsource\b[^"]*\bsource-text\b[^"]*"[^>]*>\s*'
+    r'<span[^>]*class="[^"]*\bsource-label\b[^"]*"[^>]*>\s*Synopsis:\s*</span>'
+    r"(.*?)</div>",
+    re.IGNORECASE | re.DOTALL,
+)
+HTML_TAG_RE = re.compile(r"<[^>]+>")
 TARGET_STYLE_BLOCK = """  <style data-search-target-highlight>
     .node-shell:target {
       outline: 3px solid #c68b00;
@@ -116,9 +130,35 @@ def unique(values: Iterable[str]) -> list[str]:
     return result
 
 
+def extract_synopsis(html_text: str) -> str:
+    match = SYNOPSIS_BLOCK_RE.search(html_text)
+    if not match:
+        return ""
+    synopsis_html = match.group(1)
+    synopsis_text = HTML_TAG_RE.sub(" ", synopsis_html)
+    return clean_text(unescape(synopsis_text))
+
+
+def build_preview_meta_block(title: str, synopsis: str) -> str:
+    safe_title = escape(title, quote=True)
+    safe_synopsis = escape(synopsis, quote=True)
+    return (
+        PREVIEW_META_BLOCK_START
+        + f'  <meta name="description" content="{safe_synopsis}">\n'
+        + '  <meta property="og:type" content="article">\n'
+        + f'  <meta property="og:title" content="{safe_title}">\n'
+        + f'  <meta property="og:description" content="{safe_synopsis}">\n'
+        + '  <meta name="twitter:card" content="summary">\n'
+        + f'  <meta name="twitter:title" content="{safe_title}">\n'
+        + f'  <meta name="twitter:description" content="{safe_synopsis}">\n'
+        + PREVIEW_META_BLOCK_END
+    )
+
+
 @dataclass
 class DialogParseResult:
     title: str = ""
+    synopsis: str = ""
     speakers: list[str] = field(default_factory=list)
     nodes: list["DialogNode"] = field(default_factory=list)
 
@@ -231,12 +271,18 @@ class DialogHTMLParser(HTMLParser):
         self._capture_stack[-1]["parts"].append(data)
 
 
-def ensure_target_highlight(html_text: str) -> str:
-    cleaned = TARGET_STYLE_RE.sub("\n", html_text)
+def ensure_dialog_page_features(html_text: str, title: str, synopsis: str) -> str:
+    cleaned = PREVIEW_META_RE.sub("\n", html_text)
+    cleaned = TARGET_STYLE_RE.sub("\n", cleaned)
     cleaned = TARGET_LINE_SCRIPT_RE.sub("\n", cleaned)
     if "</head>" not in cleaned:
         return cleaned
-    cleaned = cleaned.replace("</head>", f"{TARGET_STYLE_BLOCK}</head>", 1)
+    preview_meta_block = build_preview_meta_block(title=title, synopsis=synopsis)
+    cleaned = cleaned.replace(
+        "</head>",
+        f"{preview_meta_block}{TARGET_STYLE_BLOCK}</head>",
+        1,
+    )
     if "</body>" in cleaned:
         cleaned = cleaned.replace("</body>", f"{TARGET_LINE_SCRIPT_BLOCK}</body>", 1)
     return cleaned
@@ -246,6 +292,7 @@ def parse_dialog_html(html_text: str) -> DialogParseResult:
     parser = DialogHTMLParser()
     parser.feed(html_text)
     parser.close()
+    parser.result.synopsis = extract_synopsis(html_text)
     all_speakers: list[str] = []
     for node in parser.result.nodes:
         node.texts = unique(node.texts)
@@ -262,13 +309,17 @@ def build_index(repo_root: Path, dialog_root: Path, output_path: Path) -> dict:
     html_files = sorted(dialog_root.rglob("*.html"))
     for html_path in html_files:
         html_text = html_path.read_text(encoding="utf-8")
-        patched_html = ensure_target_highlight(html_text)
+        parsed = parse_dialog_html(html_text)
+        title = parsed.title or html_path.stem
+        patched_html = ensure_dialog_page_features(
+            html_text,
+            title=title,
+            synopsis=parsed.synopsis,
+        )
         if patched_html != html_text:
             html_path.write_text(patched_html, encoding="utf-8")
 
-        parsed = parse_dialog_html(patched_html)
         relative_path = html_path.relative_to(repo_root).as_posix()
-        title = parsed.title or html_path.stem
         nodes = []
         for node in parsed.nodes:
             nodes.append(
