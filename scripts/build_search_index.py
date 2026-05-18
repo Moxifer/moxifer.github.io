@@ -29,13 +29,55 @@ SYNOPSIS_BLOCK_RE = re.compile(
 )
 HTML_TAG_RE = re.compile(r"<[^>]+>")
 TARGET_STYLE_BLOCK = """  <style data-search-target-highlight>
+    :root {
+      color-scheme: dark;
+      --ink: #e7edf6;
+      --muted: #9ba8bb;
+      --line: #2a3748;
+      --npc: #ff8a80;
+      --player: #8ce5a7;
+      --system: #8cb4ff;
+      --rule: #78d3a7;
+      --tag: #7ddbe6;
+      --check: #d0bbff;
+      --set: #ffb86b;
+      --roll: #c4b5fd;
+      --approval: #79e2d0;
+      --jump: #9dc2ff;
+      --context: #a0acbd;
+      --surface: #101822;
+      --surface-active: #152132;
+      --surface-hover: #1b2940;
+      --detail-surface: #142030;
+      --detail-border: #324258;
+      --focus: #6f8eb4;
+      --highlight: #1f3044;
+      --scrollbar-proxy-bg: rgba(8, 12, 18, 0.94);
+    }
+    body {
+      background: #0b1117;
+      color: var(--ink);
+    }
+    a {
+      color: var(--jump);
+    }
+    .toolbar {
+      background: rgba(11, 17, 23, 0.96);
+      border-bottom-color: var(--line);
+      backdrop-filter: blur(8px);
+    }
+    .speaker-map ul {
+      background: #0f1822;
+      border-color: var(--line);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+    }
     .node-shell:target {
-      outline: 3px solid #c68b00;
-      background: #fff7db;
+      outline: 3px solid #f0bd58;
+      background: rgba(240, 189, 88, 0.12);
       scroll-margin-top: 1rem;
     }
     .text-line.search-target-line {
-      background: #fff0a6;
+      background: rgba(240, 189, 88, 0.18);
       border-radius: 2px;
       padding: 0 0.08rem;
     }
