@@ -18,27 +18,51 @@ function normalizePhrase(value) {
     .trim();
 }
 
+function prepareTextEntries(values) {
+  const seen = new Set();
+  const entries = [];
+  for (const value of Array.isArray(values) ? values : []) {
+    if (typeof value !== "string" || !value.trim()) {
+      continue;
+    }
+    const key = value.trim();
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    entries.push({
+      text: value,
+      haystack: normalize(value),
+      phraseHaystack: normalizePhrase(value),
+    });
+  }
+  return entries;
+}
+
 function prepareDocuments(sourceDocuments) {
   documents = sourceDocuments.map((document) => {
     const speakers = Array.isArray(document.speakers) ? document.speakers : [];
+    const documentSearchChunks = prepareTextEntries([
+      document.title || "",
+      document.path || "",
+      ...(Array.isArray(document.search_chunks) ? document.search_chunks : []),
+    ]);
     const nodes = Array.isArray(document.nodes)
       ? document.nodes.map((node) => {
           const nodeSpeakers = Array.isArray(node.speakers) ? node.speakers : [];
-          const nodeLines = Array.isArray(node.lines)
-            ? node.lines
-            : node.text
-              ? [node.text]
-              : [];
+          const nodeChunks = prepareTextEntries([
+            ...(Array.isArray(node.chunks)
+              ? node.chunks
+              : Array.isArray(node.lines)
+                ? node.lines
+                : node.text
+                  ? [node.text]
+                  : []),
+          ]);
           return {
             id: node.id || "",
             speakers: nodeSpeakers,
-            lines: nodeLines
-              .filter((line) => typeof line === "string" && line.trim())
-              .map((line) => ({
-                text: line,
-                haystack: normalize(line),
-                phraseHaystack: normalizePhrase(line),
-              })),
+            chunks: nodeChunks,
           };
         })
       : [];
@@ -48,6 +72,7 @@ function prepareDocuments(sourceDocuments) {
       speakers,
       excerpt: document.excerpt || "",
       sizeBytes: Number(document.size_bytes) || 0,
+      searchChunks: documentSearchChunks,
       nodes,
       speakerKeys: speakers.map((speaker) => normalize(speaker)),
     };
@@ -81,10 +106,41 @@ function matchesSpeakerFilter(document, speaker, mode) {
   return true;
 }
 
+function matchesTextEntry(entry, normalizedQuery, normalizedPhraseQuery, rawTerms, phraseTerms, matchMode) {
+  if (!entry || !entry.haystack) {
+    return false;
+  }
+
+  if (matchMode === "phrase") {
+    return Boolean(
+      normalizedPhraseQuery && entry.phraseHaystack.includes(normalizedPhraseQuery)
+    );
+  }
+
+  if (normalizedQuery && entry.haystack.includes(normalizedQuery)) {
+    return true;
+  }
+
+  if (normalizedPhraseQuery && entry.phraseHaystack.includes(normalizedPhraseQuery)) {
+    return true;
+  }
+
+  const rawTermsMatch =
+    rawTerms.length > 0 && rawTerms.every((term) => entry.haystack.includes(term));
+  const phraseTermsMatch =
+    phraseTerms.length > 0 &&
+    phraseTerms.every((term) => entry.phraseHaystack.includes(term));
+
+  return rawTermsMatch || phraseTermsMatch;
+}
+
 function searchDocuments(query, speaker, speakerMode, queryMode) {
   const normalizedQuery = normalize(query);
   const normalizedPhraseQuery = normalizePhrase(query);
-  const queryTerms = normalizedQuery ? normalizedQuery.split(" ") : [];
+  const rawTerms = normalizedQuery ? normalizedQuery.split(" ").filter(Boolean) : [];
+  const phraseTerms = normalizedPhraseQuery
+    ? normalizedPhraseQuery.split(" ").filter(Boolean)
+    : [];
   const matchMode =
     queryMode === "phrase" || queryMode === "exact" ? "phrase" : "contains";
 
@@ -95,27 +151,46 @@ function searchDocuments(query, speaker, speakerMode, queryMode) {
       continue;
     }
 
-    for (const node of document.nodes) {
-      for (const line of node.lines) {
-        if (!line.haystack) {
-          continue;
-        }
+    for (const chunk of document.searchChunks) {
+      if (
+        !matchesTextEntry(
+          chunk,
+          normalizedQuery,
+          normalizedPhraseQuery,
+          rawTerms,
+          phraseTerms,
+          matchMode
+        )
+      ) {
+        continue;
+      }
 
-        if (matchMode === "phrase") {
-          if (!normalizedPhraseQuery || !line.phraseHaystack.includes(normalizedPhraseQuery)) {
-            continue;
-          }
-        } else if (!line.haystack.includes(normalizedQuery)) {
-          let allTermsPresent = true;
-          for (const term of queryTerms) {
-            if (!line.haystack.includes(term)) {
-              allTermsPresent = false;
-              break;
-            }
-          }
-          if (!allTermsPresent) {
-            continue;
-          }
+      totalCount += 1;
+      if (results.length < MAX_RESULTS) {
+        results.push({
+          path: document.path,
+          documentPath: document.path,
+          title: document.title,
+          speakers: document.speakers,
+          excerpt: chunk.text,
+          sizeBytes: document.sizeBytes,
+        });
+      }
+    }
+
+    for (const node of document.nodes) {
+      for (const chunk of node.chunks) {
+        if (
+          !matchesTextEntry(
+            chunk,
+            normalizedQuery,
+            normalizedPhraseQuery,
+            rawTerms,
+            phraseTerms,
+            matchMode
+          )
+        ) {
+          continue;
         }
 
         totalCount += 1;
@@ -125,7 +200,7 @@ function searchDocuments(query, speaker, speakerMode, queryMode) {
             documentPath: document.path,
             title: document.title,
             speakers: node.speakers,
-            excerpt: line.text,
+            excerpt: chunk.text,
             sizeBytes: document.sizeBytes,
           });
         }
@@ -162,6 +237,7 @@ self.onmessage = (event) => {
       payload.speakerMode || "includes",
       payload.queryMode || "contains"
     );
+    response.requestId = payload.requestId || 0;
     self.postMessage({
       type: "results",
       payload: response,

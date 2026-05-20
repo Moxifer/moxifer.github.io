@@ -4,6 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Baldur's Gate 3 Dialog</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" href="/favicon.png">
   <style>
     :root {
       color-scheme: dark;
@@ -217,7 +219,7 @@
       </label>
     </div>
   </div>
-  <p id="status">Loading search index...</p>
+  <p id="status">Loading dialog files...</p>
   <ul id="results"></ul>
   <script>
     const queryInput = document.getElementById("query");
@@ -226,12 +228,17 @@
     const speakerModeSelect = document.getElementById("speaker-mode");
     const status = document.getElementById("status");
     const resultsList = document.getElementById("results");
-    const worker = new Worker("search-worker.js");
+    const workerCodeVersion = "2026-05-19-racefix-1";
+    let worker = null;
     const onlyModeIgnoredSpeakers = new Set(["Player", "Narrator", "No Speaker"]);
 
     let allDocuments = [];
+    let manifestReady = false;
     let searchReady = false;
+    let searchLoadError = "";
     let pendingTimer = null;
+    let latestSearchRequestId = 0;
+    const loadedSpeakers = new Set();
 
     function formatSize(sizeBytes) {
       const units = ["B", "KB", "MB"];
@@ -254,6 +261,19 @@
       size.className = "size";
       size.textContent = "(" + formatSize(sizeBytes) + ")";
       return size;
+    }
+
+    function populateSpeakerOptions(speakers) {
+      for (const speaker of speakers || []) {
+        if (!speaker || loadedSpeakers.has(speaker)) {
+          continue;
+        }
+        loadedSpeakers.add(speaker);
+        const option = document.createElement("option");
+        option.value = speaker;
+        option.textContent = speaker;
+        speakerSelect.appendChild(option);
+      }
     }
 
     function shortenText(text, limit) {
@@ -434,6 +454,18 @@
       renderTreeNode(tree, resultsList, 0);
     }
 
+    function renderTreeView() {
+      if (!manifestReady) {
+        return;
+      }
+      const filteredDocuments = getTreeDocuments();
+      status.textContent =
+        filteredDocuments.length +
+        " dialog file" +
+        (filteredDocuments.length === 1 ? "" : "s");
+      renderTree(filteredDocuments);
+    }
+
     function renderResults(payload) {
       resultsList.className = "";
       status.textContent =
@@ -483,21 +515,20 @@
     }
 
     function requestSearch() {
-      if (!searchReady) {
+      latestSearchRequestId += 1;
+      const requestId = latestSearchRequestId;
+      if (!queryInput.value.trim()) {
+        renderTreeView();
         return;
       }
-      if (!queryInput.value.trim()) {
-        const filteredDocuments = getTreeDocuments();
-        status.textContent =
-          filteredDocuments.length +
-          " dialog file" +
-          (filteredDocuments.length === 1 ? "" : "s");
-        renderTree(filteredDocuments);
+      if (!searchReady) {
+        status.textContent = searchLoadError || "Loading search index...";
         return;
       }
       worker.postMessage({
         type: "search",
         payload: {
+          requestId,
           query: queryInput.value,
           queryMode: queryModeSelect.value,
           speaker: speakerSelect.value,
@@ -513,48 +544,87 @@
       pendingTimer = window.setTimeout(requestSearch, 120);
     }
 
-    worker.onmessage = (event) => {
-      const { type, payload } = event.data || {};
+    function withVersion(url, version) {
+      if (!version) {
+        return url;
+      }
+      const separator = url.includes("?") ? "&" : "?";
+      return url + separator + "v=" + encodeURIComponent(version);
+    }
 
-      if (type === "ready") {
-        searchReady = true;
-        status.textContent = payload.count + " dialog files";
-        for (const speaker of payload.speakers) {
-          const option = document.createElement("option");
-          option.value = speaker;
-          option.textContent = speaker;
-          speakerSelect.appendChild(option);
+    function initWorker(assetVersion) {
+      if (worker) {
+        worker.terminate();
+      }
+      const workerVersion = assetVersion
+        ? assetVersion + "-" + workerCodeVersion
+        : workerCodeVersion;
+      worker = new Worker(withVersion("search-worker.js", workerVersion));
+      worker.onmessage = (event) => {
+        const { type, payload } = event.data || {};
+
+        if (type === "ready") {
+          searchReady = true;
+          populateSpeakerOptions(payload.speakers || []);
+          requestSearch();
+          return;
         }
-        requestSearch();
-        return;
-      }
 
-      if (type === "results") {
-        renderResults(payload);
-      }
-    };
+        if (type === "results") {
+          if (payload.requestId !== latestSearchRequestId || !queryInput.value.trim()) {
+            renderTreeView();
+            return;
+          }
+          renderResults(payload);
+        }
+      };
+    }
 
     queryInput.addEventListener("input", scheduleSearch);
     queryModeSelect.addEventListener("change", requestSearch);
     speakerSelect.addEventListener("change", requestSearch);
     speakerModeSelect.addEventListener("change", requestSearch);
 
-    fetch("search-index.json")
+    function loadSearchIndex(assetVersion) {
+      return fetch(withVersion("search-index.json", assetVersion))
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Failed to load search index");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          worker.postMessage({
+            type: "init",
+            payload: {
+              documents: data.documents || [],
+              speakers: data.speakers || [],
+            },
+          });
+        })
+        .catch((error) => {
+          searchLoadError = error.message;
+          if (queryInput.value.trim()) {
+            status.textContent = searchLoadError;
+          }
+        });
+    }
+
+    fetch("dialog-manifest.json", { cache: "no-store" })
       .then((response) => {
         if (!response.ok) {
-          throw new Error("Failed to load search index");
+          throw new Error("Failed to load dialog manifest");
         }
         return response.json();
       })
       .then((data) => {
+        const assetVersion = data.generated_at || "";
         allDocuments = data.documents || [];
-        worker.postMessage({
-          type: "init",
-          payload: {
-            documents: allDocuments,
-            speakers: data.speakers || [],
-          },
-        });
+        manifestReady = true;
+        populateSpeakerOptions(data.speakers || []);
+        initWorker(assetVersion);
+        renderTreeView();
+        return loadSearchIndex(assetVersion);
       })
       .catch((error) => {
         status.textContent = error.message;
