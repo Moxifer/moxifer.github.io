@@ -134,7 +134,30 @@ function matchesTextEntry(entry, normalizedQuery, normalizedPhraseQuery, rawTerm
   return rawTermsMatch || phraseTermsMatch;
 }
 
-function searchDocuments(query, speaker, speakerMode, queryMode) {
+function normalizeDuplicateText(value) {
+  return typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
+}
+
+function buildDuplicateKey(documentPath, excerpt) {
+  return documentPath + "\n" + normalizeDuplicateText(excerpt);
+}
+
+function maybePushResult(results, seenKeys, showDuplicates, documentPath, result, state) {
+  if (!showDuplicates) {
+    const duplicateKey = buildDuplicateKey(documentPath, result.excerpt);
+    if (seenKeys.has(duplicateKey)) {
+      return;
+    }
+    seenKeys.add(duplicateKey);
+  }
+
+  state.totalCount += 1;
+  if (results.length < MAX_RESULTS) {
+    results.push(result);
+  }
+}
+
+function searchDocuments(query, speaker, speakerMode, queryMode, showDuplicates) {
   const normalizedQuery = normalize(query);
   const normalizedPhraseQuery = normalizePhrase(query);
   const rawTerms = normalizedQuery ? normalizedQuery.split(" ").filter(Boolean) : [];
@@ -145,7 +168,10 @@ function searchDocuments(query, speaker, speakerMode, queryMode) {
     queryMode === "phrase" || queryMode === "exact" ? "phrase" : "contains";
 
   const results = [];
-  let totalCount = 0;
+  const seenKeys = new Set();
+  const state = {
+    totalCount: 0,
+  };
   for (const document of documents) {
     if (!matchesSpeakerFilter(document, speaker, speakerMode)) {
       continue;
@@ -165,17 +191,21 @@ function searchDocuments(query, speaker, speakerMode, queryMode) {
         continue;
       }
 
-      totalCount += 1;
-      if (results.length < MAX_RESULTS) {
-        results.push({
+      maybePushResult(
+        results,
+        seenKeys,
+        showDuplicates,
+        document.path,
+        {
           path: document.path,
           documentPath: document.path,
           title: document.title,
           speakers: document.speakers,
           excerpt: chunk.text,
           sizeBytes: document.sizeBytes,
-        });
-      }
+        },
+        state
+      );
     }
 
     for (const node of document.nodes) {
@@ -193,25 +223,29 @@ function searchDocuments(query, speaker, speakerMode, queryMode) {
           continue;
         }
 
-        totalCount += 1;
-        if (results.length < MAX_RESULTS) {
-          results.push({
+        maybePushResult(
+          results,
+          seenKeys,
+          showDuplicates,
+          document.path,
+          {
             path: document.path + "#" + node.id,
             documentPath: document.path,
             title: document.title,
             speakers: node.speakers,
             excerpt: chunk.text,
             sizeBytes: document.sizeBytes,
-          });
-        }
+          },
+          state
+        );
       }
     }
   }
 
   return {
-    count: totalCount,
+    count: state.totalCount,
     results,
-    truncated: totalCount > results.length,
+    truncated: state.totalCount > results.length,
   };
 }
 
@@ -235,7 +269,8 @@ self.onmessage = (event) => {
       payload.query || "",
       payload.speaker || "",
       payload.speakerMode || "includes",
-      payload.queryMode || "contains"
+      payload.queryMode || "contains",
+      payload.showDuplicates === true
     );
     response.requestId = payload.requestId || 0;
     self.postMessage({

@@ -122,7 +122,47 @@ function matchesTextValue(
   );
 }
 
-function searchDocuments(documents, query, speaker, speakerMode, queryMode) {
+function normalizeDuplicateText(value) {
+  return typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
+}
+
+function buildDuplicateKey(documentPath, excerpt) {
+  return documentPath + "\n" + normalizeDuplicateText(excerpt);
+}
+
+function maybePushResult(
+  results,
+  seenKeys,
+  showDuplicates,
+  documentPath,
+  result,
+  state
+) {
+  if (!showDuplicates) {
+    const duplicateKey = buildDuplicateKey(documentPath, result.excerpt);
+    if (seenKeys.has(duplicateKey)) {
+      return;
+    }
+    seenKeys.add(duplicateKey);
+  }
+
+  state.matchCount += 1;
+  if (results.length >= MAX_RESULTS) {
+    state.truncated = true;
+    return;
+  }
+
+  results.push(result);
+}
+
+function searchDocuments(
+  documents,
+  query,
+  speaker,
+  speakerMode,
+  queryMode,
+  showDuplicates
+) {
   const normalizedQuery = normalize(query);
   const rawTerms = normalizedQuery ? normalizedQuery.split(" ").filter(Boolean) : [];
   const matchMode =
@@ -131,8 +171,11 @@ function searchDocuments(documents, query, speaker, speakerMode, queryMode) {
   const phraseRegex = matchMode === "phrase" ? buildPhraseRegex(query) : null;
 
   const results = [];
-  let matchCount = 0;
-  let truncated = false;
+  const seenKeys = new Set();
+  const state = {
+    matchCount: 0,
+    truncated: false,
+  };
 
   searchLoop:
   for (const document of documents) {
@@ -153,20 +196,24 @@ function searchDocuments(documents, query, speaker, speakerMode, queryMode) {
         continue;
       }
 
-      matchCount += 1;
-      if (results.length >= MAX_RESULTS) {
-        truncated = true;
+      maybePushResult(
+        results,
+        seenKeys,
+        showDuplicates,
+        document.path,
+        {
+          path: document.path,
+          documentPath: document.path,
+          title: document.title,
+          speakers: Array.isArray(document.speakers) ? document.speakers : [],
+          excerpt: chunk,
+          sizeBytes: Number(document.size_bytes) || 0,
+        },
+        state
+      );
+      if (state.truncated) {
         break searchLoop;
       }
-
-      results.push({
-        path: document.path,
-        documentPath: document.path,
-        title: document.title,
-        speakers: Array.isArray(document.speakers) ? document.speakers : [],
-        excerpt: chunk,
-        sizeBytes: Number(document.size_bytes) || 0,
-      });
     }
 
     for (const node of Array.isArray(document.nodes) ? document.nodes : []) {
@@ -183,28 +230,32 @@ function searchDocuments(documents, query, speaker, speakerMode, queryMode) {
           continue;
         }
 
-        matchCount += 1;
-        if (results.length >= MAX_RESULTS) {
-          truncated = true;
+        maybePushResult(
+          results,
+          seenKeys,
+          showDuplicates,
+          document.path,
+          {
+            path: document.path + "#" + (node.id || ""),
+            documentPath: document.path,
+            title: document.title,
+            speakers: Array.isArray(node.speakers) ? node.speakers : [],
+            excerpt: chunk,
+            sizeBytes: Number(document.size_bytes) || 0,
+          },
+          state
+        );
+        if (state.truncated) {
           break searchLoop;
         }
-
-        results.push({
-          path: document.path + "#" + (node.id || ""),
-          documentPath: document.path,
-          title: document.title,
-          speakers: Array.isArray(node.speakers) ? node.speakers : [],
-          excerpt: chunk,
-          sizeBytes: Number(document.size_bytes) || 0,
-        });
       }
     }
   }
 
   return {
-    count: truncated ? results.length : matchCount,
+    count: state.truncated ? results.length : state.matchCount,
     results,
-    truncated,
+    truncated: state.truncated,
   };
 }
 
@@ -264,6 +315,7 @@ export async function onRequestGet(context) {
   const speaker = url.searchParams.get("speaker") || "";
   const speakerMode = url.searchParams.get("speakerMode") || "includes";
   const queryMode = url.searchParams.get("queryMode") || "contains";
+  const showDuplicates = url.searchParams.get("showDuplicates") === "true";
   const requestId = Number(url.searchParams.get("requestId") || "0");
   const debug = url.searchParams.get("debug") === "1";
 
@@ -330,7 +382,8 @@ export async function onRequestGet(context) {
       query,
       speaker,
       speakerMode,
-      queryMode
+      queryMode,
+      showDuplicates
     );
     response.requestId = requestId;
     return jsonResponse(response);
