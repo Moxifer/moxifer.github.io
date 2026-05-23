@@ -98,6 +98,7 @@ function matchesSpeakerFilter(document, normalizedSpeaker, mode) {
 function matchesTextValue(
   value,
   normalizedQuery,
+  rawTerms,
   phraseRegex,
   matchMode
 ) {
@@ -111,11 +112,19 @@ function matchesTextValue(
     return Boolean(phraseRegex && phraseRegex.test(haystack));
   }
 
-  return Boolean(normalizedQuery && haystack.includes(normalizedQuery));
+  if (normalizedQuery && haystack.includes(normalizedQuery)) {
+    return true;
+  }
+
+  return (
+    rawTerms.length > 1 &&
+    rawTerms.every((term) => haystack.includes(term))
+  );
 }
 
 function searchDocuments(documents, query, speaker, speakerMode, queryMode) {
   const normalizedQuery = normalize(query);
+  const rawTerms = normalizedQuery ? normalizedQuery.split(" ").filter(Boolean) : [];
   const matchMode =
     queryMode === "phrase" || queryMode === "exact" ? "phrase" : "contains";
   const normalizedSpeaker = normalize(speaker);
@@ -136,6 +145,7 @@ function searchDocuments(documents, query, speaker, speakerMode, queryMode) {
         !matchesTextValue(
           chunk,
           normalizedQuery,
+          rawTerms,
           phraseRegex,
           matchMode
         )
@@ -165,6 +175,7 @@ function searchDocuments(documents, query, speaker, speakerMode, queryMode) {
           !matchesTextValue(
             chunk,
             normalizedQuery,
+            rawTerms,
             phraseRegex,
             matchMode
           )
