@@ -81,6 +81,7 @@
       align-items: center;
       gap: 0.55rem;
       white-space: nowrap;
+      color: var(--muted);
     }
 
     .toggle-label span {
@@ -91,7 +92,13 @@
       width: 1rem;
       height: 1rem;
       margin: 0;
-      accent-color: var(--accent);
+      min-width: 0;
+      padding: 0;
+      flex: 0 0 auto;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      accent-color: var(--focus);
     }
 
     .controls input,
@@ -239,6 +246,10 @@
         <input id="show-duplicates" type="checkbox">
         <span>Show duplicates</span>
       </label>
+      <label class="toggle-label">
+        <input id="match-case" type="checkbox">
+        <span>Match case</span>
+      </label>
     </div>
   </div>
   <p id="status">Loading dialog files...</p>
@@ -249,9 +260,10 @@
     const speakerSelect = document.getElementById("speaker");
     const speakerModeSelect = document.getElementById("speaker-mode");
     const showDuplicatesCheckbox = document.getElementById("show-duplicates");
+    const matchCaseCheckbox = document.getElementById("match-case");
     const status = document.getElementById("status");
     const resultsList = document.getElementById("results");
-    const workerCodeVersion = "2026-05-22-dedup-1";
+    const workerCodeVersion = "2026-05-22-matchcase-1";
     const searchDebounceMs = 280;
     let worker = null;
     const onlyModeIgnoredSpeakers = new Set(["Player", "Narrator", "No Speaker"]);
@@ -334,7 +346,7 @@
         .sort((a, b) => b.length - a.length);
     }
 
-    function appendHighlightedText(container, text, terms) {
+    function appendHighlightedText(container, text, terms, matchCase) {
       if (!text) {
         return;
       }
@@ -344,13 +356,14 @@
         return;
       }
 
-      const lowerText = text.toLowerCase();
+      const comparisonText = matchCase ? text : text.toLowerCase();
       let index = 0;
 
       while (index < text.length) {
         let matchedTerm = "";
         for (const term of terms) {
-          if (lowerText.startsWith(term.toLowerCase(), index)) {
+          const comparisonTerm = matchCase ? term : term.toLowerCase();
+          if (comparisonText.startsWith(comparisonTerm, index)) {
             matchedTerm = text.slice(index, index + term.length);
             break;
           }
@@ -366,7 +379,8 @@
 
         let nextIndex = text.length;
         for (const term of terms) {
-          const foundIndex = lowerText.indexOf(term.toLowerCase(), index);
+          const comparisonTerm = matchCase ? term : term.toLowerCase();
+          const foundIndex = comparisonText.indexOf(comparisonTerm, index);
           if (foundIndex !== -1 && foundIndex < nextIndex) {
             nextIndex = foundIndex;
           }
@@ -507,6 +521,7 @@
       resultsList.innerHTML = "";
       const showDetail = Boolean(queryInput.value.trim() || speakerSelect.value);
       const queryTerms = getQueryTerms();
+      const matchCase = matchCaseCheckbox.checked;
 
       for (const result of payload.results) {
         const item = document.createElement("li");
@@ -536,7 +551,8 @@
           appendHighlightedText(
             excerpt,
             shortenText(result.excerpt, 260),
-            queryTerms
+            queryTerms,
+            matchCase
           );
           item.appendChild(excerpt);
         }
@@ -553,6 +569,7 @@
         speaker: speakerSelect.value,
         speakerMode: speakerModeSelect.value,
         showDuplicates: showDuplicatesCheckbox.checked,
+        matchCase: matchCaseCheckbox.checked,
       };
     }
 
@@ -719,6 +736,7 @@
     speakerSelect.addEventListener("change", requestSearch);
     speakerModeSelect.addEventListener("change", requestSearch);
     showDuplicatesCheckbox.addEventListener("change", requestSearch);
+    matchCaseCheckbox.addEventListener("change", requestSearch);
 
     function loadSearchIndex(assetVersion) {
       return fetch(withVersion("search-index.json", assetVersion))

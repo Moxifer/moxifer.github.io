@@ -18,16 +18,17 @@ function nowMs() {
   return Date.now();
 }
 
-function normalize(value) {
-  return (value || "").toLowerCase().replace(/\s+/g, " ").trim();
+function normalize(value, lowerCase = true) {
+  const normalized = (value || "").replace(/\s+/g, " ").trim();
+  return lowerCase ? normalized.toLowerCase() : normalized;
 }
 
 function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function buildPhraseRegex(query) {
-  const terms = normalize(query).split(/[^a-z0-9]+/).filter(Boolean);
+function buildPhraseRegex(query, matchCase = false) {
+  const terms = normalize(query, !matchCase).split(/[^a-z0-9]+/).filter(Boolean);
   if (!terms.length) {
     return null;
   }
@@ -100,13 +101,14 @@ function matchesTextValue(
   normalizedQuery,
   rawTerms,
   phraseRegex,
-  matchMode
+  matchMode,
+  matchCase
 ) {
   if (typeof value !== "string" || !value.trim()) {
     return false;
   }
 
-  const haystack = value.toLowerCase();
+  const haystack = normalize(value, !matchCase);
 
   if (matchMode === "phrase") {
     return Boolean(phraseRegex && phraseRegex.test(haystack));
@@ -161,14 +163,16 @@ function searchDocuments(
   speaker,
   speakerMode,
   queryMode,
-  showDuplicates
+  showDuplicates,
+  matchCase
 ) {
-  const normalizedQuery = normalize(query);
+  const normalizedQuery = normalize(query, !matchCase);
   const rawTerms = normalizedQuery ? normalizedQuery.split(" ").filter(Boolean) : [];
   const matchMode =
     queryMode === "phrase" || queryMode === "exact" ? "phrase" : "contains";
   const normalizedSpeaker = normalize(speaker);
-  const phraseRegex = matchMode === "phrase" ? buildPhraseRegex(query) : null;
+  const phraseRegex =
+    matchMode === "phrase" ? buildPhraseRegex(query, matchCase) : null;
 
   const results = [];
   const seenKeys = new Set();
@@ -190,7 +194,8 @@ function searchDocuments(
           normalizedQuery,
           rawTerms,
           phraseRegex,
-          matchMode
+          matchMode,
+          matchCase
         )
       ) {
         continue;
@@ -224,7 +229,8 @@ function searchDocuments(
             normalizedQuery,
             rawTerms,
             phraseRegex,
-            matchMode
+            matchMode,
+            matchCase
           )
         ) {
           continue;
@@ -316,6 +322,7 @@ export async function onRequestGet(context) {
   const speakerMode = url.searchParams.get("speakerMode") || "includes";
   const queryMode = url.searchParams.get("queryMode") || "contains";
   const showDuplicates = url.searchParams.get("showDuplicates") === "true";
+  const matchCase = url.searchParams.get("matchCase") === "true";
   const requestId = Number(url.searchParams.get("requestId") || "0");
   const debug = url.searchParams.get("debug") === "1";
 
@@ -383,7 +390,8 @@ export async function onRequestGet(context) {
       speaker,
       speakerMode,
       queryMode,
-      showDuplicates
+      showDuplicates,
+      matchCase
     );
     response.requestId = requestId;
     return jsonResponse(response);

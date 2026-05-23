@@ -202,6 +202,10 @@ TARGET_STYLE_BLOCK = """  <style data-search-target-highlight>
       border-color: var(--line);
       box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
     }
+    .tree-toggle-marker {
+      cursor: pointer;
+      user-select: none;
+    }
     .page-nav {
       margin-bottom: 0.45rem;
       padding-bottom: 0.3rem;
@@ -341,6 +345,61 @@ TARGET_LINE_SCRIPT_RE = re.compile(
     r"\s*<script data-search-target-line>.*?</script>\s*",
     re.DOTALL,
 )
+TREE_TOGGLE_CLICK_TARGET = """      const link = event.target.closest("a[href^='#node-']");
+      if (link) {
+        event.preventDefault();
+        const target = document.querySelector(link.getAttribute("href"));
+        if (target) {
+          revealAndFocusNodeTarget(target, link.getAttribute("href"));
+        }
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+"""
+TREE_TOGGLE_CLICK_REPLACEMENT = """      const link = event.target.closest("a[href^='#node-']");
+      if (link) {
+        event.preventDefault();
+        const target = document.querySelector(link.getAttribute("href"));
+        if (target) {
+          revealAndFocusNodeTarget(target, link.getAttribute("href"));
+        }
+        return;
+      }
+      const marker = event.target.closest(".tree-toggle-marker[data-branch-target]");
+      if (marker) {
+        const isOpen = marker.dataset.branchExpanded === "true";
+        setBranchOpen(marker, !isOpen);
+        if (isOpen) {
+          const shell = marker.closest(".node-shell");
+          if (shell) {
+            const panel = getNodeDetailPanel(shell);
+            if (panel && !panel.hasAttribute("hidden")) {
+              setDetailOpen(shell, false);
+            }
+          }
+        }
+        return;
+      }
+      const summary = event.target.closest(".node-summary");
+"""
+TREE_TOGGLE_MARKER_STYLE_TARGET = """    .speaker-map ul {
+      background: #0f1822;
+      border-color: var(--line);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+    }
+    .page-nav {
+"""
+TREE_TOGGLE_MARKER_STYLE_REPLACEMENT = """    .speaker-map ul {
+      background: #0f1822;
+      border-color: var(--line);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+    }
+    .tree-toggle-marker {
+      cursor: pointer;
+      user-select: none;
+    }
+    .page-nav {
+"""
 
 
 def clean_text(value: str) -> str:
@@ -712,6 +771,26 @@ def ensure_dialog_page_features(
     return cleaned
 
 
+def patch_tree_toggle_marker_behavior(html_text: str) -> str:
+    if TREE_TOGGLE_CLICK_REPLACEMENT in html_text:
+        return html_text
+    return html_text.replace(
+        TREE_TOGGLE_CLICK_TARGET,
+        TREE_TOGGLE_CLICK_REPLACEMENT,
+        1,
+    )
+
+
+def patch_tree_toggle_marker_style(html_text: str) -> str:
+    if ".tree-toggle-marker {" in html_text:
+        return html_text
+    return html_text.replace(
+        TREE_TOGGLE_MARKER_STYLE_TARGET,
+        TREE_TOGGLE_MARKER_STYLE_REPLACEMENT,
+        1,
+    )
+
+
 def parse_dialog_html(html_text: str) -> DialogParseResult:
     parser = DialogHTMLParser()
     parser.feed(html_text)
@@ -762,6 +841,8 @@ def build_index(
             search_page_href=search_page_href,
         )
         patched_html = link_nested_dialog_targets(patched_html, dialog_target_lookup)
+        patched_html = patch_tree_toggle_marker_style(patched_html)
+        patched_html = patch_tree_toggle_marker_behavior(patched_html)
         if patched_html != html_text:
             html_path.write_text(patched_html, encoding="utf-8")
 

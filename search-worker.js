@@ -2,17 +2,17 @@ let documents = [];
 const ONLY_MODE_IGNORED_SPEAKERS = new Set(["player", "narrator", "no speaker"]);
 const MAX_RESULTS = 500;
 
-function normalize(value) {
-  return (value || "")
-    .toLowerCase()
+function normalize(value, lowerCase = true) {
+  const normalized = (value || "")
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/\s+/g, " ")
     .trim();
+  return lowerCase ? normalized.toLowerCase() : normalized;
 }
 
-function normalizePhrase(value) {
-  return normalize(value)
+function normalizePhrase(value, lowerCase = true) {
+  return normalize(value, lowerCase)
     .replace(/[^a-z0-9]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -34,6 +34,8 @@ function prepareTextEntries(values) {
       text: value,
       haystack: normalize(value),
       phraseHaystack: normalizePhrase(value),
+      caseHaystack: normalize(value, false),
+      casePhraseHaystack: normalizePhrase(value, false),
     });
   }
   return entries;
@@ -106,30 +108,33 @@ function matchesSpeakerFilter(document, speaker, mode) {
   return true;
 }
 
-function matchesTextEntry(entry, normalizedQuery, normalizedPhraseQuery, rawTerms, phraseTerms, matchMode) {
+function matchesTextEntry(entry, normalizedQuery, normalizedPhraseQuery, rawTerms, phraseTerms, matchMode, matchCase) {
   if (!entry || !entry.haystack) {
     return false;
   }
 
+  const haystack = matchCase ? entry.caseHaystack : entry.haystack;
+  const phraseHaystack = matchCase ? entry.casePhraseHaystack : entry.phraseHaystack;
+
   if (matchMode === "phrase") {
     return Boolean(
-      normalizedPhraseQuery && entry.phraseHaystack.includes(normalizedPhraseQuery)
+      normalizedPhraseQuery && phraseHaystack.includes(normalizedPhraseQuery)
     );
   }
 
-  if (normalizedQuery && entry.haystack.includes(normalizedQuery)) {
+  if (normalizedQuery && haystack.includes(normalizedQuery)) {
     return true;
   }
 
-  if (normalizedPhraseQuery && entry.phraseHaystack.includes(normalizedPhraseQuery)) {
+  if (normalizedPhraseQuery && phraseHaystack.includes(normalizedPhraseQuery)) {
     return true;
   }
 
   const rawTermsMatch =
-    rawTerms.length > 0 && rawTerms.every((term) => entry.haystack.includes(term));
+    rawTerms.length > 0 && rawTerms.every((term) => haystack.includes(term));
   const phraseTermsMatch =
     phraseTerms.length > 0 &&
-    phraseTerms.every((term) => entry.phraseHaystack.includes(term));
+    phraseTerms.every((term) => phraseHaystack.includes(term));
 
   return rawTermsMatch || phraseTermsMatch;
 }
@@ -157,9 +162,9 @@ function maybePushResult(results, seenKeys, showDuplicates, documentPath, result
   }
 }
 
-function searchDocuments(query, speaker, speakerMode, queryMode, showDuplicates) {
-  const normalizedQuery = normalize(query);
-  const normalizedPhraseQuery = normalizePhrase(query);
+function searchDocuments(query, speaker, speakerMode, queryMode, showDuplicates, matchCase) {
+  const normalizedQuery = normalize(query, !matchCase);
+  const normalizedPhraseQuery = normalizePhrase(query, !matchCase);
   const rawTerms = normalizedQuery ? normalizedQuery.split(" ").filter(Boolean) : [];
   const phraseTerms = normalizedPhraseQuery
     ? normalizedPhraseQuery.split(" ").filter(Boolean)
@@ -185,7 +190,8 @@ function searchDocuments(query, speaker, speakerMode, queryMode, showDuplicates)
           normalizedPhraseQuery,
           rawTerms,
           phraseTerms,
-          matchMode
+          matchMode,
+          matchCase
         )
       ) {
         continue;
@@ -217,7 +223,8 @@ function searchDocuments(query, speaker, speakerMode, queryMode, showDuplicates)
             normalizedPhraseQuery,
             rawTerms,
             phraseTerms,
-            matchMode
+            matchMode,
+            matchCase
           )
         ) {
           continue;
@@ -270,7 +277,8 @@ self.onmessage = (event) => {
       payload.speaker || "",
       payload.speakerMode || "includes",
       payload.queryMode || "contains",
-      payload.showDuplicates === true
+      payload.showDuplicates === true,
+      payload.matchCase === true
     );
     response.requestId = payload.requestId || 0;
     self.postMessage({
