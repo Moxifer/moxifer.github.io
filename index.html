@@ -233,11 +233,14 @@
     const onlyModeIgnoredSpeakers = new Set(["Player", "Narrator", "No Speaker"]);
 
     let allDocuments = [];
+    let assetVersion = "";
     let manifestReady = false;
-    let searchReady = false;
-    let searchLoadError = "";
+    let clientSearchReady = false;
+    let clientSearchLoadError = "";
     let pendingTimer = null;
     let latestSearchRequestId = 0;
+    let activeSearchController = null;
+    let clientSearchBootPromise = null;
     const loadedSpeakers = new Set();
 
     function formatSize(sizeBytes) {
@@ -514,27 +517,107 @@
       }
     }
 
+    function buildSearchPayload(requestId) {
+      return {
+        requestId,
+        query: queryInput.value,
+        queryMode: queryModeSelect.value,
+        speaker: speakerSelect.value,
+        speakerMode: speakerModeSelect.value,
+      };
+    }
+
+    function requestClientSearch(requestId) {
+      if (!clientSearchReady) {
+        status.textContent = clientSearchLoadError || "Loading search index...";
+        ensureClientSearch().catch((error) => {
+          clientSearchLoadError = error.message || "Failed to load search index";
+          if (queryInput.value.trim()) {
+            status.textContent = clientSearchLoadError;
+          }
+        });
+        return;
+      }
+
+      worker.postMessage({
+        type: "search",
+        payload: buildSearchPayload(requestId),
+      });
+    }
+
+    function requestServerSearch(requestId) {
+      if (activeSearchController) {
+        activeSearchController.abort();
+      }
+
+      const controller = new AbortController();
+      activeSearchController = controller;
+      status.textContent = "Searching...";
+
+      const params = new URLSearchParams();
+      const payload = buildSearchPayload(requestId);
+      for (const [key, value] of Object.entries(payload)) {
+        params.set(key, String(value || ""));
+      }
+
+      fetch("api/search?" + params.toString(), {
+        signal: controller.signal,
+        headers: {
+          Accept: "application/json",
+        },
+      })
+        .then((response) => {
+          if (!response.ok) {
+            const error = new Error("Search request failed");
+            error.status = response.status;
+            throw error;
+          }
+          return response.json();
+        })
+        .then((payload) => {
+          if (
+            requestId !== latestSearchRequestId ||
+            !queryInput.value.trim()
+          ) {
+            renderTreeView();
+            return;
+          }
+          renderResults(payload);
+        })
+        .catch((error) => {
+          if (controller.signal.aborted) {
+            return;
+          }
+
+          if (error.status === 404) {
+            requestClientSearch(requestId);
+            return;
+          }
+
+          status.textContent = error.message || "Search failed";
+        })
+        .finally(() => {
+          if (activeSearchController === controller) {
+            activeSearchController = null;
+          }
+        });
+    }
+
     function requestSearch() {
       latestSearchRequestId += 1;
       const requestId = latestSearchRequestId;
+
+      if (activeSearchController) {
+        activeSearchController.abort();
+        activeSearchController = null;
+      }
+
       if (!queryInput.value.trim()) {
         renderTreeView();
         return;
       }
-      if (!searchReady) {
-        status.textContent = searchLoadError || "Loading search index...";
-        return;
-      }
-      worker.postMessage({
-        type: "search",
-        payload: {
-          requestId,
-          query: queryInput.value,
-          queryMode: queryModeSelect.value,
-          speaker: speakerSelect.value,
-          speakerMode: speakerModeSelect.value,
-        },
-      });
+
+      requestServerSearch(requestId);
     }
 
     function scheduleSearch() {
@@ -564,9 +647,13 @@
         const { type, payload } = event.data || {};
 
         if (type === "ready") {
-          searchReady = true;
+          clientSearchReady = true;
           populateSpeakerOptions(payload.speakers || []);
-          requestSearch();
+          if (queryInput.value.trim()) {
+            requestClientSearch(latestSearchRequestId);
+          } else {
+            renderTreeView();
+          }
           return;
         }
 
@@ -578,6 +665,24 @@
           renderResults(payload);
         }
       };
+    }
+
+    function ensureClientSearch() {
+      if (clientSearchBootPromise) {
+        return clientSearchBootPromise;
+      }
+
+      clientSearchBootPromise = Promise.resolve()
+        .then(() => {
+          initWorker(assetVersion);
+          return loadSearchIndex(assetVersion);
+        })
+        .catch((error) => {
+          clientSearchBootPromise = null;
+          throw error;
+        });
+
+      return clientSearchBootPromise;
     }
 
     queryInput.addEventListener("input", scheduleSearch);
@@ -601,12 +706,6 @@
               speakers: data.speakers || [],
             },
           });
-        })
-        .catch((error) => {
-          searchLoadError = error.message;
-          if (queryInput.value.trim()) {
-            status.textContent = searchLoadError;
-          }
         });
     }
 
@@ -618,13 +717,11 @@
         return response.json();
       })
       .then((data) => {
-        const assetVersion = data.generated_at || "";
+        assetVersion = data.generated_at || "";
         allDocuments = data.documents || [];
         manifestReady = true;
         populateSpeakerOptions(data.speakers || []);
-        initWorker(assetVersion);
         renderTreeView();
-        return loadSearchIndex(assetVersion);
       })
       .catch((error) => {
         status.textContent = error.message;
