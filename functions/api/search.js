@@ -14,6 +14,10 @@ function jsonResponse(payload, init = {}) {
   });
 }
 
+function nowMs() {
+  return Date.now();
+}
+
 function normalize(value) {
   return (value || "")
     .toLowerCase()
@@ -282,6 +286,15 @@ function getPreparedIndex(env, requestUrl) {
   return preparedIndexPromise;
 }
 
+export async function onRequestOptions() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "cache-control": "no-store",
+    },
+  });
+}
+
 export async function onRequestGet(context) {
   const { request, env } = context;
   const url = new URL(request.url);
@@ -290,6 +303,79 @@ export async function onRequestGet(context) {
   const speakerMode = url.searchParams.get("speakerMode") || "includes";
   const queryMode = url.searchParams.get("queryMode") || "contains";
   const requestId = Number(url.searchParams.get("requestId") || "0");
+  const debug = url.searchParams.get("debug") === "1";
+
+  if (debug) {
+    const timings = [];
+    const startedAt = nowMs();
+    try {
+      timings.push({
+        step: "binding",
+        hasSearchIndexBucket: Boolean(env.SEARCH_INDEX_BUCKET),
+        hasAssetsBinding: Boolean(env.ASSETS),
+        elapsedMs: nowMs() - startedAt,
+      });
+
+      let object = null;
+      if (env.SEARCH_INDEX_BUCKET) {
+        const getStartedAt = nowMs();
+        object = await env.SEARCH_INDEX_BUCKET.get(SEARCH_INDEX_KEY);
+        timings.push({
+          step: "r2_get",
+          found: Boolean(object),
+          size: object ? object.size : null,
+          etag: object ? object.httpEtag : null,
+          elapsedMs: nowMs() - getStartedAt,
+        });
+      } else if (env.ASSETS) {
+        const assetFetchStartedAt = nowMs();
+        const assetUrl = new URL("/" + SEARCH_INDEX_KEY, request.url);
+        const response = await env.ASSETS.fetch(assetUrl);
+        timings.push({
+          step: "assets_fetch",
+          ok: response.ok,
+          status: response.status,
+          elapsedMs: nowMs() - assetFetchStartedAt,
+        });
+      }
+
+      if (object) {
+        const parseStartedAt = nowMs();
+        const payload = await object.json();
+        timings.push({
+          step: "json_parse",
+          documents: Array.isArray(payload.documents) ? payload.documents.length : 0,
+          speakers: Array.isArray(payload.speakers) ? payload.speakers.length : 0,
+          elapsedMs: nowMs() - parseStartedAt,
+        });
+
+        const prepareStartedAt = nowMs();
+        const prepared = prepareDocuments(payload.documents || []);
+        timings.push({
+          step: "prepare_documents",
+          preparedDocuments: prepared.length,
+          elapsedMs: nowMs() - prepareStartedAt,
+        });
+      }
+
+      return jsonResponse({
+        ok: true,
+        requestId,
+        timings,
+      });
+    } catch (error) {
+      return jsonResponse(
+        {
+          ok: false,
+          requestId,
+          error: error.message || "Debug failed",
+          stack: error.stack || null,
+          timings,
+        },
+        { status: 500 }
+      );
+    }
+  }
 
   if (!query.trim()) {
     return jsonResponse({
