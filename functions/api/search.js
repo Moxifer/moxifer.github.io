@@ -2,7 +2,7 @@ const ONLY_MODE_IGNORED_SPEAKERS = new Set(["player", "narrator", "no speaker"])
 const MAX_RESULTS = 500;
 const SEARCH_INDEX_KEY = "search-index.json";
 
-let searchPayloadPromise = null;
+let cachedSearchPayload = null;
 
 function jsonResponse(payload, init = {}) {
   const headers = new Headers(init.headers || {});
@@ -227,15 +227,14 @@ async function loadSearchPayload(env, requestUrl) {
   return JSON.parse(text);
 }
 
-function getSearchPayload(env, requestUrl) {
-  if (!searchPayloadPromise) {
-    searchPayloadPromise = loadSearchPayload(env, requestUrl).catch((error) => {
-      searchPayloadPromise = null;
-      throw error;
-    });
+async function getSearchPayload(env, requestUrl) {
+  if (cachedSearchPayload) {
+    return cachedSearchPayload;
   }
 
-  return searchPayloadPromise;
+  const payload = await loadSearchPayload(env, requestUrl);
+  cachedSearchPayload = payload;
+  return payload;
 }
 
 export async function onRequestOptions() {
