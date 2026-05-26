@@ -3,6 +3,7 @@ const MAX_RESULTS = 500;
 const SEARCH_INDEX_KEY = "search-index.json";
 
 let cachedSearchPayload = null;
+let cachedSearchPayloadPromise = null;
 
 function jsonResponse(payload, init = {}) {
   const headers = new Headers(init.headers || {});
@@ -300,9 +301,19 @@ async function getSearchPayload(env, requestUrl) {
     return cachedSearchPayload;
   }
 
-  const payload = await loadSearchPayload(env, requestUrl);
-  cachedSearchPayload = payload;
-  return payload;
+  if (!cachedSearchPayloadPromise) {
+    cachedSearchPayloadPromise = loadSearchPayload(env, requestUrl)
+      .then((payload) => {
+        cachedSearchPayload = payload;
+        return payload;
+      })
+      .catch((error) => {
+        cachedSearchPayloadPromise = null;
+        throw error;
+      });
+  }
+
+  return cachedSearchPayloadPromise;
 }
 
 export async function onRequestOptions() {

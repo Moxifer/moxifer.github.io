@@ -263,8 +263,10 @@
     const matchCaseCheckbox = document.getElementById("match-case");
     const status = document.getElementById("status");
     const resultsList = document.getElementById("results");
-    const workerCodeVersion = "2026-05-22-matchcase-1";
+    const workerCodeVersion = "2026-05-25-search-retry-1";
     const searchDebounceMs = 280;
+    const serverSearchRetryDelayMs = 650;
+    const maxServerSearchRetries = 1;
     let worker = null;
     const onlyModeIgnoredSpeakers = new Set(["Player", "Narrator", "No Speaker"]);
 
@@ -573,12 +575,16 @@
       };
     }
 
+    function isCurrentSearch(requestId) {
+      return requestId === latestSearchRequestId && Boolean(queryInput.value.trim());
+    }
+
     function requestClientSearch(requestId) {
       if (!clientSearchReady) {
         status.textContent = clientSearchLoadError || "Loading search index...";
         ensureClientSearch().catch((error) => {
           clientSearchLoadError = error.message || "Failed to load search index";
-          if (queryInput.value.trim()) {
+          if (isCurrentSearch(requestId)) {
             status.textContent = clientSearchLoadError;
           }
         });
@@ -591,7 +597,15 @@
       });
     }
 
-    function requestServerSearch(requestId) {
+    function retryServerSearch(requestId, attempt) {
+      window.setTimeout(() => {
+        if (isCurrentSearch(requestId)) {
+          requestServerSearch(requestId, attempt);
+        }
+      }, serverSearchRetryDelayMs);
+    }
+
+    function requestServerSearch(requestId, attempt = 0) {
       if (activeSearchController) {
         activeSearchController.abort();
       }
@@ -621,17 +635,29 @@
           return response.json();
         })
         .then((payload) => {
-          if (
-            requestId !== latestSearchRequestId ||
-            !queryInput.value.trim()
-          ) {
+          if (requestId !== latestSearchRequestId) {
+            return;
+          }
+
+          if (!queryInput.value.trim()) {
             renderTreeView();
             return;
           }
           renderResults(payload);
         })
         .catch((error) => {
-          if (controller.signal.aborted) {
+          if (controller.signal.aborted || requestId !== latestSearchRequestId) {
+            return;
+          }
+
+          if (!queryInput.value.trim()) {
+            renderTreeView();
+            return;
+          }
+
+          if (error.status !== 404 && attempt < maxServerSearchRetries) {
+            status.textContent = "Searching...";
+            retryServerSearch(requestId, attempt + 1);
             return;
           }
 
@@ -704,7 +730,11 @@
         }
 
         if (type === "results") {
-          if (payload.requestId !== latestSearchRequestId || !queryInput.value.trim()) {
+          if (payload.requestId !== latestSearchRequestId) {
+            return;
+          }
+
+          if (!queryInput.value.trim()) {
             renderTreeView();
             return;
           }
