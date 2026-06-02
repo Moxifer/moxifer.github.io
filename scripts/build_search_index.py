@@ -222,9 +222,39 @@ TARGET_STYLE_BLOCK = """  <style data-search-target-highlight>
       text-decoration: underline;
     }
     .node-shell:target {
+      outline: 0;
+      background: none;
+      scroll-margin-top: 1rem;
+    }
+    .node-shell:target > .node-row > .node-content > .node-summary,
+    .node-summary.hash-target {
+      width: fit-content;
       outline: 3px solid #f0bd58;
       background: rgba(240, 189, 88, 0.12);
       scroll-margin-top: 1rem;
+    }
+    .node-url-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin: 0 0 0.35rem;
+    }
+    .node-url-tools button {
+      min-height: 1.35rem;
+      padding: 0.08rem 0.35rem;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--jump);
+      font: inherit;
+      font-size: 0.78rem;
+      line-height: 1.15;
+      cursor: pointer;
+    }
+    .node-url-tools button:hover,
+    .node-url-tools button:focus-visible {
+      background: var(--surface-hover);
+      outline: 1px solid var(--focus);
+      outline-offset: 1px;
     }
     .search-target-line {
       background: rgba(240, 189, 88, 0.18);
@@ -293,7 +323,17 @@ TARGET_LINE_SCRIPT_BLOCK = """  <script data-search-target-line>
       const candidateRoots = [];
       let targetShell = null;
       if (targetHash) {
-        targetShell = document.querySelector(targetHash);
+        if (typeof window.resolveDialogNodeHashTarget === "function") {
+          targetShell = window.resolveDialogNodeHashTarget(targetHash);
+        } else if (targetHash.startsWith("#node-")) {
+          targetShell = document.getElementById(targetHash.slice(1));
+        } else {
+          try {
+            targetShell = document.querySelector(targetHash);
+          } catch (error) {
+            targetShell = null;
+          }
+        }
         if (!targetShell) {
           return;
         }
@@ -343,6 +383,213 @@ TARGET_LINE_SCRIPT_BLOCK = """  <script data-search-target-line>
 """
 TARGET_LINE_SCRIPT_RE = re.compile(
     r"\s*<script data-search-target-line>.*?</script>\s*",
+    re.DOTALL,
+)
+NODE_URL_SCRIPT_BLOCK = """  <script data-node-url-tools>
+    (function () {
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const uuidToShell = new Map();
+
+      function getPanel(shell) {
+        if (typeof getNodeDetailPanel === "function") {
+          return getNodeDetailPanel(shell);
+        }
+        const content = shell.querySelector(":scope > .node-row > .node-content");
+        return content ? content.querySelector(":scope > .node-detail-panel") : null;
+      }
+
+      function getNodeRow(shell) {
+        return shell ? shell.querySelector(":scope > .node-row") : null;
+      }
+
+      function getNodeSummary(shell) {
+        return shell ? shell.querySelector(":scope > .node-row > .node-content > .node-summary") : null;
+      }
+
+      function getNodeUuid(panel) {
+        if (!panel) {
+          return "";
+        }
+        const items = Array.from(panel.querySelectorAll(".section-metadata .meta-item"));
+        for (const item of items) {
+          const label = item.querySelector("strong");
+          if (!label || label.textContent.trim() !== "UUID") {
+            continue;
+          }
+          const match = item.textContent.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+          return match ? match[0].toLowerCase() : "";
+        }
+        return "";
+      }
+
+      function buildNodeUrl(hash) {
+        const url = new URL(window.location.href);
+        url.search = "";
+        url.hash = hash;
+        return url.href;
+      }
+
+      function makeButton(text, hash) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = text;
+        button.dataset.copyNodeUrl = buildNodeUrl(hash);
+        return button;
+      }
+
+      function copyText(value) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          return navigator.clipboard.writeText(value);
+        }
+        const textarea = document.createElement("textarea");
+        textarea.value = value;
+        textarea.style.position = "fixed";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        try {
+          document.execCommand("copy");
+          return Promise.resolve();
+        } finally {
+          textarea.remove();
+        }
+      }
+
+      function resolveHash(hash) {
+        if (!hash) {
+          return null;
+        }
+        if (hash.startsWith("#uuid-")) {
+          const uuid = hash.slice("#uuid-".length).toLowerCase();
+          return uuidPattern.test(uuid) ? uuidToShell.get(uuid) || null : null;
+        }
+        if (hash.startsWith("#node-")) {
+          return document.getElementById(hash.slice(1));
+        }
+        return null;
+      }
+
+      function setBranchNodeOpen(branch, openState) {
+        if (!branch || !branch.id) {
+          return;
+        }
+        const marker = document.querySelector(`.tree-toggle-marker[data-branch-target="${branch.id}"]`);
+        if (openState) {
+          branch.removeAttribute("hidden");
+        } else {
+          branch.setAttribute("hidden", "until-found");
+        }
+        if (marker) {
+          marker.textContent = openState ? "-" : "+";
+          marker.dataset.branchExpanded = openState ? "true" : "false";
+        }
+        const shell = marker ? marker.closest(".node-shell") : null;
+        const summary = shell ? getNodeSummary(shell) : null;
+        if (summary && summary.dataset.branchTarget === branch.id) {
+          summary.setAttribute("aria-expanded", openState ? "true" : "false");
+        }
+      }
+
+      function openParentBranches(target) {
+        let current = target;
+        while (current) {
+          if (current.classList && current.classList.contains("node-branch")) {
+            setBranchNodeOpen(current, true);
+          }
+          current = current.parentElement;
+        }
+      }
+
+      function getScrollOffset() {
+        const toolbar = document.querySelector(".toolbar");
+        return toolbar ? Math.ceil(toolbar.getBoundingClientRect().height) + 8 : 8;
+      }
+
+      function scrollTargetIntoView(target) {
+        if (!target) {
+          return;
+        }
+        const top = window.scrollY + target.getBoundingClientRect().top - getScrollOffset();
+        window.scrollTo({ top: Math.max(0, top), behavior: "auto" });
+      }
+
+      function revealHashTarget(hash) {
+        document.querySelectorAll(".node-summary.hash-target").forEach((summary) => {
+          summary.classList.remove("hash-target");
+        });
+        const target = resolveHash(hash);
+        if (!target) {
+          return null;
+        }
+        const shell = target.classList.contains("node-shell")
+          ? target
+          : target.closest(".node-shell");
+        if (shell) {
+          const summary = getNodeSummary(shell);
+          if (summary) {
+            summary.classList.add("hash-target");
+          }
+        }
+        openParentBranches(shell || target);
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            scrollTargetIntoView(getNodeSummary(shell) || getNodeRow(shell) || shell || target);
+          });
+        });
+        return shell || target;
+      }
+
+      document.querySelectorAll(".node-shell").forEach((shell) => {
+        const panel = getPanel(shell);
+        const uuid = getNodeUuid(panel);
+        if (!panel || !uuid || !shell.id) {
+          return;
+        }
+        shell.dataset.nodeUuid = uuid;
+        uuidToShell.set(uuid, shell);
+
+        if (panel.querySelector(":scope > .node-url-tools")) {
+          return;
+        }
+        const tools = document.createElement("div");
+        tools.className = "node-url-tools";
+        tools.appendChild(makeButton("Copy uuid url", "#uuid-" + uuid));
+        tools.appendChild(makeButton("Copy node number url", "#" + shell.id));
+        panel.insertBefore(tools, panel.firstChild);
+      });
+
+      window.resolveDialogNodeHashTarget = resolveHash;
+      window.revealDialogNodeHashTarget = revealHashTarget;
+
+      document.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-copy-node-url]");
+        if (!button) {
+          return;
+        }
+        const originalText = button.textContent;
+        copyText(button.dataset.copyNodeUrl).then(() => {
+          button.textContent = "Copied";
+          window.setTimeout(() => {
+            button.textContent = originalText;
+          }, 1200);
+        }).catch(() => {
+          button.textContent = "Copy failed";
+          window.setTimeout(() => {
+            button.textContent = originalText;
+          }, 1200);
+        });
+      });
+
+      window.addEventListener("hashchange", () => {
+        revealHashTarget(window.location.hash);
+      });
+      revealHashTarget(window.location.hash);
+    })();
+  </script>
+"""
+NODE_URL_SCRIPT_RE = re.compile(
+    r"\s*<script data-node-url-tools>.*?</script>\s*",
     re.DOTALL,
 )
 TREE_TOGGLE_CLICK_TARGET = """      const link = event.target.closest("a[href^='#node-']");
@@ -753,6 +1000,7 @@ def ensure_dialog_page_features(
     cleaned = PREVIEW_META_RE.sub("\n", html_text)
     cleaned = FAVICON_RE.sub("\n", cleaned)
     cleaned = TARGET_STYLE_RE.sub("\n", cleaned)
+    cleaned = NODE_URL_SCRIPT_RE.sub("\n", cleaned)
     cleaned = TARGET_LINE_SCRIPT_RE.sub("\n", cleaned)
     cleaned = PAGE_NAV_RE.sub("\n", cleaned)
     cleaned = LEGACY_PAGE_NAV_RE.sub("\n", cleaned)
@@ -767,7 +1015,11 @@ def ensure_dialog_page_features(
     page_nav_block = build_page_nav_block(search_page_href)
     cleaned = HERO_TITLE_RE.sub(rf"\1{page_nav_block}      \2", cleaned, count=1)
     if "</body>" in cleaned:
-        cleaned = cleaned.replace("</body>", f"{TARGET_LINE_SCRIPT_BLOCK}</body>", 1)
+        cleaned = cleaned.replace(
+            "</body>",
+            f"{NODE_URL_SCRIPT_BLOCK}{TARGET_LINE_SCRIPT_BLOCK}</body>",
+            1,
+        )
     return cleaned
 
 
@@ -828,7 +1080,7 @@ def build_index(
     html_files = sorted(dialog_root.rglob("*.html"))
     dialog_target_lookup = build_dialog_target_lookup(repo_root, html_files)
     for html_path in html_files:
-        html_text = html_path.read_text(encoding="utf-8")
+        html_text = html_path.read_bytes().decode("utf-8")
         parsed = parse_dialog_html(html_text)
         title = parsed.title or html_path.stem
         search_page_href = Path(
@@ -844,7 +1096,7 @@ def build_index(
         patched_html = patch_tree_toggle_marker_style(patched_html)
         patched_html = patch_tree_toggle_marker_behavior(patched_html)
         if patched_html != html_text:
-            html_path.write_text(patched_html, encoding="utf-8")
+            html_path.write_bytes(patched_html.encode("utf-8"))
 
         relative_path = html_path.relative_to(repo_root).as_posix()
         nodes = []
